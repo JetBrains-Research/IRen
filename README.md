@@ -1,31 +1,35 @@
-# suggesting-identifier-names/IRen
+# Id Names Suggesting Plugin
 
+## Description
 
+This plugin makes variable's name suggestion for you.
 
-## Getting Started
+## Structure
 
-Download links:
+### Directories:
 
-SSH clone URL: ssh://git@git.jetbrains.team/suggesting-identifier-names/IRen.git
+- `org.jetbrains.id.names.suggesting` – part of a plugin that predicts variable names. Done by Igor Davidenko.
+- `org.jetbrains.astrid` – part of a plugin that predicts method names. Done by Zarina Kurbatova.
+- `tools` – experiments and tools that have been needed for master's thesis. Done by Igor Davidenko.
 
-HTTPS clone URL: https://git.jetbrains.team/suggesting-identifier-names/IRen.git
+## Approach
 
+To be done.
 
+## Installation
 
-These instructions will get you a copy of the project up and running on your local machine for development and testing purposes.
+1. In Intellij IDEA add custom plugin
+   repository `https://buildserver.labs.intellij.net/guestAuth/repository/download/ijplatform_IntelliJProjectDependencies_CodeCompletionProjects_IdentifiersNamesSuggesting_BuildPlugin/lastSuccessful/updatePlugins.xml`
+   . [Instruction](https://www.jetbrains.com/help/idea/managing-plugins.html#repos)
+2. Install plugin `Id Names Suggesting` in Marketplace.
 
-## Prerequisites
+## Usage
 
-What things you need to install the software and how to install them.
+- Go to `Analyze/Train Project Id Model` to train model on an opened project.
 
-```
-Examples
-```
+- When a caret stands on a variable you can click `Alt+Enter` and choose `Suggest variable name`. 
+Plugin will show you a list of consistent names for this variable.
 
-## Deployment
+## Features
 
-Add additional notes about how to deploy this on a production system.
-
-## Resources
-
-Add links to external resources for this project, such as CI server, bug tracker, etc.
+To be done.

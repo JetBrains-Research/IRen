@@ -1,0 +1,81 @@
+<idea-plugin>
+    <id>com.github.davidenkoim.idnamessuggestingplugin</id>
+    <name>Id Names Suggesting</name>
+    <vendor>davidenkoim</vendor>
+    <resource-bundle>messages.IdNamesSuggesting</resource-bundle>
+    <!-- Product and plugin compatibility requirements -->
+    <!-- https://www.jetbrains.org/intellij/sdk/docs/basics/getting_started/plugin_compatibility.html -->
+
+    <description>
+        <![CDATA[
+      <p>Provides assistance in naming variables.</p>
+
+      <p>To use the <b>Id Names Suggesting</b> tool, press <b>Alt+Enter</b> on a variable and select <b>Suggest variable name</b>.</p>
+      ]]>
+    </description>
+
+    <depends>com.intellij.modules.platform</depends>
+    <depends>com.intellij.modules.java</depends>
+    <extensions defaultExtensionNs="com.intellij">
+        <registryKey key="developer.mode" description="Registry for showing id names suggesting plugin notifications"
+                     defaultValue="True" restartRequired="false"/>
+        <!-- Headless running part-->
+        <appStarter implementation="tools.graphModelsEvaluator.PluginRunner"/>
+        <appStarter implementation="tools.modelsEvaluator.PluginRunner"/>
+        <appStarter implementation="tools.nGramModelsEvaluator.PluginRunner"/>
+        <appStarter implementation="tools.nGramTrainingTime.PluginRunner"/>
+        <!-- End of headless running part-->
+        <intentionAction>
+            <className>org.jetbrains.id.names.suggesting.impl.SuggestVariableNamesIntention</className>
+        </intentionAction>
+        <applicationService serviceImplementation="org.jetbrains.id.names.suggesting.IdNamesSuggestingModelManager"/>
+        <applicationService serviceImplementation="org.jetbrains.id.names.suggesting.IdNamesSuggestingService"/>
+        <!--        <backgroundPostStartupActivity-->
+        <!--                implementation="org.jetbrains.id.names.suggesting.LoadingGlobalModelStartupActivity"/>-->
+        <inspectionToolProvider
+                implementation="org.jetbrains.id.names.suggesting.inspections.variable.VariableNamesProvider"/>
+        <!-- Astrid part-->
+        <intentionAction>
+            <className>org.jetbrains.astrid.actions.SuggestionIntentionAction</className>
+            <category>Suggestions list</category>
+            <descriptionDirectoryName>SuggestionIntentionAction</descriptionDirectoryName>
+        </intentionAction>
+
+        <inspectionToolProvider implementation="org.jetbrains.astrid.inspections.method.MethodNamesProvider"/>
+        <inspectionToolProvider implementation="org.jetbrains.astrid.inspections.ifstatement.IfStatementProvider"/>
+
+        <applicationService serviceImplementation="org.jetbrains.astrid.stats.RenameMethodStatistics"/>
+        <!-- End of Astrid part-->
+    </extensions>
+    <extensions defaultExtensionNs="org.jetbrains.id.names.suggesting">
+        <variableNamesContributor
+                implementation="org.jetbrains.id.names.suggesting.contributors.FileVariableNamesContributor"/>
+        <variableNamesContributor
+                implementation="org.jetbrains.id.names.suggesting.contributors.ProjectVariableNamesContributor"/>
+        <variableNamesContributor
+                implementation="org.jetbrains.id.names.suggesting.contributors.GlobalVariableNamesContributor"/>
+        <variableNamesContributor
+                implementation="org.jetbrains.id.names.suggesting.naturalize.ProjectNaturalizeContributor"/>
+        <variableNamesContributor
+                implementation="org.jetbrains.id.names.suggesting.naturalize.GlobalNaturalizeContributor"/>
+    </extensions>
+    <actions>
+        <action id="train.project.id.model" class="org.jetbrains.id.names.suggesting.impl.TrainProjectNGramModelAction"
+                text="Train Project Id Model">
+            <add-to-group group-id="AnalyzeMenu" anchor="first"/>
+            <keyboard-shortcut keymap="$default" first-keystroke="ctrl alt shift Z"/>
+        </action>
+        <action id="train.global.id.model" class="org.jetbrains.id.names.suggesting.impl.TrainGlobalNGramModelAction"
+                text="Add Project To Global Id Model">
+            <add-to-group group-id="AnalyzeMenu" anchor="first"/>
+        </action>
+        <action id="build.dataset.from.project" class="tools.varMiner.DatasetBuildAction"
+                text="Build Dataset From Project">
+            <add-to-group group-id="AnalyzeMenu" anchor="first"/>
+        </action>
+    </actions>
+    <extensionPoints>
+        <extensionPoint qualifiedName="org.jetbrains.id.names.suggesting.variableNamesContributor"
+                        interface="org.jetbrains.id.names.suggesting.api.VariableNamesContributor" dynamic="true"/>
+    </extensionPoints>
+</idea-plugin>
