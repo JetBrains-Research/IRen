@@ -20,9 +20,8 @@
         <registryKey key="developer.mode" description="Registry for showing id names suggesting plugin notifications"
                      defaultValue="True" restartRequired="false"/>
         <!-- Headless running part-->
-        <appStarter implementation="tools.graphModelsEvaluator.PluginRunner"/>
-        <appStarter implementation="tools.modelsEvaluator.PluginRunner"/>
-        <appStarter implementation="tools.nGramModelsEvaluator.PluginRunner"/>
+        <appStarter implementation="tools.gnnEvaluator.GNNPluginRunner"/>
+        <appStarter implementation="tools.transformerEvaluator.TransformerPluginRunner"/>
         <appStarter implementation="tools.nGramTrainingTime.PluginRunner"/>
         <!-- End of headless running part-->
         <intentionAction>
@@ -54,10 +53,6 @@
                 implementation="org.jetbrains.id.names.suggesting.contributors.ProjectVariableNamesContributor"/>
         <variableNamesContributor
                 implementation="org.jetbrains.id.names.suggesting.contributors.GlobalVariableNamesContributor"/>
-        <variableNamesContributor
-                implementation="org.jetbrains.id.names.suggesting.naturalize.ProjectNaturalizeContributor"/>
-        <variableNamesContributor
-                implementation="org.jetbrains.id.names.suggesting.naturalize.GlobalNaturalizeContributor"/>
     </extensions>
     <actions>
         <action id="train.project.id.model" class="org.jetbrains.id.names.suggesting.impl.TrainProjectNGramModelAction"

@@ -1,4 +1,4 @@
-package tools.modelsEvaluator
+package tools.modelsEvaluatorApi
 
 import com.intellij.ide.impl.ProjectUtil
 import com.intellij.openapi.application.ApplicationStarter
@@ -9,12 +9,12 @@ import java.nio.file.Path
 import java.nio.file.Paths
 import kotlin.system.exitProcess
 
-class PluginRunner : ApplicationStarter {
-    private val javaSmallTrain = listOf(
+abstract class PluginRunner : ApplicationStarter {
+    protected open val javaSmallTrain = listOf(
         "cassandra", "elasticsearch", "gradle", "hibernate-orm", "intellij-community",
         "liferay-portal", "presto", "spring-framework", "wildfly"
     )
-    private val javaSmallTest =
+    protected open val javaSmallTest =
         listOf("libgdx", "hadoop")
 //        listOf("TestProject")
 
@@ -72,7 +72,7 @@ class PluginRunner : ApplicationStarter {
             if (ngramContributorType == "project") {
                 IdNamesSuggestingModelManager.getInstance().trainProjectNGramModel(project, null)
             }
-            VarNamer.predict(project, dir, ngramContributorType)
+            predict(project, dir, ngramContributorType)
 
             projectToClose = project
         }
@@ -80,4 +80,6 @@ class PluginRunner : ApplicationStarter {
             ProjectUtil.closeAndDispose(projectToClose)
         }
     }
+
+    abstract fun predict(project: Project, dir: Path, ngramContributorType: String)
 }
