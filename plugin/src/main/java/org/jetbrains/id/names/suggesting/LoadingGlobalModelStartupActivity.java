@@ -8,7 +8,6 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.startup.StartupActivity;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.id.names.suggesting.contributors.GlobalVariableNamesContributor;
-import org.jetbrains.id.names.suggesting.impl.IdNamesNGramModelRunner;
 
 public class LoadingGlobalModelStartupActivity implements StartupActivity {
     @Override
@@ -16,7 +15,7 @@ public class LoadingGlobalModelStartupActivity implements StartupActivity {
         ProgressManager.getInstance().run(new Task.Backgroundable(project, IdNamesSuggestingBundle.message("loading.global.model")) {
             @Override
             public void run(@NotNull ProgressIndicator progressIndicator) {
-                ReadAction.nonBlocking(() -> ((IdNamesNGramModelRunner) IdNamesSuggestingModelManager.getInstance()
+                ReadAction.nonBlocking(() -> (IdNamesSuggestingModelManager.getInstance()
                         .getModelRunner(GlobalVariableNamesContributor.class)).load(progressIndicator))
                         .inSmartMode(project)
                         .executeSynchronously();

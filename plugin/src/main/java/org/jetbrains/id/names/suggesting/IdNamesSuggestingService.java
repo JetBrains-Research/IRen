@@ -7,8 +7,8 @@ import com.intellij.psi.PsiVariable;
 import kotlin.Pair;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.id.names.suggesting.api.VariableNamesContributor;
-import org.jetbrains.id.names.suggesting.contributors.GlobalVariableNamesContributor;
-import org.jetbrains.id.names.suggesting.naturalize.ProjectNaturalizeContributor;
+import org.jetbrains.id.names.suggesting.contributors.FileVariableNamesContributor;
+import org.jetbrains.id.names.suggesting.storages.VarNamePrediction;
 import org.jetbrains.id.names.suggesting.utils.NotificationsUtil;
 
 import java.time.Duration;
@@ -37,20 +37,20 @@ public class IdNamesSuggestingService {
             // toNanos because toMillis return long but I want it to be more precise, plus stats already has probability(p) which is anyway Double.
             stats.put("t (ms)", Duration.between(timerStart, end).toNanos() / 1_000_000.);
         }
-//        int prioritiesSum = 0;
-//        for (final VariableNamesContributor modelContributor : VariableNamesContributor.EP_NAME.getExtensions()) {
-//            Instant start = Instant.now();
-//            prioritiesSum += modelContributor.contribute(variable, nameSuggestions, isAllowedToForgetUsages(modelContributor));
-//            end = Instant.now();
-//            stats.put(String.format("%s (ms)",
-//                    modelContributor.getClass().getSimpleName()),
-//                    Duration.between(start, end).toNanos() / 1_000_000.);
-//        }
+        int prioritiesSum = 0;
+        for (final VariableNamesContributor modelContributor : VariableNamesContributor.EP_NAME.getExtensions()) {
+            Instant start = Instant.now();
+            prioritiesSum += modelContributor.contribute(variable, nameSuggestions);
+            end = Instant.now();
+            stats.put(String.format("%s (ms)",
+                    modelContributor.getClass().getSimpleName()),
+                    Duration.between(start, end).toNanos() / 1_000_000.);
+        }
 //        For now plugin uses our implementation of NATURALIZE model. Later plugin will work with mixtures of models (like above).
-        int prioritiesSum = 1;
-        VariableNamesContributor contributor = VariableNamesContributor.EP_NAME.findExtension(ProjectNaturalizeContributor.class);
-        assert contributor != null;
-        prioritiesSum += contributor.contribute(variable, nameSuggestions, isAllowedToForgetUsages(contributor));
+//        int prioritiesSum = 1;
+//        VariableNamesContributor contributor = VariableNamesContributor.EP_NAME.findExtension(ProjectVariableNamesContributor.class);
+//        assert contributor != null;
+//        prioritiesSum += contributor.contribute(variable, nameSuggestions, isAllowedToForgetUsages(contributor));
 
         LinkedHashMap<String, Double> result = rankSuggestions(variable, nameSuggestions, prioritiesSum);
         Instant timerEnd = Instant.now();
@@ -75,7 +75,7 @@ public class IdNamesSuggestingService {
         double nameProbability = 0.0;
         int prioritiesSum = 0;
         for (final VariableNamesContributor modelContributor : VariableNamesContributor.EP_NAME.getExtensions()) {
-            Pair<Double, Integer> probPriority = modelContributor.getProbability(variable, isAllowedToForgetUsages(modelContributor));
+            Pair<Double, Integer> probPriority = modelContributor.getProbability(variable);
             nameProbability += probPriority.getFirst() * probPriority.getSecond();
             prioritiesSum += probPriority.getSecond();
         }
@@ -84,8 +84,8 @@ public class IdNamesSuggestingService {
         } else return 0.0;
     }
 
-    private boolean isAllowedToForgetUsages(VariableNamesContributor contributor) {
-        return contributor.getClass() != GlobalVariableNamesContributor.class;
+    private boolean isAllowedToForgetContext(VariableNamesContributor contributor) {
+        return contributor.getClass() == FileVariableNamesContributor.class;
     }
 
     private LinkedHashMap<String, Double> rankSuggestions(PsiElement variable, List<VarNamePrediction> nameSuggestions, int prioritiesSum) {

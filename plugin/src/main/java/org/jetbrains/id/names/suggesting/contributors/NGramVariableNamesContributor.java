@@ -1,25 +1,21 @@
 package org.jetbrains.id.names.suggesting.contributors;
 
-import com.google.common.collect.Lists;
 import com.intellij.completion.ngram.slp.translating.Vocabulary;
-import com.intellij.openapi.util.TextRange;
 import com.intellij.psi.*;
 import kotlin.Pair;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.jetbrains.id.names.suggesting.VarNamePrediction;
 import org.jetbrains.id.names.suggesting.api.VariableNamesContributor;
-import org.jetbrains.id.names.suggesting.impl.IdNamesNGramModelRunner;
+import org.jetbrains.id.names.suggesting.impl.NGramModelRunner;
+import org.jetbrains.id.names.suggesting.storages.Context;
+import org.jetbrains.id.names.suggesting.storages.IntContext;
+import org.jetbrains.id.names.suggesting.storages.VarNamePrediction;
 import org.jetbrains.id.names.suggesting.utils.PsiUtils;
 
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static java.lang.Integer.max;
 import static org.jetbrains.id.names.suggesting.utils.PsiUtils.findReferences;
 import static org.jetbrains.id.names.suggesting.utils.PsiUtils.isVariableOrReference;
 
@@ -30,66 +26,96 @@ public abstract class NGramVariableNamesContributor implements VariableNamesCont
         SUPPORTED_TYPES.add(PsiVariable.class);
     }
 
-    private int modelOrder;
-
     @Override
-    public int contribute(@NotNull PsiVariable variable, @NotNull List<VarNamePrediction> predictionList, boolean forgetUsages) {
-        IdNamesNGramModelRunner modelRunner = getModelRunnerToContribute(variable);
+    public int contribute(@NotNull PsiVariable variable, @NotNull List<VarNamePrediction> predictionList) {
+        NGramModelRunner modelRunner = getModelRunnerToContribute(variable);
         if (modelRunner == null || !isSupported(variable)) {
             return 0;
         }
-        modelOrder = modelRunner.getOrder();
-        predictionList.addAll(modelRunner.suggestNames(variable.getClass(), findUsageNGrams(variable), forgetUsages));
+        @NotNull IntContext intContext = IntContext.fromContext(getContext(variable, false), modelRunner.getVocabulary());
+        PsiFile file = variable.getContainingFile();
+        if (this.forgetFile()) {
+            modelRunner.forgetPsiFile(file);
+        } else if (this.forgetContext()) {
+            modelRunner.forgetContext(intContext);
+        }
+
+        predictionList.addAll(modelRunner.suggestNames(variable.getClass(), intContext));
+
+        if (this.forgetFile()) {
+            modelRunner.learnPsiFile(file);
+        } else if (this.forgetContext()) {
+            modelRunner.learnContext(intContext);
+        }
         return modelRunner.getModelPriority();
     }
 
+    protected abstract boolean forgetFile();
+
+    protected abstract boolean forgetContext();
+
     @Override
-    public @NotNull Pair<Double, Integer> getProbability(@NotNull PsiVariable variable, boolean forgetUsages) {
-        IdNamesNGramModelRunner modelRunner = getModelRunnerToContribute(variable);
+    public @NotNull Pair<Double, Integer> getProbability(@NotNull PsiVariable variable) {
+        NGramModelRunner modelRunner = getModelRunnerToContribute(variable);
         if (modelRunner == null || !isSupported(variable)) {
             return new Pair<>(0.0, 0);
         }
-        modelOrder = modelRunner.getOrder();
-        return modelRunner.getProbability(findUsageNGrams(variable), forgetUsages);
+        @NotNull IntContext intContext = IntContext.fromContext(getContext(variable, false), modelRunner.getVocabulary());
+        PsiFile file = variable.getContainingFile();
+        if (this.forgetFile()) {
+            modelRunner.forgetPsiFile(file);
+        } else if (this.forgetContext()) {
+            modelRunner.forgetContext(intContext);
+        }
+
+        @NotNull Pair<Double, Integer> prob = modelRunner.getProbability(intContext);
+        if (this.forgetFile()) {
+            modelRunner.learnPsiFile(file);
+        } else if (this.forgetContext()) {
+            modelRunner.learnContext(intContext);
+        }
+        return prob;
     }
 
-    public abstract @Nullable IdNamesNGramModelRunner getModelRunnerToContribute(@NotNull PsiVariable variable);
+    public abstract @Nullable NGramModelRunner getModelRunnerToContribute(@NotNull PsiVariable variable);
 
     private static boolean isSupported(@NotNull PsiNameIdentifierOwner identifierOwner) {
         return SUPPORTED_TYPES.stream().anyMatch(type -> type.isInstance(identifierOwner));
     }
 
-    private List<List<String>> findUsageNGrams(PsiVariable variable) {
-        Stream<PsiReference> elementUsages = findReferences(variable, variable.getContainingFile());
-        return Stream.concat(Stream.of(variable), elementUsages)
-                .map(PsiUtils::getIdentifier)
-                .filter(Objects::nonNull)
-                .sorted(Comparator.comparing(PsiElement::getTextOffset))
-                .map(identifier -> getNGram(identifier, variable))
-                .collect(Collectors.toList());
-    }
-
-    private List<String> getNGram(@NotNull PsiElement element, @NotNull PsiVariable variable) {
-        int order = modelOrder;
-        final List<String> tokens = new ArrayList<>();
-        for (PsiElement token : SyntaxTraverser
-                .revPsiTraverser()
-                .withRoot(element.getContainingFile())
-                .onRange(new TextRange(0, max(0, element.getTextOffset())))
+    private @NotNull Context getContext(@NotNull PsiVariable variable, boolean changeToUnknown) {
+        PsiElement root = findRoot(variable);
+        List<Integer> varIdxs = new ArrayList<>();
+        List<PsiElement> elements = SyntaxTraverser.psiTraverser()
+                .withRoot(root)
                 .forceIgnore(node -> node instanceof PsiComment)
-                .filter(PsiUtils::shouldLex)) {
-            tokens.add(processToken(token, variable));
-            if (--order < 1) {
-                break;
+                .filter(PsiUtils::shouldLex)
+                .toList();
+        List<String> tokens = new ArrayList<>();
+        for (int i = 0; i < elements.size(); i++) {
+            PsiElement element = elements.get(i);
+            if (isVariableOrReference(variable, element)) {
+                varIdxs.add(i);
+                tokens.add(changeToUnknown ? Vocabulary.unknownCharacter : element.getText());
+            } else {
+                tokens.add(element.getText());
             }
         }
-        return Lists.reverse(tokens);
+        return new Context(tokens, varIdxs);
     }
 
-    public static String processToken(@NotNull PsiElement token, @NotNull PsiVariable variable) {
-        if (isVariableOrReference(variable, token)) {
-            return Vocabulary.unknownCharacter;
-        }
-        return token.getText();
+    private @NotNull PsiElement findRoot(@NotNull PsiVariable variable) {
+        PsiFile file = variable.getContainingFile();
+        Stream<PsiReference> elementUsages = findReferences(variable, file);
+        List<Set<PsiElement>> parents = Stream.concat(Stream.of(variable), elementUsages)
+                .map(PsiUtils::getIdentifier)
+                .filter(Objects::nonNull)
+                .map(PsiUtils::getParents)
+                .collect(Collectors.toList());
+        Set<PsiElement> common = parents.remove(0);
+        parents.forEach(common::retainAll);
+        Optional<PsiElement> res = common.stream().findFirst();
+        return res.orElse(file);
     }
 }
+

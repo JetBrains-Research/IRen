@@ -24,8 +24,8 @@
         </intentionAction>
         <applicationService serviceImplementation="org.jetbrains.id.names.suggesting.IdNamesSuggestingModelManager"/>
         <applicationService serviceImplementation="org.jetbrains.id.names.suggesting.IdNamesSuggestingService"/>
-        <!--        <backgroundPostStartupActivity-->
-        <!--                implementation="org.jetbrains.id.names.suggesting.LoadingGlobalModelStartupActivity"/>-->
+                <backgroundPostStartupActivity
+                        implementation="org.jetbrains.id.names.suggesting.LoadingGlobalModelStartupActivity"/>
         <inspectionToolProvider
                 implementation="org.jetbrains.id.names.suggesting.inspections.variable.VariableNamesProvider"/>
         <!-- Astrid part-->
@@ -48,10 +48,6 @@
                 implementation="org.jetbrains.id.names.suggesting.contributors.ProjectVariableNamesContributor"/>
         <variableNamesContributor
                 implementation="org.jetbrains.id.names.suggesting.contributors.GlobalVariableNamesContributor"/>
-        <variableNamesContributor
-                implementation="org.jetbrains.id.names.suggesting.naturalize.ProjectNaturalizeContributor"/>
-        <variableNamesContributor
-                implementation="org.jetbrains.id.names.suggesting.naturalize.GlobalNaturalizeContributor"/>
     </extensions>
     <actions>
         <action id="train.project.id.model" class="org.jetbrains.id.names.suggesting.impl.TrainProjectNGramModelAction"

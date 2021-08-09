@@ -20,10 +20,9 @@ import kotlin.Pair;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.id.names.suggesting.IdNamesSuggestingBundle;
-import org.jetbrains.id.names.suggesting.IdNamesSuggestingService;
-import org.jetbrains.id.names.suggesting.VarNamePrediction;
 import org.jetbrains.id.names.suggesting.VocabularyManager;
-import org.jetbrains.id.names.suggesting.api.IdNamesSuggestingModelRunner;
+import org.jetbrains.id.names.suggesting.storages.IntContext;
+import org.jetbrains.id.names.suggesting.storages.VarNamePrediction;
 import org.jetbrains.id.names.suggesting.utils.NotificationsUtil;
 import org.jetbrains.id.names.suggesting.utils.PsiUtils;
 
@@ -36,7 +35,10 @@ import java.util.*;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
-public class IdNamesNGramModelRunner implements IdNamesSuggestingModelRunner {
+import static java.lang.Math.*;
+import static org.jetbrains.id.names.suggesting.IdNamesSuggestingService.PREDICTION_CUTOFF;
+
+public class NGramModelRunner {
     /**
      * {@link HashMap} from {@link Class} of identifier to {@link HashSet} of remembered identifiers of this {@link Class}.
      */
@@ -57,14 +59,14 @@ public class IdNamesNGramModelRunner implements IdNamesSuggestingModelRunner {
         return myVocabulary;
     }
 
-    public IdNamesNGramModelRunner(List<Class<? extends PsiNameIdentifierOwner>> supportedTypes, boolean isLargeCorpora) {
+    public NGramModelRunner(List<Class<? extends PsiNameIdentifierOwner>> supportedTypes, boolean isLargeCorpora) {
         myModel = new JMModel(6, 0.5, isLargeCorpora ? new GigaCounter() : new ArrayTrieCounter());
         this.setSupportedTypes(supportedTypes);
     }
 
-    public IdNamesNGramModelRunner(NGramModel model,
-                                   Vocabulary vocabulary,
-                                   HashMap<Class<? extends PsiNameIdentifierOwner>, HashSet<Integer>> rememberedIdentifiers) {
+    public NGramModelRunner(NGramModel model,
+                            Vocabulary vocabulary,
+                            HashMap<Class<? extends PsiNameIdentifierOwner>, HashSet<Integer>> rememberedIdentifiers) {
         myModel = model;
         myVocabulary = vocabulary;
         myRememberedIdentifiers = rememberedIdentifiers;
@@ -80,144 +82,77 @@ public class IdNamesNGramModelRunner implements IdNamesSuggestingModelRunner {
         return myVocabulary.size();
     }
 
-    /**
-     * Makes predictions for the last token from a set of N-gram sequences.
-     *
-     * @param identifierClass class of identifier (to check if we support suggesting for it).
-     * @param usageNGrams     n-grams from which model should get suggestions.
-     * @return List of predictions.
-     */
-    @Override
-    public @NotNull List<VarNamePrediction> suggestNames(@NotNull Class<? extends PsiNameIdentifierOwner> identifierClass, @NotNull List<List<String>> usageNGrams, boolean forgetUsages) {
-        List<List<Integer>> allUsageNGramIndices = nGramToIndices(usageNGrams);
-        if (forgetUsages) {
-            allUsageNGramIndices.forEach(this::forgetUsage);
+    public @NotNull List<VarNamePrediction> suggestNames(@NotNull Class<? extends PsiNameIdentifierOwner> identifierClass, @NotNull IntContext intContext) {
+        IntContext unknownContext = intContext.with(0);
+        Set<Integer> candidates = new HashSet<>();
+        for (int idx : intContext.getVarIdxs()) {
+            candidates.addAll(getCandidates(unknownContext.getTokens(), idx, getIdTypeFilter(identifierClass)));
         }
-        List<VarNamePrediction> predictionList = new ArrayList<>();
-        int usagePrioritiesSum = 0;
-        for (List<Integer> usageNGramIndices : allUsageNGramIndices) {
-            usagePrioritiesSum += predictUsageName(predictionList, usageNGramIndices, getIdTypeFilter(identifierClass));
-        }
-        if (forgetUsages) {
-            allUsageNGramIndices.forEach(this::learnUsage);
-        }
-        return rankUsagePredictions(predictionList, usagePrioritiesSum);
+        return rankCandidates(candidates, unknownContext);
     }
 
-    /**
-     * Gets a conditional probability of the last token(in each n-gram sequence they are the same)
-     * using the formula of total probability. So the final probability obtained as a weighted sum
-     * of conditional probabilities(see {@link IdNamesNGramModelRunner#getUsageProbability}) for each n-gram sequence
-     * with weights equal to the usagePriority (see {@link IdNamesNGramModelRunner#getUsagePriority}) of each sequence.
-     *
-     * @param usageNGrams n-grams from which model should get probability of the last token.
-     * @return pair of probability and model priority.
-     */
-    @Override
-    public @NotNull Pair<Double, Integer> getProbability(@NotNull List<List<String>> usageNGrams, boolean forgetUsages) {
-        List<List<Integer>> allUsageNGramIndices = nGramToIndices(usageNGrams);
-        if (forgetUsages) {
-            allUsageNGramIndices.forEach(this::forgetUsage);
+    private @NotNull List<VarNamePrediction> rankCandidates(@NotNull Set<Integer> candidates, @NotNull IntContext intContext) {
+        List<Integer> cs = new ArrayList<>();
+        List<Double> logits = new ArrayList<>();
+        candidates.forEach(candidate -> {
+            cs.add(candidate);
+            logits.add(getLogProb(intContext.with(candidate)));
+        });
+//        List<Double> probs = logits;
+        List<Double> probs = softmax(logits, 6);
+        List<VarNamePrediction> predictions = new ArrayList<>();
+        for (int i = 0; i < cs.size(); i++) {
+            predictions.add(new VarNamePrediction(myVocabulary.toWord(cs.get(i)),
+                    probs.get(i),
+                    getModelPriority()));
         }
-        double probability = 0.0;
-        int usagePrioritiesSum = 0;
-        for (List<Integer> usageNGramIndices : allUsageNGramIndices) {
-            Pair<Double, Integer> probPriority = getUsageProbability(usageNGramIndices);
-            probability += probPriority.getFirst() * probPriority.getSecond();
-            usagePrioritiesSum += probPriority.getSecond();
-        }
-        if (forgetUsages) {
-            allUsageNGramIndices.forEach(this::learnUsage);
-        }
-        return new Pair<>(probability / usagePrioritiesSum, getModelPriority());
+        predictions.sort((a, b) -> -Double.compare(a.getProbability(), b.getProbability()));
+        return predictions.subList(0, min(predictions.size(), PREDICTION_CUTOFF));
     }
 
-    private @NotNull List<VarNamePrediction> rankUsagePredictions(@NotNull List<VarNamePrediction> predictionList, int usagePrioritiesSum) {
-        Map<String, Double> rankedPredictions = new HashMap<>();
-        for (VarNamePrediction prediction : predictionList) {
-            Double prob = rankedPredictions.get(prediction.getName());
-            double addition = prediction.getProbability() * prediction.getPriority() / usagePrioritiesSum;
-            if (prob == null) { // If see this prediction for the first time just put it in the map
-                rankedPredictions.put(prediction.getName(), addition);
-            } else {
-                rankedPredictions.put(prediction.getName(), prob + addition);
+    private static @NotNull List<Double> softmax(@NotNull List<Double> logits, double temperature) {
+        if (logits.isEmpty()) return logits;
+        List<Double> logits_t = logits.stream().map(l -> l / temperature).collect(Collectors.toList());
+        Double maxLogit = Collections.max(logits_t);
+        List<Double> probs = logits_t.stream().map(logit -> exp(logit - maxLogit)).collect(Collectors.toList());
+        double sumProbs = probs.stream().mapToDouble(Double::doubleValue).sum();
+        return probs.stream().map(p -> p / sumProbs).collect(Collectors.toList());
+    }
+
+    private double getLogProb(IntContext intContext) {
+        double logProb = 0.;
+        int leftIdx;
+        int rightIdx = 0;
+        for (int idx : intContext.getVarIdxs()) {
+            leftIdx = max(idx, rightIdx);
+            rightIdx = min(idx + getOrder(), intContext.getTokens().size());
+            for (int i = leftIdx; i < rightIdx; i++) {
+                logProb += log(toProb(myModel.modelAtIndex(intContext.getTokens(), i)));
             }
         }
-        return rankedPredictions.entrySet()
-                .stream()
-                .sorted((e1, e2) -> -Double.compare(e1.getValue(), e2.getValue()))
-                .limit(IdNamesSuggestingService.PREDICTION_CUTOFF)
-                .map(e -> new VarNamePrediction(e.getKey(), e.getValue(), getModelPriority()))
-                .collect(Collectors.toList());
+        return logProb;
     }
 
-    private @NotNull List<List<Integer>> nGramToIndices(@NotNull List<List<String>> usageNGrams) {
-        return usageNGrams.stream().map(myVocabulary::toIndices).collect(Collectors.toList());
+    public @NotNull Pair<Double, Integer> getProbability(IntContext intContext) {
+        return new Pair<>(getLogProb(intContext), getModelPriority());
     }
 
-    private int predictUsageName(@NotNull List<VarNamePrediction> predictionList,
-                                 @NotNull List<Integer> usageNGramIndices,
-                                 @NotNull Predicate<Map.Entry<Integer, ?>> idTypeFilter) {
-        int usagePriority = getUsagePriority(usageNGramIndices);
-        predictionList.addAll(myModel.predictToken(usageNGramIndices, usageNGramIndices.size() - 1)
+    private @NotNull Set<Integer> getCandidates(@NotNull List<Integer> tokenIdxs, int idx,
+                                                @NotNull Predicate<Map.Entry<Integer, ?>> idTypeFilter) {
+        return myModel.predictToken(tokenIdxs, idx)
                 .entrySet()
                 .stream()
                 .filter(idTypeFilter)
-                .map(e -> new VarNamePrediction(myVocabulary.toWord(e.getKey()),
-                        toProb(e.getValue()),
-                        usagePriority))
-                .sorted((pred1, pred2) -> -Double.compare(pred1.getProbability(), pred2.getProbability()))
-                // Anyway predictions will be filtered later.
-                .collect(Collectors.toList()));
-        return usagePriority;
+                .map(Map.Entry::getKey)
+                .collect(Collectors.toSet());
     }
 
-    /**
-     * Gets probability of identifier usage.
-     *
-     * @param usageNGramIndices n-gram sequence.
-     * @return pair of probability and usagePriority.
-     */
-    private @NotNull Pair<Double, Integer> getUsageProbability(List<Integer> usageNGramIndices) {
-        int usagePriority = getUsagePriority(usageNGramIndices);
-        double probability = toProb(myModel.modelAtIndex(usageNGramIndices, usageNGramIndices.size() - 1));
-        return new Pair<>(probability, usagePriority);
+    public void forgetContext(@NotNull IntContext context) {
+        myModel.forget(context.getTokens());
     }
 
-    /**
-     * Gets estimation of context usage count according to {@link IdNamesNGramModelRunner#myModel}.
-     * It is estimated as a weighted sum of context counts of different size.
-     * <p>
-     * Detailed explanation.
-     * Consider context sequence {C_i, ..., C_k} as C(i,k) and order of n-gram as N.
-     * Then final estimation of context usage count will be: sum from i=0 to N-1 of 1/2^i * count(C(i, N-1)).
-     * It is very similar to Jelinek-Mercer smoothing, which is used in {@link com.intellij.completion.ngram.slp.modeling.ngram.JMModel}.
-     * <p>
-     * May be it is better to assign it to 1 for all sequences,
-     * but imho we have to evaluate some metrics to make that decision.
-     *
-     * @param usageNGramIndices n-gram sequence, count of which we want to derive.
-     * @return usage priority.
-     */
-    private int getUsagePriority(List<Integer> usageNGramIndices) {
-        long priority = 0;
-        long contextCount = 1;
-        for (int index = usageNGramIndices.size() - 2; index >= 0; index--) {
-            if (contextCount > 0) {
-                long[] counts = myModel.getCounter().getCounts(usageNGramIndices.subList(index, usageNGramIndices.size()));
-                contextCount = counts[1];
-            }
-            priority = priority / 2 + contextCount;
-        }
-        return Math.max(1, (int) priority);
-    }
-
-    private void forgetUsage(@NotNull List<Integer> usageNGramIndices) {
-        myModel.forgetToken(usageNGramIndices, usageNGramIndices.size() - 1);
-    }
-
-    private void learnUsage(@NotNull List<Integer> usageNGramIndices) {
-        myModel.learnToken(usageNGramIndices, usageNGramIndices.size() - 1);
+    public void learnContext(@NotNull IntContext context) {
+        myModel.learn(context.getTokens());
     }
 
     private @NotNull Predicate<Map.Entry<Integer, ?>> getIdTypeFilter(@NotNull Class<? extends PsiNameIdentifierOwner> identifierClass) {
@@ -266,12 +201,10 @@ public class IdNamesNGramModelRunner implements IdNamesSuggestingModelRunner {
         System.out.printf("Vocabulary size: %d\n", myVocabulary.size());
     }
 
-    @Override
     public void learnPsiFile(@NotNull PsiFile file) {
         myModel.learn(myVocabulary.toIndices(lexPsiFile(file)));
     }
 
-    @Override
     public void forgetPsiFile(@NotNull PsiFile file) {
         myModel.forget(myVocabulary.toIndices(lexPsiFile(file)));
     }
@@ -305,7 +238,11 @@ public class IdNamesNGramModelRunner implements IdNamesSuggestingModelRunner {
         return prob * conf + (1 - conf) / myVocabulary.size();
     }
 
-    private static final Path MODEL_DIRECTORY = Paths.get(PathManager.getSystemPath(), "org/jetbrains/astrid/model");
+    public int getOrder() {
+        return myModel.getOrder();
+    }
+
+    private static final Path MODEL_DIRECTORY = Paths.get(PathManager.getSystemPath(), "model");
 
     public double save(@Nullable ProgressIndicator progressIndicator) {
         return save(MODEL_DIRECTORY, progressIndicator);
@@ -385,9 +322,5 @@ public class IdNamesNGramModelRunner implements IdNamesSuggestingModelRunner {
                 e.printStackTrace();
             }
         }
-    }
-
-    public int getOrder() {
-        return myModel.getOrder();
     }
 }

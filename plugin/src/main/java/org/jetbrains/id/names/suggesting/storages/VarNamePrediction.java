@@ -1,4 +1,4 @@
-package org.jetbrains.id.names.suggesting;
+package org.jetbrains.id.names.suggesting.storages;
 
 public class VarNamePrediction {
     private final String myName;
