@@ -218,7 +218,7 @@ public class NGramModelRunner {
                 .toList()
                 .stream()
                 .peek(this::rememberIdName)
-                .map(PsiElement::getText)
+                .map(PsiUtils::processToken)
                 .collect(Collectors.toList());
     }
 
@@ -318,7 +318,7 @@ public class NGramModelRunner {
                     progressIndicator.setText(IdNamesSuggestingBundle.message("loading.file", vocabularyFile.getName()));
                 }
                 myVocabulary = VocabularyManager.read(vocabularyFile);
-            } catch (IOException | ClassNotFoundException e) {
+            } catch (Exception e) {
                 e.printStackTrace();
             }
         }

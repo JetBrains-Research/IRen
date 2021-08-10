@@ -58,8 +58,15 @@ public class PsiUtils {
     public static final List<String> NumberTypes = Arrays.asList("INTEGER_LITERAL", "LONG_LITERAL", "FLOAT_LITERAL", "DOUBLE_LITERAL");
     public static final List<String> IntegersToLeave = Arrays.asList("0", "1", "32", "64");
 
-    public static @NotNull String processToken(@NotNull PsiElement token, @NotNull PsiVariable variable) {
+    public static @NotNull String processToken(@NotNull PsiElement token) {
+        return processToken(token, null);
+    }
+
+    public static @NotNull String processToken(@NotNull PsiElement token, @Nullable PsiVariable variable) {
         String text = token.getText();
+        if (text.contains("\n")) {
+            text = STRING_TOKEN;
+        }
         if (token.getParent() instanceof PsiLiteral) {
             String literalType = ((PsiJavaToken) token).getTokenType().toString();
             if (literalType.equals("STRING_LITERAL")) {
@@ -68,7 +75,7 @@ public class PsiUtils {
             if (NumberTypes.contains(literalType)) {
                 return IntegersToLeave.contains(text) ? text : NUMBER_TOKEN;
             }
-        } else if (isVariableOrReference(variable, token)) {
+        } else if (variable != null && isVariableOrReference(variable, token)) {
             return VARIABLE_TOKEN;
         }
         return text;

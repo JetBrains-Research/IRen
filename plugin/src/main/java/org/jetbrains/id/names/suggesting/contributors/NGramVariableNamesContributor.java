@@ -16,8 +16,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static org.jetbrains.id.names.suggesting.utils.PsiUtils.findReferences;
-import static org.jetbrains.id.names.suggesting.utils.PsiUtils.isVariableOrReference;
+import static org.jetbrains.id.names.suggesting.utils.PsiUtils.*;
 
 public abstract class NGramVariableNamesContributor implements VariableNamesContributor {
     public static final List<Class<? extends PsiNameIdentifierOwner>> SUPPORTED_TYPES = new ArrayList<>();
@@ -98,7 +97,7 @@ public abstract class NGramVariableNamesContributor implements VariableNamesCont
                 varIdxs.add(i);
                 tokens.add(changeToUnknown ? Vocabulary.unknownCharacter : element.getText());
             } else {
-                tokens.add(element.getText());
+                tokens.add(processToken(element));
             }
         }
         return new Context(tokens, varIdxs);
