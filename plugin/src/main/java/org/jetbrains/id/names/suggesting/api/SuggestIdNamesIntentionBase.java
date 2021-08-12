@@ -10,6 +10,7 @@ import com.intellij.psi.PsiNameIdentifierOwner;
 import com.intellij.util.IncorrectOperationException;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.id.names.suggesting.IdNamesSuggestingModelManager;
 
 public abstract class SuggestIdNamesIntentionBase<T extends PsiNameIdentifierOwner> extends BaseElementAtCaretIntentionAction {
     @Override
@@ -25,7 +26,8 @@ public abstract class SuggestIdNamesIntentionBase<T extends PsiNameIdentifierOwn
     @Override
     public boolean isAvailable(@NotNull Project project, Editor editor, @NotNull PsiElement element) {
         final T identifierOwner = getIdentifierOwner(element);
-        return identifierOwner != null && identifierOwner.isValid();
+        return identifierOwner != null && identifierOwner.isValid()
+                && IdNamesSuggestingModelManager.getInstance().isSomethingLoaded();
     }
 
     @Override

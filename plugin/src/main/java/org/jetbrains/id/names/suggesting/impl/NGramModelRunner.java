@@ -266,10 +266,11 @@ public class NGramModelRunner {
         return myModel.getOrder();
     }
 
-    private static final Path MODEL_DIRECTORY = Paths.get(PathManager.getSystemPath(), "model");
+    public static final Path MODELS_DIRECTORY = Paths.get(PathManager.getSystemPath(), "models");
+    public static final Path GLOBAL_MODEL_DIRECTORY = MODELS_DIRECTORY.resolve("global");
 
     public double save(@Nullable ProgressIndicator progressIndicator) {
-        return save(MODEL_DIRECTORY, progressIndicator);
+        return save(MODELS_DIRECTORY, progressIndicator);
     }
 
     public double save(@NotNull Path model_directory, @Nullable ProgressIndicator progressIndicator) {
@@ -282,7 +283,7 @@ public class NGramModelRunner {
         File rememberedVariablesFile = model_directory.resolve("rememberedIdentifiers.ser").toFile();
         File vocabularyFile = model_directory.resolve("vocabulary.ser").toFile();
         try {
-            counterFile.getParentFile().mkdir();
+            counterFile.getParentFile().mkdirs();
             counterFile.createNewFile();
             FileOutputStream fileOutputStream = new FileOutputStream(counterFile);
             ObjectOutputStream objectOutputStream = new ObjectOutputStream(fileOutputStream);
@@ -305,15 +306,15 @@ public class NGramModelRunner {
         return (counterFile.length() + vocabularyFile.length() + rememberedVariablesFile.length()) / (1024. * 1024);
     }
 
-    public void load() {
-        load(null);
+    public boolean load() {
+        return load(null);
     }
 
-    public void load(@Nullable ProgressIndicator progressIndicator) {
-        load(MODEL_DIRECTORY, progressIndicator);
+    public boolean load(@Nullable ProgressIndicator progressIndicator) {
+        return load(MODELS_DIRECTORY, progressIndicator);
     }
 
-    public void load(@NotNull Path model_directory, @Nullable ProgressIndicator progressIndicator) {
+    public boolean load(@NotNull Path model_directory, @Nullable ProgressIndicator progressIndicator) {
         File counterFile = model_directory.resolve("counter.ser").toFile();
         File rememberedVariablesFile = model_directory.resolve("rememberedIdentifiers.ser").toFile();
         File vocabularyFile = model_directory.resolve("vocabulary.ser").toFile();
@@ -342,9 +343,12 @@ public class NGramModelRunner {
                     progressIndicator.setText(IdNamesSuggestingBundle.message("loading.file", vocabularyFile.getName()));
                 }
                 myVocabulary = VocabularyManager.read(vocabularyFile);
+                return true;
             } catch (Exception e) {
                 e.printStackTrace();
+                return false;
             }
         }
+        return false;
     }
 }

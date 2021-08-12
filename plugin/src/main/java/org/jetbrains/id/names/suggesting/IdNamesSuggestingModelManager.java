@@ -13,29 +13,27 @@ import org.jetbrains.id.names.suggesting.impl.NGramModelRunner;
 import org.jetbrains.id.names.suggesting.utils.NotificationsUtil;
 
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 
 public class IdNamesSuggestingModelManager {
+    private final Set<String> isLoaded = new HashSet<>();
     private final Map<String, NGramModelRunner> myModelRunners = new HashMap<>();
 
-    public IdNamesSuggestingModelManager() {
-        NGramModelRunner modelRunner = new NGramModelRunner(NGramVariableNamesContributor.SUPPORTED_TYPES, true);
-        putModelRunner(GlobalVariableNamesContributor.class, modelRunner);
-    }
-
-    public static IdNamesSuggestingModelManager getInstance() {
+    public static @NotNull IdNamesSuggestingModelManager getInstance() {
         return ServiceManager.getService(IdNamesSuggestingModelManager.class);
     }
 
-    public NGramModelRunner getModelRunner(Class<? extends VariableNamesContributor> name) {
+    public @Nullable NGramModelRunner getModelRunner(@NotNull Class<? extends VariableNamesContributor> name) {
         return myModelRunners.get(name.getName());
     }
 
-    public void putModelRunner(Class<? extends VariableNamesContributor> name, NGramModelRunner modelRunner) {
+    public void putModelRunner(@NotNull Class<? extends VariableNamesContributor> name, @NotNull NGramModelRunner modelRunner) {
         myModelRunners.put(name.getName(), modelRunner);
     }
 
-    public NGramModelRunner getModelRunner(Class<? extends VariableNamesContributor> className, Project project) {
+    public @Nullable NGramModelRunner getModelRunner(@NotNull Class<? extends VariableNamesContributor> className, @NotNull Project project) {
         NGramModelRunner modelRunner = myModelRunners.get(String.join("_", className.getName(), project.getLocationHash()));
         if (modelRunner != null) {
             return modelRunner;
@@ -43,22 +41,30 @@ public class IdNamesSuggestingModelManager {
         return getModelRunner(className);
     }
 
-    public void putModelRunner(Class<? extends VariableNamesContributor> className, Project project, NGramModelRunner modelRunner) {
+    public void putModelRunner(@NotNull Class<? extends VariableNamesContributor> className, @NotNull Project project, @NotNull NGramModelRunner modelRunner) {
         myModelRunners.put(String.join("_", className.getName(), project.getLocationHash()), modelRunner);
     }
 
     public void trainProjectNGramModel(@NotNull Project project, @Nullable ProgressIndicator progressIndicator) {
         NGramModelRunner modelRunner = new NGramModelRunner(NGramVariableNamesContributor.SUPPORTED_TYPES, true);
         modelRunner.learnProject(project, progressIndicator);
+        modelRunner.getModel().getCounter().getCount(); // resolving counter
         putModelRunner(ProjectVariableNamesContributor.class, project, modelRunner);
+        setLoaded(ProjectVariableNamesContributor.class, project, true);
     }
 
     public void trainGlobalNGramModel(@NotNull Project project, @Nullable ProgressIndicator progressIndicator, boolean save) {
         NGramModelRunner modelRunner = IdNamesSuggestingModelManager.getInstance()
                 .getModelRunner(GlobalVariableNamesContributor.class);
+        if (modelRunner == null) {
+            modelRunner = new NGramModelRunner(NGramVariableNamesContributor.SUPPORTED_TYPES, true);
+            putModelRunner(GlobalVariableNamesContributor.class, modelRunner);
+        }
+        modelRunner.setVocabularyCutOff(17);
         modelRunner.learnProject(project, progressIndicator);
+        modelRunner.getModel().getCounter().getCount(); // resolving counter
         if (save) {
-            double size = modelRunner.save(progressIndicator);
+            double size = modelRunner.save(NGramModelRunner.GLOBAL_MODEL_DIRECTORY, progressIndicator);
             int vocabSize = modelRunner.getVocabulary().size();
             NotificationsUtil.notify(project,
                     "Global model stats",
@@ -67,5 +73,33 @@ public class IdNamesSuggestingModelManager {
             System.out.printf("Global model size is %.3f Mb\n", size);
             System.out.printf("Vocab size is %d\n", vocabSize);
         }
+    }
+    
+    void setLoaded(@NotNull Class<? extends VariableNamesContributor> className, boolean b){
+        if (b) {
+            isLoaded.add(className.getName());
+        } else {
+            isLoaded.remove(className.getName());
+        }
+    }
+
+    void setLoaded(@NotNull Class<? extends VariableNamesContributor> className, @NotNull Project project, boolean b){
+        if (b) {
+            isLoaded.add(String.join("_", className.getName(), project.getLocationHash()));
+        } else {
+            isLoaded.remove(String.join("_", className.getName(), project.getLocationHash()));
+        }
+    }
+
+    public boolean isSomethingLoaded() {
+        return !isLoaded.isEmpty();
+    }
+
+    public boolean isLoaded(Class<? extends VariableNamesContributor> className) {
+        return isLoaded.contains(className.getName());
+    }
+
+    public boolean isLoaded(Class<? extends VariableNamesContributor> className, Project project) {
+        return isLoaded.contains(String.join("_", className.getName(), project.getLocationHash()));
     }
 }

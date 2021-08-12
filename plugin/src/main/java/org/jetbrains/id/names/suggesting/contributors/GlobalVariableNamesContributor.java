@@ -18,7 +18,10 @@ public class GlobalVariableNamesContributor extends NGramVariableNamesContributo
 
     @Override
     public NGramModelRunner getModelRunnerToContribute(@NotNull PsiVariable variable) {
-        return IdNamesSuggestingModelManager.getInstance()
-            .getModelRunner(this.getClass());
+        @NotNull IdNamesSuggestingModelManager modelManager = IdNamesSuggestingModelManager.getInstance();
+        if (modelManager.isLoaded(GlobalVariableNamesContributor.class)) {
+            return modelManager.getModelRunner(this.getClass());
+        }
+        return null;
     }
 }

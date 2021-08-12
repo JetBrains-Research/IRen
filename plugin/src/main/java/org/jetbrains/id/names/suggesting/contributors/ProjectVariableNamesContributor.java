@@ -19,7 +19,10 @@ public class ProjectVariableNamesContributor extends NGramVariableNamesContribut
 
     @Override
     public @Nullable NGramModelRunner getModelRunnerToContribute(@NotNull PsiVariable variable) {
-        return IdNamesSuggestingModelManager.getInstance()
-                .getModelRunner(this.getClass(), variable.getProject());
+        @NotNull IdNamesSuggestingModelManager modelManager = IdNamesSuggestingModelManager.getInstance();
+        if (modelManager.isLoaded(ProjectVariableNamesContributor.class, variable.getProject())) {
+            return modelManager.getModelRunner(this.getClass());
+        }
+        return null;
     }
 }
