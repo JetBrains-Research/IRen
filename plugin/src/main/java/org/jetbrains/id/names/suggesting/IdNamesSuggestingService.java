@@ -1,5 +1,6 @@
 package org.jetbrains.id.names.suggesting;
 
+import com.intellij.completion.ngram.slp.translating.Vocabulary;
 import com.intellij.openapi.components.ServiceManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.psi.PsiElement;
@@ -102,12 +103,13 @@ public class IdNamesSuggestingService {
                 rankedSuggestions.put(prediction.getName(), prob + addition);
             }
         }
+        double unknownElementProb = rankedSuggestions.getOrDefault(Vocabulary.unknownCharacter, 0.);
         return rankedSuggestions.entrySet()
                 .stream()
                 .sorted((e1, e2) -> -Double.compare(e1.getValue(), e2.getValue()))
                 .filter(e -> !isColliding(variable, e.getKey()))
                 .limit(PREDICTION_CUTOFF)
-                .filter(e -> e.getValue() >= 0.001)
+                .filter(e -> e.getValue() > Math.max(0.001, unknownElementProb))
                 .collect(Collectors.toMap(
                         Map.Entry::getKey,
                         Map.Entry::getValue,
