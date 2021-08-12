@@ -47,11 +47,6 @@ public class IdNamesSuggestingService {
                     modelContributor.getClass().getSimpleName()),
                     Duration.between(start, end).toNanos() / 1_000_000.);
         }
-//        For now plugin uses our implementation of NATURALIZE model. Later plugin will work with mixtures of models (like above).
-//        int prioritiesSum = 1;
-//        VariableNamesContributor contributor = VariableNamesContributor.EP_NAME.findExtension(ProjectVariableNamesContributor.class);
-//        assert contributor != null;
-//        prioritiesSum += contributor.contribute(variable, nameSuggestions, isAllowedToForgetUsages(contributor));
 
         LinkedHashMap<String, Double> result = rankSuggestions(variable, nameSuggestions, prioritiesSum);
         Instant timerEnd = Instant.now();
