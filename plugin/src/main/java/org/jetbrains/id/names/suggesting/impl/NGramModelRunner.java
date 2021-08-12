@@ -46,6 +46,12 @@ public class NGramModelRunner {
 
     private final NGramModel myModel;
     private Vocabulary myVocabulary = new Vocabulary();
+    private boolean limitTrainingTime = true;
+    public long maxTrainingTime = 30;
+
+    public void limitTrainingTime(boolean b) {
+        limitTrainingTime = b;
+    }
 
     public HashMap<Class<? extends PsiNameIdentifierOwner>, HashSet<Integer>> getRememberedIdentifiers() {
         return myRememberedIdentifiers;
@@ -189,9 +195,13 @@ public class NGramModelRunner {
                 progressIndicator.setText2(file.getPath());
                 progressIndicator.setFraction(fraction);
             }
+            if (!limitTrainingTime) continue;
+            Duration delta = Duration.between(start, Instant.now());
+            if (!delta.minusSeconds(maxTrainingTime).isNegative()) {
+                break;
+            }
         }
-        Instant end = Instant.now();
-        Duration delta = Duration.between(start, end);
+        Duration delta = Duration.between(start, Instant.now());
         NotificationsUtil.notify(project,
                 "NGram model training is completed.",
                 String.format("Time of training on %s: %d ms.",
