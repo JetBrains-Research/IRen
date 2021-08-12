@@ -21,6 +21,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.id.names.suggesting.IdNamesSuggestingBundle;
 import org.jetbrains.id.names.suggesting.VocabularyManager;
+import org.jetbrains.id.names.suggesting.storages.StringCounter;
 import org.jetbrains.id.names.suggesting.storages.IntContext;
 import org.jetbrains.id.names.suggesting.storages.VarNamePrediction;
 import org.jetbrains.id.names.suggesting.utils.NotificationsUtil;
@@ -48,6 +49,11 @@ public class NGramModelRunner {
     private Vocabulary myVocabulary = new Vocabulary();
     private boolean limitTrainingTime = true;
     public long maxTrainingTime = 30;
+    private int vocabularyCutOff = 0;
+
+    public void setVocabularyCutOff(int cutOff) {
+        this.vocabularyCutOff = cutOff;
+    }
 
     public void limitTrainingTime(boolean b) {
         limitTrainingTime = b;
@@ -183,6 +189,14 @@ public class NGramModelRunner {
                 GlobalSearchScope.projectScope(project));
         int progress = 0;
         final int total = files.size();
+        if (vocabularyCutOff > 0) {
+            System.out.printf("Training vocabulary on %s...\n", project.getName());
+            StringCounter counter = new StringCounter();
+            files.forEach(f -> ObjectUtils.consumeIfNotNull(PsiManager.getInstance(project).findFile(f),
+                    psiFile -> counter.putAll(lexPsiFile(psiFile))));
+            myVocabulary = counter.toVocabulary(vocabularyCutOff);
+            myVocabulary.close();
+        }
         System.out.printf("Training NGram model on %s...\n", project.getName());
         Instant start = Instant.now();
         for (VirtualFile file : files) {
