@@ -1,5 +1,6 @@
 package org.jetbrains.id.names.suggesting.contributors;
 
+import com.intellij.openapi.project.Project;
 import com.intellij.psi.PsiVariable;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -20,8 +21,9 @@ public class ProjectVariableNamesContributor extends NGramVariableNamesContribut
     @Override
     public @Nullable NGramModelRunner getModelRunnerToContribute(@NotNull PsiVariable variable) {
         @NotNull IdNamesSuggestingModelManager modelManager = IdNamesSuggestingModelManager.getInstance();
-        if (modelManager.isLoaded(ProjectVariableNamesContributor.class, variable.getProject())) {
-            return modelManager.getModelRunner(this.getClass());
+        Project project = variable.getProject();
+        if (modelManager.isLoaded(this.getClass(), project)) {
+            return modelManager.getModelRunner(this.getClass(), project);
         }
         return null;
     }

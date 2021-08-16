@@ -6,6 +6,7 @@ import com.intellij.openapi.project.Project;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.id.names.suggesting.api.VariableNamesContributor;
+import org.jetbrains.id.names.suggesting.contributors.FileVariableNamesContributor;
 import org.jetbrains.id.names.suggesting.contributors.GlobalVariableNamesContributor;
 import org.jetbrains.id.names.suggesting.contributors.NGramVariableNamesContributor;
 import org.jetbrains.id.names.suggesting.contributors.ProjectVariableNamesContributor;
@@ -20,6 +21,10 @@ import java.util.Set;
 public class IdNamesSuggestingModelManager {
     private final Set<String> isLoaded = new HashSet<>();
     private final Map<String, NGramModelRunner> myModelRunners = new HashMap<>();
+
+    public IdNamesSuggestingModelManager(){
+        setLoaded(FileVariableNamesContributor.class, true);
+    }
 
     public static @NotNull IdNamesSuggestingModelManager getInstance() {
         return ServiceManager.getService(IdNamesSuggestingModelManager.class);
@@ -60,9 +65,11 @@ public class IdNamesSuggestingModelManager {
             modelRunner = new NGramModelRunner(NGramVariableNamesContributor.SUPPORTED_TYPES, true);
             putModelRunner(GlobalVariableNamesContributor.class, modelRunner);
         }
-        modelRunner.setVocabularyCutOff(17);
+        modelRunner.setVocabularyCutOff(0);
+        modelRunner.limitTrainingTime(false);
         modelRunner.learnProject(project, progressIndicator);
         modelRunner.getModel().getCounter().getCount(); // resolving counter
+        setLoaded(GlobalVariableNamesContributor.class, true);
         if (save) {
             double size = modelRunner.save(NGramModelRunner.GLOBAL_MODEL_DIRECTORY, progressIndicator);
             int vocabSize = modelRunner.getVocabulary().size();

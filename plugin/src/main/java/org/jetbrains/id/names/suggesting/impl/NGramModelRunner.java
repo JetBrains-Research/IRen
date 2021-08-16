@@ -21,8 +21,8 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.id.names.suggesting.IdNamesSuggestingBundle;
 import org.jetbrains.id.names.suggesting.VocabularyManager;
+import org.jetbrains.id.names.suggesting.storages.Context;
 import org.jetbrains.id.names.suggesting.storages.StringCounter;
-import org.jetbrains.id.names.suggesting.storages.IntContext;
 import org.jetbrains.id.names.suggesting.storages.VarNamePrediction;
 import org.jetbrains.id.names.suggesting.utils.NotificationsUtil;
 import org.jetbrains.id.names.suggesting.utils.PsiUtils;
@@ -38,6 +38,7 @@ import java.util.stream.Collectors;
 
 import static java.lang.Math.*;
 import static org.jetbrains.id.names.suggesting.IdNamesSuggestingService.PREDICTION_CUTOFF;
+import static org.jetbrains.id.names.suggesting.utils.PsiUtils.getContext;
 
 public class NGramModelRunner {
     /**
@@ -84,7 +85,7 @@ public class NGramModelRunner {
         myRememberedIdentifiers = rememberedIdentifiers;
     }
 
-    public void setSupportedTypes(List<Class<? extends PsiNameIdentifierOwner>> supportedTypes) {
+    public void setSupportedTypes(@NotNull List<Class<? extends PsiNameIdentifierOwner>> supportedTypes) {
         for (Class<? extends PsiNameIdentifierOwner> supportedType : supportedTypes) {
             myRememberedIdentifiers.putIfAbsent(supportedType, new HashSet<>());
         }
@@ -94,16 +95,26 @@ public class NGramModelRunner {
         return myVocabulary.size();
     }
 
-    public @NotNull List<VarNamePrediction> suggestNames(@NotNull Class<? extends PsiNameIdentifierOwner> identifierClass, @NotNull IntContext intContext) {
-        IntContext unknownContext = intContext.with(0);
+    public @NotNull List<VarNamePrediction> suggestNames(@NotNull PsiVariable variable, boolean forgetContext) {
+        Context<Integer> intContext = Context.fromStringToInt(getContext(variable, false), myVocabulary);
+        if (forgetContext) {
+            forgetContext(intContext);
+        }
+
+        Context<Integer> unknownContext = intContext.with(0);
         Set<Integer> candidates = new HashSet<>();
         for (int idx : intContext.getVarIdxs()) {
-            candidates.addAll(getCandidates(unknownContext.getTokens(), idx, getIdTypeFilter(identifierClass)));
+            candidates.addAll(getCandidates(unknownContext.getTokens(), idx, getIdTypeFilter(variable.getClass())));
         }
-        return rankCandidates(candidates, unknownContext);
+        @NotNull List<VarNamePrediction> result = rankCandidates(candidates, unknownContext);
+
+        if (forgetContext) {
+            learnContext(intContext);
+        }
+        return result;
     }
 
-    private @NotNull List<VarNamePrediction> rankCandidates(@NotNull Set<Integer> candidates, @NotNull IntContext intContext) {
+    private @NotNull List<VarNamePrediction> rankCandidates(@NotNull Set<Integer> candidates, @NotNull Context<Integer> intContext) {
         List<Integer> cs = new ArrayList<>();
         List<Double> logits = new ArrayList<>();
         candidates.forEach(candidate -> {
@@ -131,7 +142,7 @@ public class NGramModelRunner {
         return probs.stream().map(p -> p / sumProbs).collect(Collectors.toList());
     }
 
-    private double getLogProb(IntContext intContext) {
+    private double getLogProb(@NotNull Context<Integer> intContext) {
         double logProb = 0.;
         int leftIdx;
         int rightIdx = 0;
@@ -145,8 +156,18 @@ public class NGramModelRunner {
         return logProb;
     }
 
-    public @NotNull Pair<Double, Integer> getProbability(IntContext intContext) {
-        return new Pair<>(getLogProb(intContext), getModelPriority());
+    public @NotNull Pair<Double, Integer> getProbability(PsiVariable variable, boolean forgetContext) {
+        @NotNull Context<Integer> intContext = Context.fromStringToInt(getContext(variable, false), myVocabulary);
+        if (forgetContext) {
+            forgetContext(intContext);
+        }
+
+        Pair<Double, Integer> result = new Pair<>(getLogProb(intContext), getModelPriority());
+
+        if (forgetContext) {
+            learnContext(intContext);
+        }
+        return result;
     }
 
     private @NotNull Set<Integer> getCandidates(@NotNull List<Integer> tokenIdxs, int idx,
@@ -159,11 +180,11 @@ public class NGramModelRunner {
                 .collect(Collectors.toSet());
     }
 
-    public void forgetContext(@NotNull IntContext context) {
+    public void forgetContext(@NotNull Context<Integer> context) {
         myModel.forget(context.getTokens());
     }
 
-    public void learnContext(@NotNull IntContext context) {
+    public void learnContext(@NotNull Context<Integer> context) {
         myModel.learn(context.getTokens());
     }
 
@@ -189,16 +210,22 @@ public class NGramModelRunner {
                 GlobalSearchScope.projectScope(project));
         int progress = 0;
         final int total = files.size();
+        Instant st = Instant.now();
         if (vocabularyCutOff > 0) {
             System.out.printf("Training vocabulary on %s...\n", project.getName());
             StringCounter counter = new StringCounter();
-            files.forEach(f -> ObjectUtils.consumeIfNotNull(PsiManager.getInstance(project).findFile(f),
-                    psiFile -> counter.putAll(lexPsiFile(psiFile))));
+            files.forEach(f -> {
+                @Nullable PsiFile psiFile = PsiManager.getInstance(project).findFile(f);
+                if (psiFile != null) {
+                    counter.putAll(lexPsiFile(psiFile));
+                }
+            });
             myVocabulary = counter.toVocabulary(vocabularyCutOff);
             myVocabulary.close();
+            System.out.printf("Done in %s\n", Duration.between(st, Instant.now()));
         }
-        System.out.printf("Training NGram model on %s...\n", project.getName());
         Instant start = Instant.now();
+        System.out.printf("Training NGram model on %s...\n", project.getName());
         for (VirtualFile file : files) {
             ObjectUtils.consumeIfNotNull(PsiManager.getInstance(project).findFile(file), this::learnPsiFile);
             double fraction = ++progress / (double) total;

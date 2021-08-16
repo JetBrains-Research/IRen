@@ -1,5 +1,6 @@
 package org.jetbrains.id.names.suggesting.utils;
 
+import com.intellij.completion.ngram.slp.translating.Vocabulary;
 import com.intellij.openapi.progress.ProcessCanceledException;
 import com.intellij.openapi.progress.ProgressManager;
 import com.intellij.openapi.progress.util.AbstractProgressIndicatorBase;
@@ -14,13 +15,13 @@ import com.intellij.util.SmartList;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.id.names.suggesting.storages.Context;
 
-import java.util.Arrays;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
+import static org.jetbrains.id.names.suggesting.utils.StringUtils.*;
 
 public class PsiUtils {
     /**
@@ -51,12 +52,6 @@ public class PsiUtils {
         }
         return ObjectUtils.tryCast(element, PsiIdentifier.class);
     }
-
-    public static final String STRING_TOKEN = "<str>";
-    public static final String NUMBER_TOKEN = "<num>";
-    public static final String VARIABLE_TOKEN = "<var>";
-    public static final List<String> NumberTypes = Arrays.asList("INTEGER_LITERAL", "LONG_LITERAL", "FLOAT_LITERAL", "DOUBLE_LITERAL");
-    public static final List<String> IntegersToLeave = Arrays.asList("0", "1", "32", "64");
 
     public static @NotNull String processToken(@NotNull PsiElement token) {
         return processToken(token, null);
@@ -104,7 +99,8 @@ public class PsiUtils {
 
     public static @Nullable PsiElement resolveReference(@NotNull PsiReference reference) {
 //        System.out.printf("Resolving reference: %s...\r", reference.toString().replace("\n", ""));
-        return runForSomeTime(reference::resolve, 1000);
+//        return runForSomeTime(reference::resolve, 1000);
+        return reference.resolve();
     }
 
     public static <T> @Nullable T runForSomeTime(@NotNull Computable<T> process, long runningTime) {
@@ -173,5 +169,40 @@ public class PsiUtils {
             parent = parent.getParent();
         }
         return parents;
+    }
+
+    public static @NotNull Context<String> getContext(@NotNull PsiVariable variable, boolean changeToUnknown) {
+        PsiElement root = findRoot(variable);
+        List<Integer> varIdxs = new ArrayList<>();
+        List<PsiElement> elements = SyntaxTraverser.psiTraverser()
+                .withRoot(root)
+                .forceIgnore(node -> node instanceof PsiComment)
+                .filter(PsiUtils::shouldLex)
+                .toList();
+        List<String> tokens = new ArrayList<>();
+        for (int i = 0; i < elements.size(); i++) {
+            PsiElement element = elements.get(i);
+            if (isVariableOrReference(variable, element)) {
+                varIdxs.add(i);
+                tokens.add(changeToUnknown ? Vocabulary.unknownCharacter : element.getText());
+            } else {
+                tokens.add(processToken(element));
+            }
+        }
+        return new Context<>(tokens, varIdxs);
+    }
+
+    public static @NotNull PsiElement findRoot(@NotNull PsiVariable variable) {
+        PsiFile file = variable.getContainingFile();
+        Stream<PsiReference> elementUsages = findReferences(variable, file);
+        List<Set<PsiElement>> parents = Stream.concat(Stream.of(variable), elementUsages)
+                .map(PsiUtils::getIdentifier)
+                .filter(Objects::nonNull)
+                .map(PsiUtils::getParents)
+                .collect(Collectors.toList());
+        Set<PsiElement> common = parents.remove(0);
+        parents.forEach(common::retainAll);
+        Optional<PsiElement> res = common.stream().findFirst();
+        return res.orElse(file);
     }
 }
