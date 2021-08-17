@@ -53,7 +53,11 @@ public class IdNamesSuggestingModelManager {
     public void trainProjectNGramModel(@NotNull Project project, @Nullable ProgressIndicator progressIndicator) {
         NGramModelRunner modelRunner = new NGramModelRunner(NGramVariableNamesContributor.SUPPORTED_TYPES, true);
         modelRunner.learnProject(project, progressIndicator);
-        modelRunner.getModel().getCounter().getCount(); // resolving counter
+        if (progressIndicator != null) {
+            progressIndicator.setIndeterminate(true);
+            progressIndicator.setText2("Resolving counter...");
+        }
+        modelRunner.resolveCounter();
         putModelRunner(ProjectVariableNamesContributor.class, project, modelRunner);
         setLoaded(ProjectVariableNamesContributor.class, project, true);
     }
@@ -65,10 +69,13 @@ public class IdNamesSuggestingModelManager {
             modelRunner = new NGramModelRunner(NGramVariableNamesContributor.SUPPORTED_TYPES, true);
             putModelRunner(GlobalVariableNamesContributor.class, modelRunner);
         }
-        modelRunner.setVocabularyCutOff(0);
         modelRunner.limitTrainingTime(false);
         modelRunner.learnProject(project, progressIndicator);
-        modelRunner.getModel().getCounter().getCount(); // resolving counter
+        if (progressIndicator != null) {
+            progressIndicator.setIndeterminate(true);
+            progressIndicator.setText2("Resolving counter...");
+        }
+        modelRunner.resolveCounter();
         setLoaded(GlobalVariableNamesContributor.class, true);
         if (save) {
             double size = modelRunner.save(NGramModelRunner.GLOBAL_MODEL_DIRECTORY, progressIndicator);

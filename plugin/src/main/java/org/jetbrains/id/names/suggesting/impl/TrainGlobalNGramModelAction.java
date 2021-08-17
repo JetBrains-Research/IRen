@@ -24,9 +24,7 @@ public class TrainGlobalNGramModelAction extends AbstractTrainModelAction {
             @Override
             public void run(@NotNull ProgressIndicator progressIndicator) {
                 progressIndicator.setText(IdNamesSuggestingBundle.message("global.training.progress.indicator.text", project.getName()));
-                ReadAction.nonBlocking(() -> modelManager.trainGlobalNGramModel(project, progressIndicator, true))
-                        .inSmartMode(project)
-                        .executeSynchronously();
+                modelManager.trainGlobalNGramModel(project, progressIndicator, true);
             }
         });
     }

@@ -8,6 +8,7 @@ import com.intellij.completion.ngram.slp.translating.Vocabulary;
 import com.intellij.completion.ngram.slp.translating.VocabularyRunner;
 import com.intellij.ide.highlighter.JavaFileType;
 import com.intellij.openapi.application.PathManager;
+import com.intellij.openapi.application.ReadAction;
 import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.TextRange;
@@ -206,42 +207,56 @@ public class NGramModelRunner {
         if (progressIndicator != null) {
             progressIndicator.setIndeterminate(false);
         }
-        Collection<VirtualFile> files = FileTypeIndex.getFiles(JavaFileType.INSTANCE,
-                GlobalSearchScope.projectScope(project));
-        int progress = 0;
+        Collection<VirtualFile> files = ReadAction.compute(() -> FileTypeIndex.getFiles(JavaFileType.INSTANCE,
+                GlobalSearchScope.projectScope(project)));
+        final int[] progress = {0};
         final int total = files.size();
-        Instant st = Instant.now();
+        Instant start = Instant.now();
         if (vocabularyCutOff > 0) {
             System.out.printf("Training vocabulary on %s...\n", project.getName());
             StringCounter counter = new StringCounter();
-            files.forEach(f -> {
-                @Nullable PsiFile psiFile = PsiManager.getInstance(project).findFile(f);
-                if (psiFile != null) {
-                    counter.putAll(lexPsiFile(psiFile));
-                }
-            });
+            files.parallelStream()
+                    .filter(x -> !limitTrainingTime || Duration.between(start, Instant.now()).minusSeconds(maxTrainingTime).isNegative())
+                    .forEach(f -> {
+                        counter.putAll(ReadAction.compute(() -> {
+                            @Nullable PsiFile psiFile = PsiManager.getInstance(project).findFile(f);
+                            if (psiFile != null) {
+                                return lexPsiFile(psiFile);
+                            }
+                            return null;
+                        }));
+                        synchronized (progress) {
+                            double fraction = ++progress[0] / (double) total;
+                            if (total < 10 || progress[0] % (total / 10) == 0) {
+                                System.out.printf("Status:\t%.0f%%\r", fraction * 100.);
+                            }
+                            if (progressIndicator != null) {
+                                progressIndicator.setFraction(fraction);
+                            }
+                        }
+                    });
             myVocabulary = counter.toVocabulary(vocabularyCutOff);
             myVocabulary.close();
-            System.out.printf("Done in %s\n", Duration.between(st, Instant.now()));
+            System.out.printf("Done in %s\n", Duration.between(start, Instant.now()));
         }
-        Instant start = Instant.now();
         System.out.printf("Training NGram model on %s...\n", project.getName());
-        for (VirtualFile file : files) {
-            ObjectUtils.consumeIfNotNull(PsiManager.getInstance(project).findFile(file), this::learnPsiFile);
-            double fraction = ++progress / (double) total;
-            if (total < 10 || progress % (total / 10) == 0) {
-                System.out.printf("Status:\t%.0f%%\r", fraction * 100.);
-            }
-            if (progressIndicator != null) {
-                progressIndicator.setText2(file.getPath());
-                progressIndicator.setFraction(fraction);
-            }
-            if (!limitTrainingTime) continue;
-            Duration delta = Duration.between(start, Instant.now());
-            if (!delta.minusSeconds(maxTrainingTime).isNegative()) {
-                break;
-            }
-        }
+        progress[0] = 0;
+        Instant finalStart = Instant.now();
+        files.parallelStream()
+                .filter(x -> !limitTrainingTime || Duration.between(finalStart, Instant.now()).minusSeconds(maxTrainingTime).isNegative())
+                .forEach(file -> {
+                    ReadAction.run(() -> ObjectUtils.consumeIfNotNull(PsiManager.getInstance(project).findFile(file), this::learnPsiFile));
+                    synchronized (progress) {
+                        double fraction = ++progress[0] / (double) total;
+                        if (total < 10 || progress[0] % (total / 10) == 0) {
+                            System.out.printf("Status:\t%.0f%%\r", fraction * 100.);
+                        }
+                        if (progressIndicator != null) {
+                            progressIndicator.setText2(file.getPath());
+                            progressIndicator.setFraction(fraction);
+                        }
+                    }
+                });
         Duration delta = Duration.between(start, Instant.now());
         NotificationsUtil.notify(project,
                 "NGram model training is completed.",
@@ -253,7 +268,10 @@ public class NGramModelRunner {
     }
 
     public void learnPsiFile(@NotNull PsiFile file) {
-        myModel.learn(myVocabulary.toIndices(lexPsiFile(file)));
+        @NotNull List<String> lexed = lexPsiFile(file);
+        synchronized (this) {
+            myModel.learn(myVocabulary.toIndices(lexed));
+        }
     }
 
     public void forgetPsiFile(@NotNull PsiFile file) {
@@ -377,5 +395,9 @@ public class NGramModelRunner {
             }
         }
         return false;
+    }
+
+    public void resolveCounter() {
+        myModel.getCounter().getCount();
     }
 }
