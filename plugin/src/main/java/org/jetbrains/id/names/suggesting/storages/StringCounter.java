@@ -30,13 +30,12 @@ public class StringCounter extends ConcurrentHashMap<String, Integer> {
         collection.forEach(this::put);
     }
 
-    public Vocabulary toVocabulary(int vocabularyCutOff) {
-        Vocabulary vocab = new Vocabulary();
+    public void toVocabulary(@NotNull Vocabulary vocabulary, int cutOff) {
         this.forEach((k, v) -> {
-            if (v >= vocabularyCutOff) {
-                vocab.store(k, v);
+            if (v >= cutOff) {
+                vocabulary.store(k, v);
             }
         });
-        return vocab;
+        vocabulary.close();
     }
 }

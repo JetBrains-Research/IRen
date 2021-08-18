@@ -24,7 +24,7 @@ public class TrainProjectNGramModelAction extends AbstractTrainModelAction {
             @Override
             public void run(@NotNull ProgressIndicator progressIndicator) {
                 progressIndicator.setText(IdNamesSuggestingBundle.message("training.progress.indicator.text", project.getName()));
-                modelManager.trainProjectNGramModel(project, progressIndicator);
+                modelManager.trainProjectNGramModel(project, progressIndicator, true);
             }
         });
     }

@@ -1,5 +1,8 @@
 package org.jetbrains.id.names.suggesting.impl;
 
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.google.gson.stream.JsonReader;
 import com.intellij.completion.ngram.slp.counting.giga.GigaCounter;
 import com.intellij.completion.ngram.slp.counting.trie.ArrayTrieCounter;
 import com.intellij.completion.ngram.slp.modeling.ngram.JMModel;
@@ -7,7 +10,6 @@ import com.intellij.completion.ngram.slp.modeling.ngram.NGramModel;
 import com.intellij.completion.ngram.slp.translating.Vocabulary;
 import com.intellij.completion.ngram.slp.translating.VocabularyRunner;
 import com.intellij.ide.highlighter.JavaFileType;
-import com.intellij.openapi.application.PathManager;
 import com.intellij.openapi.application.ReadAction;
 import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.project.Project;
@@ -29,8 +31,8 @@ import org.jetbrains.id.names.suggesting.utils.NotificationsUtil;
 import org.jetbrains.id.names.suggesting.utils.PsiUtils;
 
 import java.io.*;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.*;
@@ -45,10 +47,10 @@ public class NGramModelRunner {
     /**
      * {@link HashMap} from {@link Class} of identifier to {@link HashSet} of remembered identifiers of this {@link Class}.
      */
-    private HashMap<Class<? extends PsiNameIdentifierOwner>, HashSet<Integer>> myRememberedIdentifiers = new HashMap<>();
+    private final HashMap<Class<? extends PsiNameIdentifierOwner>, HashSet<Integer>> myRememberedIdentifiers = new HashMap<>();
 
     private final NGramModel myModel;
-    private Vocabulary myVocabulary = new Vocabulary();
+    private final Vocabulary myVocabulary = new Vocabulary();
     private boolean limitTrainingTime = true;
     public long maxTrainingTime = 30;
     private int vocabularyCutOff = 0;
@@ -78,14 +80,6 @@ public class NGramModelRunner {
         this.setSupportedTypes(supportedTypes);
     }
 
-    public NGramModelRunner(NGramModel model,
-                            Vocabulary vocabulary,
-                            HashMap<Class<? extends PsiNameIdentifierOwner>, HashSet<Integer>> rememberedIdentifiers) {
-        myModel = model;
-        myVocabulary = vocabulary;
-        myRememberedIdentifiers = rememberedIdentifiers;
-    }
-
     public void setSupportedTypes(@NotNull List<Class<? extends PsiNameIdentifierOwner>> supportedTypes) {
         for (Class<? extends PsiNameIdentifierOwner> supportedType : supportedTypes) {
             myRememberedIdentifiers.putIfAbsent(supportedType, new HashSet<>());
@@ -97,7 +91,7 @@ public class NGramModelRunner {
     }
 
     public @NotNull List<VarNamePrediction> suggestNames(@NotNull PsiVariable variable, boolean forgetContext) {
-        Context<Integer> intContext = Context.fromStringToInt(getContext(variable, false), myVocabulary);
+        @NotNull Context<Integer> intContext = Context.fromStringToInt(getContext(variable, false), myVocabulary);
         if (forgetContext) {
             forgetContext(intContext);
         }
@@ -215,16 +209,10 @@ public class NGramModelRunner {
         if (vocabularyCutOff > 0) {
             System.out.printf("Training vocabulary on %s...\n", project.getName());
             StringCounter counter = new StringCounter();
-            files.parallelStream()
-                    .filter(x -> !limitTrainingTime || Duration.between(start, Instant.now()).minusSeconds(maxTrainingTime).isNegative())
-                    .forEach(f -> {
-                        counter.putAll(ReadAction.compute(() -> {
-                            @Nullable PsiFile psiFile = PsiManager.getInstance(project).findFile(f);
-                            if (psiFile != null) {
-                                return lexPsiFile(psiFile);
-                            }
-                            return null;
-                        }));
+            files.parallelStream().filter(x -> (progressIndicator == null || !progressIndicator.isCanceled()) &&
+                            (!limitTrainingTime || Duration.between(start, Instant.now()).minusSeconds(maxTrainingTime).isNegative()))
+                    .forEach(file -> {
+                        counter.putAll(ReadAction.compute(() -> lexPsiFile(Objects.requireNonNull(PsiManager.getInstance(project).findFile(file)))));
                         synchronized (progress) {
                             double fraction = ++progress[0] / (double) total;
                             if (total < 10 || progress[0] % (total / 10) == 0) {
@@ -235,15 +223,15 @@ public class NGramModelRunner {
                             }
                         }
                     });
-            myVocabulary = counter.toVocabulary(vocabularyCutOff);
-            myVocabulary.close();
+            VocabularyManager.clear(myVocabulary);
+            counter.toVocabulary(myVocabulary, vocabularyCutOff);
             System.out.printf("Done in %s\n", Duration.between(start, Instant.now()));
         }
         System.out.printf("Training NGram model on %s...\n", project.getName());
         progress[0] = 0;
         Instant finalStart = Instant.now();
-        files.parallelStream()
-                .filter(x -> !limitTrainingTime || Duration.between(finalStart, Instant.now()).minusSeconds(maxTrainingTime).isNegative())
+        files.parallelStream().filter(x -> (progressIndicator == null || !progressIndicator.isCanceled()) &&
+                        (!limitTrainingTime || Duration.between(finalStart, Instant.now()).minusSeconds(maxTrainingTime).isNegative()))
                 .forEach(file -> {
                     ReadAction.run(() -> ObjectUtils.consumeIfNotNull(PsiManager.getInstance(project).findFile(file), this::learnPsiFile));
                     synchronized (progress) {
@@ -268,10 +256,15 @@ public class NGramModelRunner {
     }
 
     public void learnPsiFile(@NotNull PsiFile file) {
-        @NotNull List<String> lexed = lexPsiFile(file);
-        synchronized (this) {
-            myModel.learn(myVocabulary.toIndices(lexed));
+        learnLexed(lexPsiFile(file));
+    }
+
+    private synchronized void learnLexed(List<String> lexed) {
+        List<Integer> indices = myVocabulary.toIndices(lexed);
+        if (myVocabulary.getWordIndices().size() != myVocabulary.getWords().size()) {
+            throw new AssertionError("Something went wrong with vocabulary!");
         }
+        myModel.learn(indices);
     }
 
     public void forgetPsiFile(@NotNull PsiFile file) {
@@ -296,7 +289,9 @@ public class NGramModelRunner {
             PsiNameIdentifierOwner parent = (PsiNameIdentifierOwner) element.getParent();
             Class<? extends PsiNameIdentifierOwner> parentClass = getSupportedParentClass(parent.getClass());
             if (parentClass != null) {
-                myRememberedIdentifiers.get(parentClass).add(myVocabulary.toIndex(element.getText()));
+                synchronized (this) {
+                    myRememberedIdentifiers.get(parentClass).add(myVocabulary.toIndex(element.getText()));
+                }
             }
         }
     }
@@ -311,23 +306,15 @@ public class NGramModelRunner {
         return myModel.getOrder();
     }
 
-    public static final Path MODELS_DIRECTORY = Paths.get(PathManager.getSystemPath(), "models");
-    public static final Path GLOBAL_MODEL_DIRECTORY = MODELS_DIRECTORY.resolve("global");
-
-    public double save(@Nullable ProgressIndicator progressIndicator) {
-        return save(MODELS_DIRECTORY, progressIndicator);
-    }
-
     public double save(@NotNull Path model_directory, @Nullable ProgressIndicator progressIndicator) {
-        if (progressIndicator != null) {
-            progressIndicator.setText(IdNamesSuggestingBundle.message("saving.global.model"));
-            progressIndicator.setText2("");
-            progressIndicator.setIndeterminate(true);
-        }
         File counterFile = model_directory.resolve("counter.ser").toFile();
-        File rememberedVariablesFile = model_directory.resolve("rememberedIdentifiers.ser").toFile();
-        File vocabularyFile = model_directory.resolve("vocabulary.ser").toFile();
+        File rememberedVariablesFile = model_directory.resolve("rememberedIdentifiers.json").toFile();
+        File vocabularyFile = model_directory.resolve("vocabulary.txt").toFile();
         try {
+            if (progressIndicator != null) {
+                progressIndicator.setIndeterminate(true);
+                progressIndicator.setText2(IdNamesSuggestingBundle.message("saving.file", counterFile.getName()));
+            }
             counterFile.getParentFile().mkdirs();
             counterFile.createNewFile();
             FileOutputStream fileOutputStream = new FileOutputStream(counterFile);
@@ -336,13 +323,23 @@ public class NGramModelRunner {
             objectOutputStream.close();
             fileOutputStream.close();
 
+            if (progressIndicator != null) {
+                progressIndicator.setText2(IdNamesSuggestingBundle.message("saving.file", rememberedVariablesFile.getName()));
+            }
             rememberedVariablesFile.createNewFile();
+            Gson gson = new GsonBuilder().create();
             fileOutputStream = new FileOutputStream(rememberedVariablesFile);
-            objectOutputStream = new ObjectOutputStream(fileOutputStream);
-            objectOutputStream.writeObject(myRememberedIdentifiers);
-            objectOutputStream.close();
-            fileOutputStream.close();
+            OutputStreamWriter writer = new OutputStreamWriter(fileOutputStream, StandardCharsets.UTF_8);
+            try {
+                writer.write(gson.toJson(myRememberedIdentifiers));
+            } finally {
+                writer.close();
+                fileOutputStream.close();
+            }
 
+            if (progressIndicator != null) {
+                progressIndicator.setText2(IdNamesSuggestingBundle.message("saving.file", vocabularyFile.getName()));
+            }
             vocabularyFile.createNewFile();
             VocabularyRunner.INSTANCE.write(myVocabulary, vocabularyFile);
         } catch (IOException e) {
@@ -351,43 +348,37 @@ public class NGramModelRunner {
         return (counterFile.length() + vocabularyFile.length() + rememberedVariablesFile.length()) / (1024. * 1024);
     }
 
-    public boolean load() {
-        return load(null);
-    }
-
-    public boolean load(@Nullable ProgressIndicator progressIndicator) {
-        return load(MODELS_DIRECTORY, progressIndicator);
-    }
-
     public boolean load(@NotNull Path model_directory, @Nullable ProgressIndicator progressIndicator) {
         File counterFile = model_directory.resolve("counter.ser").toFile();
-        File rememberedVariablesFile = model_directory.resolve("rememberedIdentifiers.ser").toFile();
-        File vocabularyFile = model_directory.resolve("vocabulary.ser").toFile();
+        File rememberedVariablesFile = model_directory.resolve("rememberedIdentifiers.json").toFile();
+        File vocabularyFile = model_directory.resolve("vocabulary.txt").toFile();
         if (counterFile.exists() && rememberedVariablesFile.exists() && vocabularyFile.exists()) {
             try {
                 if (progressIndicator != null) {
                     progressIndicator.setIndeterminate(true);
-                    progressIndicator.setText(IdNamesSuggestingBundle.message("loading.file", counterFile.getName()));
+                    progressIndicator.setText2(IdNamesSuggestingBundle.message("loading.file", counterFile.getName()));
                 }
                 FileInputStream fileInputStream = new FileInputStream(counterFile);
                 ObjectInputStream objectInputStream = new ObjectInputStream(fileInputStream);
-                myModel.getCounter().readExternal(objectInputStream);
-                objectInputStream.close();
-                fileInputStream.close();
+                try {
+                    myModel.getCounter().readExternal(objectInputStream);
+                } finally {
+                    objectInputStream.close();
+                    fileInputStream.close();
+                }
 
                 if (progressIndicator != null) {
-                    progressIndicator.setText(IdNamesSuggestingBundle.message("loading.file", rememberedVariablesFile.getName()));
+                    progressIndicator.setText2(IdNamesSuggestingBundle.message("loading.file", rememberedVariablesFile.getName()));
                 }
-                fileInputStream = new FileInputStream(rememberedVariablesFile);
-                objectInputStream = new ObjectInputStream(fileInputStream);
-                myRememberedIdentifiers = (HashMap) objectInputStream.readObject();
-                objectInputStream.close();
-                fileInputStream.close();
+                Gson gson = new Gson();
+                JsonReader reader = new JsonReader(new FileReader(rememberedVariablesFile));
+                mapToRemember(gson.fromJson(reader, HashMap.class));
 
                 if (progressIndicator != null) {
-                    progressIndicator.setText(IdNamesSuggestingBundle.message("loading.file", vocabularyFile.getName()));
+                    progressIndicator.setText2(IdNamesSuggestingBundle.message("loading.file", vocabularyFile.getName()));
                 }
-                myVocabulary = VocabularyManager.read(vocabularyFile);
+                VocabularyManager.clear(myVocabulary);
+                VocabularyManager.read(vocabularyFile, myVocabulary);
                 return true;
             } catch (Exception e) {
                 e.printStackTrace();
@@ -397,7 +388,16 @@ public class NGramModelRunner {
         return false;
     }
 
+    private void mapToRemember(@NotNull HashMap<String, List<Double>> fromJson) {
+        for (Double id : fromJson.get("interface com.intellij.psi.PsiVariable")) {
+            myRememberedIdentifiers.get(PsiVariable.class).add(id.intValue());
+        }
+    }
+
     public void resolveCounter() {
+        /**
+         *  Invokes com.intellij.completion.ngram.slp.counting.giga.GigaCounter#resolve()
+         */
         myModel.getCounter().getCount();
     }
 }

@@ -25,7 +25,7 @@
         <applicationService serviceImplementation="org.jetbrains.id.names.suggesting.IdNamesSuggestingModelManager"/>
         <applicationService serviceImplementation="org.jetbrains.id.names.suggesting.IdNamesSuggestingService"/>
                 <backgroundPostStartupActivity
-                        implementation="org.jetbrains.id.names.suggesting.LoadingGlobalModelStartupActivity"/>
+                        implementation="org.jetbrains.id.names.suggesting.LoadingModelsStartupActivity"/>
         <inspectionToolProvider
                 implementation="org.jetbrains.id.names.suggesting.inspections.variable.VariableNamesProvider"/>
         <!-- Astrid part-->

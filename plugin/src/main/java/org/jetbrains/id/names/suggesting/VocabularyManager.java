@@ -2,6 +2,7 @@ package org.jetbrains.id.names.suggesting;
 
 import com.intellij.completion.ngram.slp.translating.Vocabulary;
 import com.intellij.completion.ngram.slp.translating.VocabularyRunner;
+import org.jetbrains.annotations.NotNull;
 
 import java.io.*;
 import java.nio.channels.Channels;
@@ -15,20 +16,25 @@ import java.util.stream.Collectors;
 
 public class VocabularyManager {
     public static int cutOff = 0;
+
     /**
      * Read vocabulary from file, where it is assumed that the vocabulary is written as per {@link VocabularyRunner#write(Vocabulary, File)}:
      * tab-separated, having three columns per line: count, index and token (which may contain tabs))
      * <br /><em>Note:</em>: index is assumed to be strictly incremental starting at 0!
-     * @return
+     *
+     * @return vocabulary
      */
     public static Vocabulary read(File file) {
-        Vocabulary vocabulary = new Vocabulary();
+        return read(file, new Vocabulary());
+    }
+
+    public static Vocabulary read(File file, Vocabulary vocabulary) {
         readLines(file).stream()
                 .map(x -> x.split("\t", 3))
                 .filter(x -> Integer.parseInt(x[0]) >= cutOff)
                 .forEachOrdered(split -> {
-                    Integer count = Integer.parseInt(split[0]);
-                    Integer index = Integer.parseInt(split[1]);
+                    int count = Integer.parseInt(split[0]);
+                    int index = Integer.parseInt(split[1]);
                     if (index > 0 && index != vocabulary.size()) {
                         System.out.println("VocabularyRunner.read(): non-consecutive indices while reading vocabulary!");
                     }
@@ -58,5 +64,13 @@ public class VocabularyManager {
             }
             return lines;
         }
+    }
+
+    public static void clear(@NotNull Vocabulary myVocabulary) {
+        myVocabulary.getWordIndices().clear();
+        myVocabulary.getWords().clear();
+        myVocabulary.getCounts().clear();
+        myVocabulary.open();
+        myVocabulary.store(Vocabulary.unknownCharacter, 0);
     }
 }

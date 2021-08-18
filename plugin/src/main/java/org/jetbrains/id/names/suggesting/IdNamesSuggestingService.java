@@ -29,28 +29,25 @@ public class IdNamesSuggestingService {
     public LinkedHashMap<String, Double> suggestVariableName(@NotNull PsiVariable variable) {
         Instant timerStart = Instant.now();
         List<VarNamePrediction> nameSuggestions = new ArrayList<>();
-        Instant end = Instant.now();
         boolean isDeveloperMode = NotificationsUtil.isDeveloperMode();
         Map<String, Double> stats = new LinkedHashMap<>();
         if (isDeveloperMode) {
             double p = getVariableNameProbability(variable);
             stats.put("p", p);
             // toNanos because toMillis return long but I want it to be more precise, plus stats already has probability(p) which is anyway Double.
-            stats.put("t (ms)", Duration.between(timerStart, end).toNanos() / 1_000_000.);
+            stats.put("t (ms)", Duration.between(timerStart, Instant.now()).toNanos() / 1_000_000.);
         }
         int prioritiesSum = 0;
         for (final VariableNamesContributor modelContributor : VariableNamesContributor.EP_NAME.getExtensions()) {
             Instant start = Instant.now();
             prioritiesSum += modelContributor.contribute(variable, nameSuggestions);
-            end = Instant.now();
             stats.put(String.format("%s (ms)",
                     modelContributor.getClass().getSimpleName()),
-                    Duration.between(start, end).toNanos() / 1_000_000.);
+                    Duration.between(start, Instant.now()).toNanos() / 1_000_000.);
         }
 
         LinkedHashMap<String, Double> result = rankSuggestions(variable, nameSuggestions, prioritiesSum);
-        Instant timerEnd = Instant.now();
-        stats.put("Total time (ms)", Duration.between(timerStart, timerEnd).toNanos() / 1_000_000.);
+        stats.put("Total time (ms)", Duration.between(timerStart, Instant.now()).toNanos() / 1_000_000.);
         notify(variable.getProject(), stats);
         return result;
     }
