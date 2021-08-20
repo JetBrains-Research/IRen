@@ -23,6 +23,6 @@ public class NotificationsUtil {
     }
 
     public static boolean isDeveloperMode(){
-        return Registry.get("developer.mode").asBoolean();
+        return Registry.get("iren.developer.mode").asBoolean();
     }
 }

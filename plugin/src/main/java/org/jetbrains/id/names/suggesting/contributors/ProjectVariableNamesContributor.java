@@ -4,7 +4,8 @@ import com.intellij.openapi.project.Project;
 import com.intellij.psi.PsiVariable;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.jetbrains.id.names.suggesting.IdNamesSuggestingModelManager;
+import org.jetbrains.id.names.suggesting.LoadingTimeService;
+import org.jetbrains.id.names.suggesting.ModelManager;
 import org.jetbrains.id.names.suggesting.impl.NGramModelRunner;
 
 public class ProjectVariableNamesContributor extends NGramVariableNamesContributor {
@@ -20,10 +21,9 @@ public class ProjectVariableNamesContributor extends NGramVariableNamesContribut
 
     @Override
     public @Nullable NGramModelRunner getModelRunnerToContribute(@NotNull PsiVariable variable) {
-        @NotNull IdNamesSuggestingModelManager modelManager = IdNamesSuggestingModelManager.getInstance();
         Project project = variable.getProject();
-        if (modelManager.isLoaded(this.getClass(), project)) {
-            return modelManager.getModelRunner(this.getClass(), project);
+        if (LoadingTimeService.getInstance().isLoaded(this.getClass(), project)) {
+            return ModelManager.getInstance().getModelRunner(this.getClass(), project);
         }
         return null;
     }

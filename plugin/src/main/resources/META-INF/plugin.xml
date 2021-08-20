@@ -1,4 +1,4 @@
-<idea-plugin>
+<idea-plugin require-restart="true">
     <id>com.github.davidenkoim.idnamessuggestingplugin</id>
     <name>Id Names Suggesting</name>
     <vendor>davidenkoim</vendor>
@@ -17,15 +17,24 @@
     <depends>com.intellij.modules.platform</depends>
     <depends>com.intellij.modules.java</depends>
     <extensions defaultExtensionNs="com.intellij">
-        <registryKey key="developer.mode" description="Registry for showing id names suggesting plugin notifications"
-                     defaultValue="True" restartRequired="false"/>
+        <!--    Settings part    -->
+        <registryKey key="iren.developer.mode"
+                     description="Registry for showing id names suggesting plugin notifications"
+                     defaultValue="False" restartRequired="false"/>
+        <applicationService serviceImplementation="org.jetbrains.id.names.suggesting.settings.AppSettingsState"/>
+        <applicationConfigurable parentId="tools"
+                                 instance="org.jetbrains.id.names.suggesting.settings.AppSettingsConfigurable"
+                                 id="org.jetbrains.id.names.suggesting.settings.AppSettingsConfigurable"
+                                 displayName="IRen Settings"/>
+        <!--    End of settings part    -->
         <intentionAction>
             <className>org.jetbrains.id.names.suggesting.impl.SuggestVariableNamesIntention</className>
         </intentionAction>
-        <applicationService serviceImplementation="org.jetbrains.id.names.suggesting.IdNamesSuggestingModelManager"/>
+        <applicationService serviceImplementation="org.jetbrains.id.names.suggesting.LoadingTimeService"/>
+        <applicationService serviceImplementation="org.jetbrains.id.names.suggesting.ModelManager"/>
         <applicationService serviceImplementation="org.jetbrains.id.names.suggesting.IdNamesSuggestingService"/>
-                <backgroundPostStartupActivity
-                        implementation="org.jetbrains.id.names.suggesting.LoadingModelsStartupActivity"/>
+        <backgroundPostStartupActivity
+                implementation="org.jetbrains.id.names.suggesting.LoadingModelsStartupActivity"/>
         <inspectionToolProvider
                 implementation="org.jetbrains.id.names.suggesting.inspections.variable.VariableNamesProvider"/>
         <!-- Astrid part-->
@@ -43,21 +52,13 @@
     </extensions>
     <extensions defaultExtensionNs="org.jetbrains.id.names.suggesting">
         <variableNamesContributor
-                implementation="org.jetbrains.id.names.suggesting.contributors.FileVariableNamesContributor"/>
-        <variableNamesContributor
                 implementation="org.jetbrains.id.names.suggesting.contributors.ProjectVariableNamesContributor"/>
-        <variableNamesContributor
-                implementation="org.jetbrains.id.names.suggesting.contributors.GlobalVariableNamesContributor"/>
     </extensions>
     <actions>
         <action id="train.project.id.model" class="org.jetbrains.id.names.suggesting.impl.TrainProjectNGramModelAction"
                 text="Train Project Id Model">
-            <add-to-group group-id="AnalyzeMenu" anchor="first"/>
+            <add-to-group group-id="RefactoringMenu" anchor="last"/>
             <keyboard-shortcut keymap="$default" first-keystroke="ctrl alt shift Z"/>
-        </action>
-        <action id="train.global.id.model" class="org.jetbrains.id.names.suggesting.impl.TrainGlobalNGramModelAction"
-                text="Add Project To Global Id Model">
-            <add-to-group group-id="AnalyzeMenu" anchor="first"/>
         </action>
     </actions>
     <extensionPoints>

@@ -1,6 +1,8 @@
 package org.jetbrains.id.names.suggesting.utils;
 
+import com.intellij.openapi.project.Project;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.id.names.suggesting.api.VariableNamesContributor;
 
 import java.util.Arrays;
 import java.util.Collection;
@@ -16,5 +18,9 @@ public class StringUtils {
 
     public static @NotNull Collection<String> subtokenSplit(@NotNull String token) {
         return Arrays.asList(token.split("(?<!(^|[A-Z]))(?=[A-Z])|(?<!^)(?=[A-Z][a-z])|_"));
+    }
+
+    public static @NotNull String join(@NotNull Class<? extends VariableNamesContributor> className, @NotNull Project project) {
+        return String.join("_", className.getName(), project.getLocationHash());
     }
 }

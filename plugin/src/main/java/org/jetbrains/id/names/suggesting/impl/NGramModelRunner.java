@@ -24,6 +24,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.id.names.suggesting.IdNamesSuggestingBundle;
 import org.jetbrains.id.names.suggesting.VocabularyManager;
+import org.jetbrains.id.names.suggesting.settings.AppSettingsState;
 import org.jetbrains.id.names.suggesting.storages.Context;
 import org.jetbrains.id.names.suggesting.storages.StringCounter;
 import org.jetbrains.id.names.suggesting.storages.VarNamePrediction;
@@ -51,17 +52,7 @@ public class NGramModelRunner {
 
     private final NGramModel myModel;
     private final Vocabulary myVocabulary = new Vocabulary();
-    private boolean limitTrainingTime = true;
-    public long maxTrainingTime = 30;
-    private int vocabularyCutOff = 0;
-
-    public void setVocabularyCutOff(int cutOff) {
-        this.vocabularyCutOff = cutOff;
-    }
-
-    public void limitTrainingTime(boolean b) {
-        limitTrainingTime = b;
-    }
+    private boolean rememberPossibleNames = false;
 
     public HashMap<Class<? extends PsiNameIdentifierOwner>, HashSet<Integer>> getRememberedIdentifiers() {
         return myRememberedIdentifiers;
@@ -206,11 +197,13 @@ public class NGramModelRunner {
         final int[] progress = {0};
         final int total = files.size();
         Instant start = Instant.now();
+        int vocabularyCutOff = AppSettingsState.getInstance().vocabularyCutOff;
+        int maxTrainingTime = AppSettingsState.getInstance().maxTrainingTime;
         if (vocabularyCutOff > 0) {
             System.out.printf("Training vocabulary on %s...\n", project.getName());
             StringCounter counter = new StringCounter();
             files.parallelStream().filter(x -> (progressIndicator == null || !progressIndicator.isCanceled()) &&
-                            (!limitTrainingTime || Duration.between(start, Instant.now()).minusSeconds(maxTrainingTime).isNegative()))
+                            (maxTrainingTime <= 0 || Duration.between(start, Instant.now()).minusSeconds(maxTrainingTime).isNegative()))
                     .forEach(file -> {
                         counter.putAll(ReadAction.compute(() -> lexPsiFile(Objects.requireNonNull(PsiManager.getInstance(project).findFile(file)))));
                         synchronized (progress) {
@@ -229,9 +222,10 @@ public class NGramModelRunner {
         }
         System.out.printf("Training NGram model on %s...\n", project.getName());
         progress[0] = 0;
+        rememberPossibleNames = true;
         Instant finalStart = Instant.now();
         files.parallelStream().filter(x -> (progressIndicator == null || !progressIndicator.isCanceled()) &&
-                        (!limitTrainingTime || Duration.between(finalStart, Instant.now()).minusSeconds(maxTrainingTime).isNegative()))
+                        (maxTrainingTime <= 0 || Duration.between(finalStart, Instant.now()).minusSeconds(maxTrainingTime).isNegative()))
                 .forEach(file -> {
                     ReadAction.run(() -> ObjectUtils.consumeIfNotNull(PsiManager.getInstance(project).findFile(file), this::learnPsiFile));
                     synchronized (progress) {
@@ -253,6 +247,7 @@ public class NGramModelRunner {
                         delta.toMillis()));
         System.out.printf("Done in %s\n", delta);
         System.out.printf("Vocabulary size: %d\n", myVocabulary.size());
+        rememberPossibleNames = false;
     }
 
     public void learnPsiFile(@NotNull PsiFile file) {
@@ -285,7 +280,7 @@ public class NGramModelRunner {
     }
 
     private void rememberIdName(PsiElement element) {
-        if (element instanceof PsiIdentifier && element.getParent() instanceof PsiNameIdentifierOwner) {
+        if (rememberPossibleNames && element instanceof PsiIdentifier && element.getParent() instanceof PsiNameIdentifierOwner) {
             PsiNameIdentifierOwner parent = (PsiNameIdentifierOwner) element.getParent();
             Class<? extends PsiNameIdentifierOwner> parentClass = getSupportedParentClass(parent.getClass());
             if (parentClass != null) {
