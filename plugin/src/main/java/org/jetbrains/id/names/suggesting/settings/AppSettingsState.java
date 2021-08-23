@@ -26,7 +26,7 @@ public class AppSettingsState implements PersistentStateComponent<AppSettingsSta
     public int maxTrainingTime = 30;
     public int vocabularyCutOff = 0;
     public int modelsLifetime = 1;
-    public ChronoUnit modelsLifetimeUnit = ChronoUnit.HOURS;
+    public ChronoUnit modelsLifetimeUnit = ChronoUnit.DAYS;
 
     public static AppSettingsState getInstance() {
         return ApplicationManager.getApplication().getService(AppSettingsState.class);
@@ -42,5 +42,4 @@ public class AppSettingsState implements PersistentStateComponent<AppSettingsSta
     public void loadState(@NotNull AppSettingsState state) {
         XmlSerializerUtil.copyBean(state, this);
     }
-
 }

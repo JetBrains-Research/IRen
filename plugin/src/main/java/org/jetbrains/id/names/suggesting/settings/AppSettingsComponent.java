@@ -19,11 +19,11 @@ import java.util.List;
 public class AppSettingsComponent {
 
     private final JPanel myMainPanel;
-    private final JBCheckBox myAutomaticTrainingStatus = new JBCheckBox("Automatic training of models on a newly opened projects ");
+    private final JBCheckBox myAutomaticTrainingStatus = new JBCheckBox("Automatic training of models.");
     private final IntegerField myMaxTrainingTimeText = new IntegerField("30", 0, 10000);
     private final IntegerField myVocabularyCutOff = new IntegerField("0", 0, 20);
     private final IntegerField myModelsLifetime = new IntegerField();
-    private final List<ChronoUnit> chronoUnits = Arrays.asList(ChronoUnit.MINUTES, ChronoUnit.HOURS, ChronoUnit.DAYS);
+    private final List<ChronoUnit> chronoUnits = Arrays.asList(ChronoUnit.HOURS, ChronoUnit.DAYS, ChronoUnit.WEEKS, ChronoUnit.MONTHS);
     private final ComboBox<String> myModelsLifetimeUnit = new ComboBox<>(chronoUnits.stream().map(ChronoUnit::toString).toArray(String[]::new));
 
     public AppSettingsComponent() {
@@ -36,6 +36,7 @@ public class AppSettingsComponent {
                 .addVerticalGap(10)
                 .addLabeledComponent(new JBLabel("Maximal training time of models (s): "), myMaxTrainingTimeText, 1, false)
                 .addLabeledComponent(new JBLabel("Vocabulary cutoff: "), myVocabularyCutOff, 1, false)
+                .addTooltip("Words with frequencies less than this will be removed from the vocabulary.")
                 .addLabeledComponent(new JBLabel("Models lifetime: "), myModelsLifetime, 1, false)
                 .addComponentToRightColumn(this.myModelsLifetimeUnit)
                 .addTooltip("The time after which model will be retrained.")
@@ -48,7 +49,7 @@ public class AppSettingsComponent {
     }
 
     public JComponent getPreferredFocusedComponent() {
-        return myMaxTrainingTimeText;
+        return myAutomaticTrainingStatus;
     }
 
     public boolean getAutomaticTrainingStatus() {

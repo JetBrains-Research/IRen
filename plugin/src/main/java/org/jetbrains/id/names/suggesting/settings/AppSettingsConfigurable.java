@@ -6,7 +6,6 @@ import com.intellij.openapi.options.Configurable;
 
 import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.Nullable;
-import org.jetbrains.id.names.suggesting.LoadingTimeService;
 
 import javax.swing.*;
 
@@ -44,7 +43,6 @@ public class AppSettingsConfigurable implements Configurable {
         boolean modified = mySettingsComponent.getMaxTrainingTime() != settings.maxTrainingTime;
         modified |= mySettingsComponent.getAutomaticTrainingStatus() != settings.automaticTraining;
         modified |= mySettingsComponent.getVocabularyCutOff() != settings.vocabularyCutOff;
-        if (modified) {LoadingTimeService.getInstance().settingsChanged();}
         modified |= mySettingsComponent.getModelsLifetime() != settings.modelsLifetime;
         modified |= mySettingsComponent.getModelsLifetimeUnit() != settings.modelsLifetimeUnit;
         return modified;
