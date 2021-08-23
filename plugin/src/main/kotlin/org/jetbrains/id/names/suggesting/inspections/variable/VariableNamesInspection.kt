@@ -18,33 +18,38 @@ class VariableNamesInspection : AbstractBaseJavaLocalInspectionTool() {
     }
 
     class VariableVisitor(private val holder: ProblemsHolder) : JavaElementVisitor() {
-        private val probabilityCutoff: Double = 0.001
-
         override fun visitVariable(variable: PsiVariable?) {
-            when (variable) {
-                null -> return
-                else -> {
-                    val probability = IdNamesSuggestingService.getInstance().getVariableNameProbability(variable)
-                    if (probability < probabilityCutoff) {
-                        holder.registerProblem(
-                            variable.nameIdentifier ?: variable,
-                            "There are suggestions for variable name",
-                            ProblemHighlightType.WEAK_WARNING,
-                            RenameMethodQuickFix(variable.createSmartPointer())
-                        )
-                    }
-                    super.visitVariable(variable)
-                }
+            if (variable == null) return
+            val predictions =
+                thereIsBetterName(variable, IdNamesSuggestingService.getInstance().suggestVariableName(variable))
+            if (predictions.isNotEmpty()) {
+                holder.registerProblem(
+                    variable.nameIdentifier ?: variable,
+                    "There are suggestions for variable name",
+                    ProblemHighlightType.WEAK_WARNING,
+                    RenameMethodQuickFix(variable.createSmartPointer(), predictions)
+                )
             }
+            super.visitVariable(variable)
+        }
+
+        private fun thereIsBetterName(
+            variable: PsiVariable,
+            predictions: LinkedHashMap<String, Double>
+        ): LinkedHashMap<String, Double> {
+            val threshold = predictions[variable.name] ?: return predictions
+            return predictions.filterValues { v -> v > threshold }.toMap(LinkedHashMap())
         }
     }
 
-    class RenameMethodQuickFix(private var variable: SmartPsiElementPointer<PsiVariable>) : LocalQuickFix {
+    class RenameMethodQuickFix(
+        private var variable: SmartPsiElementPointer<PsiVariable>,
+        private var predictions: LinkedHashMap<String, Double>
+    ) : LocalQuickFix {
         override fun applyFix(project: Project, descriptor: ProblemDescriptor) {
             val editor = FileEditorManager.getInstance(project).selectedTextEditor!!
             val inplaceRefactoring = ModifiedMemberInplaceRenamer(variable.element!!, null, editor)
-            inplaceRefactoring.performInplaceRefactoring(IdNamesSuggestingService.getInstance()
-                    .suggestVariableName(variable.element!!))
+            inplaceRefactoring.performInplaceRefactoring(predictions)
         }
 
 
@@ -59,7 +64,7 @@ class VariableNamesInspection : AbstractBaseJavaLocalInspectionTool() {
     }
 
     override fun getGroupDisplayName(): String {
-        return "Plugin id names suggesting"
+        return "IRen plugin"
     }
 
     override fun getShortName(): String {
