@@ -21,6 +21,6 @@ public class StringUtils {
     }
 
     public static @NotNull String join(@NotNull Class<? extends VariableNamesContributor> className, @NotNull Project project) {
-        return String.join("_", className.getName(), project.getLocationHash());
+        return String.join("_", className.getSimpleName(), project.getLocationHash());
     }
 }

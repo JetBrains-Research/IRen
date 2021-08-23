@@ -2,13 +2,8 @@ package org.jetbrains.id.names.suggesting;
 
 import com.intellij.openapi.Disposable;
 import com.intellij.openapi.application.PathManager;
-import com.intellij.openapi.application.ReadAction;
 import com.intellij.openapi.components.ServiceManager;
-import com.intellij.openapi.progress.ProgressIndicator;
-import com.intellij.openapi.progress.ProgressManager;
-import com.intellij.openapi.progress.Task;
 import com.intellij.openapi.project.Project;
-import com.intellij.openapi.util.Disposer;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.id.names.suggesting.api.VariableNamesContributor;
@@ -40,11 +35,11 @@ public class ModelManager implements Disposable {
     }
 
     public @Nullable NGramModelRunner getModelRunner(@NotNull Class<? extends VariableNamesContributor> name) {
-        return myModelRunners.get(name.getName());
+        return myModelRunners.get(name.getSimpleName());
     }
 
     public void putModelRunner(@NotNull Class<? extends VariableNamesContributor> name, @NotNull NGramModelRunner modelRunner) {
-        myModelRunners.put(name.getName(), modelRunner);
+        myModelRunners.put(name.getSimpleName(), modelRunner);
     }
 
     public @Nullable NGramModelRunner getModelRunner(@NotNull Class<? extends VariableNamesContributor> className, @NotNull Project project) {

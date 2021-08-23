@@ -2,7 +2,7 @@ package org.jetbrains.id.names.suggesting.contributors;
 
 import com.intellij.psi.PsiVariable;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.id.names.suggesting.LoadingTimeService;
+import org.jetbrains.id.names.suggesting.ModelSaveTimeService;
 import org.jetbrains.id.names.suggesting.ModelManager;
 import org.jetbrains.id.names.suggesting.impl.NGramModelRunner;
 
@@ -19,7 +19,7 @@ public class GlobalVariableNamesContributor extends NGramVariableNamesContributo
 
     @Override
     public NGramModelRunner getModelRunnerToContribute(@NotNull PsiVariable variable) {
-        if (LoadingTimeService.getInstance().isLoaded(this.getClass())) {
+        if (ModelSaveTimeService.getInstance().isTrained(this.getClass())) {
             return ModelManager.getInstance().getModelRunner(this.getClass());
         }
         return null;

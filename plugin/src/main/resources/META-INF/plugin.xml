@@ -1,4 +1,4 @@
-<idea-plugin require-restart="true">
+<idea-plugin require-restart="false">
     <id>com.github.davidenkoim.idnamessuggestingplugin</id>
     <name>Id Names Suggesting</name>
     <vendor>davidenkoim</vendor>
@@ -30,11 +30,11 @@
         <intentionAction>
             <className>org.jetbrains.id.names.suggesting.impl.SuggestVariableNamesIntention</className>
         </intentionAction>
-        <applicationService serviceImplementation="org.jetbrains.id.names.suggesting.LoadingTimeService"/>
+        <applicationService serviceImplementation="org.jetbrains.id.names.suggesting.ModelSaveTimeService"/>
         <applicationService serviceImplementation="org.jetbrains.id.names.suggesting.ModelManager"/>
         <applicationService serviceImplementation="org.jetbrains.id.names.suggesting.IdNamesSuggestingService"/>
         <backgroundPostStartupActivity
-                implementation="org.jetbrains.id.names.suggesting.LoadingModelsStartupActivity"/>
+                implementation="org.jetbrains.id.names.suggesting.LoadingModelStartupActivity"/>
         <inspectionToolProvider
                 implementation="org.jetbrains.id.names.suggesting.inspections.variable.VariableNamesProvider"/>
         <!-- Astrid part-->

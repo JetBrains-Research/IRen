@@ -11,23 +11,24 @@ import org.jetbrains.id.names.suggesting.contributors.NGramVariableNamesContribu
 import org.jetbrains.id.names.suggesting.contributors.ProjectVariableNamesContributor;
 import org.jetbrains.id.names.suggesting.impl.NGramModelRunner;
 
-public class LoadingModelsStartupActivity implements StartupActivity {
+public class LoadingModelStartupActivity implements StartupActivity {
     @Override
     public void runActivity(@NotNull Project project) {
-        @NotNull ProgressManager progressManager = ProgressManager.getInstance();
-        progressManager.run(new Task.Backgroundable(project, IdNamesSuggestingBundle.message("loading.project.model", project.getName())) {
+        ProgressManager.getInstance().run(new Task.Backgroundable(project, IdNamesSuggestingBundle.message("loading.project.model", project.getName())) {
             @Override
             public void run(@NotNull ProgressIndicator indicator) {
+                if (ModelSaveTimeService.getInstance().needRetraining(ProjectVariableNamesContributor.class, project)) {
+                    indicator.setText(IdNamesSuggestingBundle.message("training.progress.indicator.text", project.getName()));
+                    ReadAction.nonBlocking(() -> ModelTrainer.trainProjectNGramModel(project, indicator, true))
+                            .inSmartMode(project).executeSynchronously();
+                    return;
+                }
                 NGramModelRunner modelRunner = new NGramModelRunner(NGramVariableNamesContributor.SUPPORTED_TYPES, true);
                 if (modelRunner.load(ModelManager.getPath(project), indicator)) {
                     modelRunner.getVocabulary().close();
                     modelRunner.resolveCounter();
                     ModelManager.getInstance().putModelRunner(ProjectVariableNamesContributor.class, project, modelRunner);
-                    LoadingTimeService.getInstance().setLoaded(ProjectVariableNamesContributor.class, project, true);
-                } else if (LoadingTimeService.getInstance().needRetraining(ProjectVariableNamesContributor.class, project)) {
-                    indicator.setText(IdNamesSuggestingBundle.message("training.progress.indicator.text", project.getName()));
-                    ReadAction.nonBlocking(() -> ModelTrainer.trainProjectNGramModel(project, indicator, true))
-                            .inSmartMode(project).executeSynchronously();
+                    ModelSaveTimeService.getInstance().setTrained(ProjectVariableNamesContributor.class, project, true);
                 }
             }
         });
