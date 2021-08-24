@@ -42,6 +42,7 @@ public class AppSettingsConfigurable implements Configurable {
         AppSettingsState settings = AppSettingsState.getInstance();
         boolean modified = mySettingsComponent.getMaxTrainingTime() != settings.maxTrainingTime;
         modified |= mySettingsComponent.getAutomaticTrainingStatus() != settings.automaticTraining;
+        modified |= mySettingsComponent.getSendStatisticsStatus() != settings.sendStatistics;
         modified |= mySettingsComponent.getVocabularyCutOff() != settings.vocabularyCutOff;
         modified |= mySettingsComponent.getModelsLifetime() != settings.modelsLifetime;
         modified |= mySettingsComponent.getModelsLifetimeUnit() != settings.modelsLifetimeUnit;
@@ -52,6 +53,7 @@ public class AppSettingsConfigurable implements Configurable {
     public void apply() {
         AppSettingsState settings = AppSettingsState.getInstance();
         settings.automaticTraining = mySettingsComponent.getAutomaticTrainingStatus();
+        settings.sendStatistics = mySettingsComponent.getSendStatisticsStatus();
         settings.maxTrainingTime = mySettingsComponent.getMaxTrainingTime();
         settings.vocabularyCutOff = mySettingsComponent.getVocabularyCutOff();
         settings.modelsLifetime = mySettingsComponent.getModelsLifetime();
@@ -63,6 +65,7 @@ public class AppSettingsConfigurable implements Configurable {
         AppSettingsState settings = AppSettingsState.getInstance();
         mySettingsComponent.setMaxTrainingTime(settings.maxTrainingTime);
         mySettingsComponent.setAutomaticTrainingStatus(settings.automaticTraining);
+        mySettingsComponent.setSendStatisticsStatus(settings.sendStatistics);
         mySettingsComponent.setVocabularyCutOff(settings.vocabularyCutOff);
         mySettingsComponent.setModelsLifetime(settings.modelsLifetime);
         mySettingsComponent.setModelsLifetimeUnit(settings.modelsLifetimeUnit);
