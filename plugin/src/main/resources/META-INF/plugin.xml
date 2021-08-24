@@ -30,7 +30,7 @@
         <intentionAction>
             <className>org.jetbrains.id.names.suggesting.impl.SuggestVariableNamesIntention</className>
         </intentionAction>
-        <applicationService serviceImplementation="org.jetbrains.id.names.suggesting.ModelSaveTimeService"/>
+        <applicationService serviceImplementation="org.jetbrains.id.names.suggesting.ModelStatsService"/>
         <applicationService serviceImplementation="org.jetbrains.id.names.suggesting.ModelManager"/>
         <applicationService serviceImplementation="org.jetbrains.id.names.suggesting.IdNamesSuggestingService"/>
         <applicationService serviceImplementation="org.jetbrains.id.names.suggesting.inspections.variable.PredictionsStorage"/>

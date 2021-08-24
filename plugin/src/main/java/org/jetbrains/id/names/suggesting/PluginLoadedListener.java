@@ -7,8 +7,15 @@ import com.intellij.notification.NotificationAction;
 import com.intellij.notification.NotificationType;
 import com.intellij.notification.Notifications;
 import com.intellij.openapi.actionSystem.AnActionEvent;
+import com.intellij.openapi.application.ReadAction;
+import com.intellij.openapi.progress.ProgressIndicator;
+import com.intellij.openapi.progress.ProgressManager;
+import com.intellij.openapi.progress.Task;
+import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.Disposer;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+import org.jetbrains.id.names.suggesting.inspections.variable.PredictionsStorage;
 import org.jetbrains.id.names.suggesting.settings.AppSettingsState;
 
 public class PluginLoadedListener implements DynamicPluginListener {
@@ -16,6 +23,7 @@ public class PluginLoadedListener implements DynamicPluginListener {
     public void beforePluginUnload(@NotNull IdeaPluginDescriptor pluginDescriptor, boolean isUpdate) {
         DynamicPluginListener.super.beforePluginUnload(pluginDescriptor, isUpdate);
         Disposer.dispose(ModelManager.getInstance());
+        Disposer.dispose(PredictionsStorage.Companion.getInstance());
     }
 
     @Override
@@ -31,7 +39,7 @@ public class PluginLoadedListener implements DynamicPluginListener {
                     "IRen: send anonymous statistics",
                     "Do You allow sending anonymous statistics? We will only collect variable name predictions.",
                     NotificationType.INFORMATION);
-            notification1.addAction(new NotificationAction("Yes") {
+            notification1.addAction(new NotificationAction("Yes (default)") {
                 @Override
                 public void actionPerformed(@NotNull AnActionEvent e, @NotNull Notification notification) {
                     settings.sendStatistics = true;
@@ -51,11 +59,21 @@ public class PluginLoadedListener implements DynamicPluginListener {
                     "IRen: automatic training permission",
                     "Do You allow automatic training of models?",
                     NotificationType.INFORMATION);
-            notification2.addAction(new NotificationAction("Yes") {
+            notification2.addAction(new NotificationAction("Yes (default)") {
                 @Override
                 public void actionPerformed(@NotNull AnActionEvent e, @NotNull Notification notification) {
                     settings.automaticTraining = true;
                     notification.expire();
+                    @Nullable Project project = e.getProject();
+                    if (project == null) return;
+                    ProgressManager.getInstance().run(new Task.Backgroundable(project, IdNamesSuggestingBundle.message("loading.project.model", project.getName())) {
+                        @Override
+                        public void run(@NotNull ProgressIndicator indicator) {
+                            indicator.setText(IdNamesSuggestingBundle.message("training.progress.indicator.text", project.getName()));
+                            ReadAction.nonBlocking(() -> ModelTrainer.trainProjectNGramModel(project, indicator, true))
+                                    .inSmartMode(project).executeSynchronously();
+                        }
+                    });
                 }
             });
             notification2.addAction(new NotificationAction("No") {

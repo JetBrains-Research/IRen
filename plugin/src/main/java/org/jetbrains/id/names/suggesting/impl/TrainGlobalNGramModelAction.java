@@ -10,6 +10,7 @@ import com.intellij.psi.search.FileTypeIndex;
 import com.intellij.psi.search.GlobalSearchScope;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.id.names.suggesting.IdNamesSuggestingBundle;
+import org.jetbrains.id.names.suggesting.ModelStatsService;
 import org.jetbrains.id.names.suggesting.ModelTrainer;
 import org.jetbrains.id.names.suggesting.api.AbstractTrainModelAction;
 
@@ -29,7 +30,7 @@ public class TrainGlobalNGramModelAction extends AbstractTrainModelAction {
 
     @Override
     protected boolean canBePerformed(@NotNull AnActionEvent e) {
-        return e.getProject() != null &&
+        return e.getProject() != null && !ModelStatsService.getInstance().isTraining() &&
                 FileTypeIndex.containsFileOfType(JavaFileType.INSTANCE, GlobalSearchScope.projectScope(e.getProject()));
     }
 }

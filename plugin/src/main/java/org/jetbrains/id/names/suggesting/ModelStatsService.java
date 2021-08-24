@@ -15,24 +15,27 @@ import org.jetbrains.id.names.suggesting.settings.AppSettingsState;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 
 import static org.jetbrains.id.names.suggesting.utils.StringUtils.join;
 
-@State(name = "org.jetbrains.id.names.suggesting.ModelSaveTimeService",
-storages = {@Storage("ModelSaveTime.xml")})
-public class ModelSaveTimeService implements PersistentStateComponent<ModelSaveTimeService> {
+@State(name = "org.jetbrains.id.names.suggesting.ModelStatsService",
+        storages = {@Storage("ModelSaveTime.xml")})
+public class ModelStatsService implements PersistentStateComponent<ModelStatsService> {
     private boolean isTraining = false;
     @XMap(propertyElementName = "saveTime", keyAttributeName = "model", valueAttributeName = "time")
     public final Map<String, String> mySavingTime = new HashMap<>();
+    private final Set<String> loaded = new HashSet<>();
 
     @Override
-    public @Nullable ModelSaveTimeService getState() {
+    public @Nullable ModelStatsService getState() {
         return this;
     }
 
     @Override
-    public void loadState(@NotNull ModelSaveTimeService state) {
+    public void loadState(@NotNull ModelStatsService state) {
         XmlSerializerUtil.copyBean(state, this);
     }
 
@@ -40,9 +43,12 @@ public class ModelSaveTimeService implements PersistentStateComponent<ModelSaveT
         isTraining = training;
     }
 
+    public boolean isTraining() {
+        return isTraining;
+    }
 
-    public static @NotNull ModelSaveTimeService getInstance() {
-        return ServiceManager.getService(ModelSaveTimeService.class);
+    public static @NotNull ModelStatsService getInstance() {
+        return ServiceManager.getService(ModelStatsService.class);
     }
 
     public void setTrained(@NotNull Class<? extends VariableNamesContributor> className, boolean b) {
@@ -62,15 +68,7 @@ public class ModelSaveTimeService implements PersistentStateComponent<ModelSaveT
     }
 
     public boolean isSomethingLoaded() {
-        return !mySavingTime.isEmpty();
-    }
-
-    public boolean isTrained(Class<? extends VariableNamesContributor> className) {
-        return mySavingTime.containsKey(className.getSimpleName());
-    }
-
-    public boolean isTrained(Class<? extends VariableNamesContributor> className, Project project) {
-        return mySavingTime.containsKey(join(className, project));
+        return !loaded.isEmpty();
     }
 
     public @Nullable Instant whenTrained(@NotNull Class<? extends VariableNamesContributor> className) {
@@ -84,10 +82,34 @@ public class ModelSaveTimeService implements PersistentStateComponent<ModelSaveT
     }
 
     public boolean needRetraining(Class<? extends VariableNamesContributor> className, Project project) {
-        @Nullable Instant saveTime = ModelSaveTimeService.getInstance().whenTrained(className, project);
+        @Nullable Instant saveTime = ModelStatsService.getInstance().whenTrained(className, project);
         AppSettingsState settings = AppSettingsState.getInstance();
         Duration modelsLifetime = Duration.of(settings.modelsLifetime, settings.modelsLifetimeUnit);
         return settings.automaticTraining && !isTraining &&
                 (saveTime == null || !Duration.between(saveTime, Instant.now()).minus(modelsLifetime).isNegative());
+    }
+
+    public void setLoaded(@NotNull Class<? extends VariableNamesContributor> className, boolean b) {
+        if (b) {
+            loaded.add(className.getSimpleName());
+        } else {
+            loaded.remove(className.getSimpleName());
+        }
+    }
+
+    public void setLoaded(@NotNull Class<? extends VariableNamesContributor> className, Project project, boolean b) {
+        if (b) {
+            loaded.add(join(className, project));
+        } else {
+            loaded.remove(join(className, project));
+        }
+    }
+
+    public boolean isLoaded(@NotNull Class<? extends VariableNamesContributor> className) {
+        return loaded.contains(className.getSimpleName());
+    }
+
+    public boolean isLoaded(Class<? extends VariableNamesContributor> className, Project project) {
+        return loaded.contains(join(className, project));
     }
 }
