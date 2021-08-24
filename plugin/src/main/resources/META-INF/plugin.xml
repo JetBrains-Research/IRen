@@ -33,6 +33,7 @@
         <applicationService serviceImplementation="org.jetbrains.id.names.suggesting.ModelSaveTimeService"/>
         <applicationService serviceImplementation="org.jetbrains.id.names.suggesting.ModelManager"/>
         <applicationService serviceImplementation="org.jetbrains.id.names.suggesting.IdNamesSuggestingService"/>
+        <applicationService serviceImplementation="org.jetbrains.id.names.suggesting.inspections.variable.PredictionsStorage"/>
         <backgroundPostStartupActivity
                 implementation="org.jetbrains.id.names.suggesting.LoadingModelStartupActivity"/>
         <inspectionToolProvider

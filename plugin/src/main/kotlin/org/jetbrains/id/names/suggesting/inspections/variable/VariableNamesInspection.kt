@@ -8,7 +8,6 @@ import com.intellij.psi.PsiElementVisitor
 import com.intellij.psi.PsiVariable
 import com.intellij.psi.SmartPsiElementPointer
 import com.intellij.refactoring.suggested.createSmartPointer
-import org.jetbrains.id.names.suggesting.IdNamesSuggestingService
 import org.jetbrains.id.names.suggesting.ModifiedMemberInplaceRenamer
 
 class VariableNamesInspection : AbstractBaseJavaLocalInspectionTool() {
@@ -20,8 +19,7 @@ class VariableNamesInspection : AbstractBaseJavaLocalInspectionTool() {
     class VariableVisitor(private val holder: ProblemsHolder) : JavaElementVisitor() {
         override fun visitVariable(variable: PsiVariable?) {
             if (variable == null) return
-            val predictions =
-                thereIsBetterName(variable, IdNamesSuggestingService.getInstance().suggestVariableName(variable))
+            val predictions = thereIsBetterName(variable)
             if (predictions.isNotEmpty()) {
                 holder.registerProblem(
                     variable.nameIdentifier ?: variable,
@@ -33,10 +31,8 @@ class VariableNamesInspection : AbstractBaseJavaLocalInspectionTool() {
             super.visitVariable(variable)
         }
 
-        private fun thereIsBetterName(
-            variable: PsiVariable,
-            predictions: LinkedHashMap<String, Double>
-        ): LinkedHashMap<String, Double> {
+        private fun thereIsBetterName(variable: PsiVariable): LinkedHashMap<String, Double> {
+            val predictions = PredictionsStorage.getInstance().getPrediction(variable.createSmartPointer()) ?: LinkedHashMap()
             val threshold = predictions[variable.name] ?: return predictions
             return predictions.filterValues { v -> v > threshold }.toMap(LinkedHashMap())
         }
