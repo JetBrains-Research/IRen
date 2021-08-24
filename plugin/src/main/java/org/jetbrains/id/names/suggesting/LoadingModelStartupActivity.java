@@ -11,9 +11,12 @@ import org.jetbrains.id.names.suggesting.contributors.NGramVariableNamesContribu
 import org.jetbrains.id.names.suggesting.contributors.ProjectVariableNamesContributor;
 import org.jetbrains.id.names.suggesting.impl.NGramModelRunner;
 
+import static org.jetbrains.id.names.suggesting.PluginLoadedListener.askPermissions;
+
 public class LoadingModelStartupActivity implements StartupActivity {
     @Override
     public void runActivity(@NotNull Project project) {
+        askPermissions();
         ProgressManager.getInstance().run(new Task.Backgroundable(project, IdNamesSuggestingBundle.message("loading.project.model", project.getName())) {
             @Override
             public void run(@NotNull ProgressIndicator indicator) {

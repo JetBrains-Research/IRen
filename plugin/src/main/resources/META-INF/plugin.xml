@@ -65,4 +65,7 @@
         <extensionPoint qualifiedName="org.jetbrains.id.names.suggesting.variableNamesContributor"
                         interface="org.jetbrains.id.names.suggesting.api.VariableNamesContributor" dynamic="true"/>
     </extensionPoints>
+    <applicationListeners>
+        <listener class="org.jetbrains.id.names.suggesting.PluginLoadedListener" topic="com.intellij.ide.plugins.DynamicPluginListener"/>
+    </applicationListeners>
 </idea-plugin>
