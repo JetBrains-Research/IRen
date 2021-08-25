@@ -3,13 +3,14 @@ package org.jetbrains.id.names.suggesting.inspections.variable
 import com.google.common.cache.CacheBuilder
 import com.google.common.cache.CacheLoader
 import com.google.common.cache.LoadingCache
+import com.intellij.openapi.Disposable
 import com.intellij.openapi.components.ServiceManager
 import com.intellij.psi.PsiVariable
 import com.intellij.psi.SmartPsiElementPointer
 import org.jetbrains.id.names.suggesting.IdNamesSuggestingService
 
 
-class PredictionsStorage {
+class PredictionsStorage : Disposable {
     companion object {
         fun getInstance(): PredictionsStorage {
             return ServiceManager.getService(PredictionsStorage::class.java)
@@ -30,5 +31,9 @@ class PredictionsStorage {
 
     fun getPrediction(pointer: SmartPsiElementPointer<PsiVariable>): LinkedHashMap<String, Double>?{
         return storage.get(pointer)
+    }
+
+    override fun dispose() {
+        storage.cleanUp()
     }
 }

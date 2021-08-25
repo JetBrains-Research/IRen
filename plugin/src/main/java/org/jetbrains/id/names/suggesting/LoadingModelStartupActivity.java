@@ -14,7 +14,7 @@ import org.jetbrains.id.names.suggesting.utils.NotificationsUtil;
 
 import static org.jetbrains.id.names.suggesting.PluginLoadedListener.askPermissions;
 
-public class LoadingModelStartupActivity implements StartupActivity {
+public class LoadingModelStartupActivity implements StartupActivity.Background {
     @Override
     public void runActivity(@NotNull Project project) {
         askPermissions();
