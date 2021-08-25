@@ -4,7 +4,7 @@ import com.intellij.ide.impl.ProjectUtil
 import com.intellij.openapi.application.ApplicationStarter
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.project.ProjectManager
-import org.jetbrains.id.names.suggesting.ModelTrainer
+import org.jetbrains.iren.ModelTrainer
 import java.io.File
 import java.nio.file.Path
 import java.nio.file.Paths

@@ -5,8 +5,8 @@ import com.intellij.psi.PsiComment;
 import com.intellij.psi.PsiElement;
 import org.jetbrains.annotations.NotNull;
 
-import static org.jetbrains.id.names.suggesting.utils.PsiUtils.isBlank;
-import static org.jetbrains.id.names.suggesting.utils.PsiUtils.isLeaf;
+import static org.jetbrains.iren.utils.PsiUtils.isBlank;
+import static org.jetbrains.iren.utils.PsiUtils.isLeaf;
 
 public class AstGraphCreator extends JavaRecursiveElementVisitor {
 

@@ -21,21 +21,21 @@
         <registryKey key="iren.developer.mode"
                      description="Registry for showing id names suggesting plugin notifications"
                      defaultValue="False" restartRequired="false"/>
-        <applicationService serviceImplementation="org.jetbrains.id.names.suggesting.settings.AppSettingsState"/>
+        <applicationService serviceImplementation="org.jetbrains.iren.settings.AppSettingsState"/>
         <applicationConfigurable parentId="tools"
-                                 instance="org.jetbrains.id.names.suggesting.settings.AppSettingsConfigurable"
-                                 id="org.jetbrains.id.names.suggesting.settings.AppSettingsConfigurable"
+                                 instance="org.jetbrains.iren.settings.AppSettingsConfigurable"
+                                 id="org.jetbrains.iren.settings.AppSettingsConfigurable"
                                  displayName="IRen Settings"/>
         <!--    End of settings part    -->
         <intentionAction>
-            <className>org.jetbrains.id.names.suggesting.impl.SuggestVariableNamesIntention</className>
+            <className>org.jetbrains.iren.impl.SuggestVariableNamesIntention</className>
         </intentionAction>
-        <applicationService serviceImplementation="org.jetbrains.id.names.suggesting.ModelStatsService"/>
-        <applicationService serviceImplementation="org.jetbrains.id.names.suggesting.ModelManager"/>
-        <applicationService serviceImplementation="org.jetbrains.id.names.suggesting.IdNamesSuggestingService"/>
-        <applicationService serviceImplementation="org.jetbrains.id.names.suggesting.inspections.variable.PredictionsStorage"/>
+        <applicationService serviceImplementation="org.jetbrains.iren.ModelStatsService"/>
+        <applicationService serviceImplementation="org.jetbrains.iren.ModelManager"/>
+        <applicationService serviceImplementation="org.jetbrains.iren.IdNamesSuggestingService"/>
+        <applicationService serviceImplementation="org.jetbrains.iren.inspections.variable.PredictionsStorage"/>
         <backgroundPostStartupActivity
-                implementation="org.jetbrains.id.names.suggesting.LoadingModelStartupActivity"/>
+                implementation="org.jetbrains.iren.LoadingModelStartupActivity"/>
         <inspectionToolProvider
                 implementation="org.jetbrains.id.names.suggesting.inspections.variable.VariableNamesProvider"/>
         <!-- Astrid part-->
@@ -53,10 +53,10 @@
     </extensions>
     <extensions defaultExtensionNs="org.jetbrains.id.names.suggesting">
         <variableNamesContributor
-                implementation="org.jetbrains.id.names.suggesting.contributors.ProjectVariableNamesContributor"/>
+                implementation="org.jetbrains.iren.contributors.ProjectVariableNamesContributor"/>
     </extensions>
     <actions>
-        <action id="train.project.id.model" class="org.jetbrains.id.names.suggesting.impl.TrainProjectNGramModelAction"
+        <action id="train.project.id.model" class="org.jetbrains.iren.impl.TrainProjectNGramModelAction"
                 text="Train Project Id Model">
             <add-to-group group-id="RefactoringMenu" anchor="last"/>
             <keyboard-shortcut keymap="$default" first-keystroke="ctrl alt shift Z"/>
@@ -64,9 +64,9 @@
     </actions>
     <extensionPoints>
         <extensionPoint qualifiedName="org.jetbrains.id.names.suggesting.variableNamesContributor"
-                        interface="org.jetbrains.id.names.suggesting.api.VariableNamesContributor" dynamic="true"/>
+                        interface="org.jetbrains.iren.api.VariableNamesContributor" dynamic="true"/>
     </extensionPoints>
     <applicationListeners>
-        <listener class="org.jetbrains.id.names.suggesting.PluginLoadedListener" topic="com.intellij.ide.plugins.DynamicPluginListener"/>
+        <listener class="org.jetbrains.iren.PluginLoadedListener" topic="com.intellij.ide.plugins.DynamicPluginListener"/>
     </applicationListeners>
 </idea-plugin>

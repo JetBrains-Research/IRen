@@ -11,8 +11,8 @@ import com.intellij.openapi.project.Project;
 import com.intellij.psi.search.FileTypeIndex;
 import com.intellij.psi.search.GlobalSearchScope;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.id.names.suggesting.IdNamesSuggestingBundle;
-import org.jetbrains.id.names.suggesting.utils.NotificationsUtil;
+import org.jetbrains.iren.IdNamesSuggestingBundle;
+import org.jetbrains.iren.utils.NotificationsUtil;
 
 import java.time.Duration;
 import java.time.Instant;

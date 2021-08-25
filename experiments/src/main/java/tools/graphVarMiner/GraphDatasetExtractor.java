@@ -24,8 +24,8 @@ import java.util.Objects;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static org.jetbrains.id.names.suggesting.utils.PsiUtils.processToken;
-import static org.jetbrains.id.names.suggesting.utils.PsiUtils.shouldLex;
+import static org.jetbrains.iren.utils.PsiUtils.processToken;
+import static org.jetbrains.iren.utils.PsiUtils.shouldLex;
 
 public class GraphDatasetExtractor {
     private static final String defaultPrefix = Paths.get(PathManager.getSystemPath(), "dataset", "graph").toString();

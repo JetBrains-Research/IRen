@@ -6,7 +6,6 @@ import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.project.Project
 import com.intellij.psi.*
-import org.jetbrains.id.names.suggesting.utils.PsiUtils.findReferences
 import java.util.concurrent.atomic.AtomicReference
 
 object PsiUtils {
@@ -47,18 +46,6 @@ object PsiUtils {
         val offset = getOffset(method)
         return if (offset != null) {
             (offset > methodTextRange.startOffset) && (offset < methodTextRange.endOffset)
-        } else {
-            false
-        }
-    }
-
-    fun caretInsideVariable(variable: PsiVariable): Boolean {
-        val offset = getOffset(variable)
-        return if (offset != null) {
-            findReferences(variable, variable.containingFile).anyMatch { reference: PsiReference ->
-                offset >= reference.rangeInElement.startOffset &&
-                        offset <= reference.rangeInElement.endOffset
-            }
         } else {
             false
         }

@@ -25,22 +25,22 @@
         <appStarter implementation="tools.nGramTrainingTime.PluginRunner"/>
         <!-- End of headless running part-->
         <intentionAction>
-            <className>org.jetbrains.id.names.suggesting.impl.SuggestVariableNamesIntention</className>
+            <className>org.jetbrains.iren.impl.SuggestVariableNamesIntention</className>
         </intentionAction>
-        <applicationService serviceImplementation="org.jetbrains.id.names.suggesting.ModelManager"/>
-        <applicationService serviceImplementation="org.jetbrains.id.names.suggesting.ModelStatsService"/>
-        <applicationService serviceImplementation="org.jetbrains.id.names.suggesting.IdNamesSuggestingService"/>
+        <applicationService serviceImplementation="org.jetbrains.iren.ModelManager"/>
+        <applicationService serviceImplementation="org.jetbrains.iren.ModelStatsService"/>
+        <applicationService serviceImplementation="org.jetbrains.iren.IdNamesSuggestingService"/>
     </extensions>
     <extensions defaultExtensionNs="org.jetbrains.id.names.suggesting">
         <variableNamesContributor
-                implementation="org.jetbrains.id.names.suggesting.contributors.FileVariableNamesContributor"/>
+                implementation="org.jetbrains.iren.contributors.FileVariableNamesContributor"/>
         <variableNamesContributor
-                implementation="org.jetbrains.id.names.suggesting.contributors.ProjectVariableNamesContributor"/>
+                implementation="org.jetbrains.iren.contributors.ProjectVariableNamesContributor"/>
         <variableNamesContributor
-                implementation="org.jetbrains.id.names.suggesting.contributors.GlobalVariableNamesContributor"/>
+                implementation="org.jetbrains.iren.contributors.GlobalVariableNamesContributor"/>
     </extensions>
     <extensionPoints>
         <extensionPoint qualifiedName="org.jetbrains.id.names.suggesting.variableNamesContributor"
-                        interface="org.jetbrains.id.names.suggesting.api.VariableNamesContributor" dynamic="true"/>
+                        interface="org.jetbrains.iren.api.VariableNamesContributor" dynamic="true"/>
     </extensionPoints>
 </idea-plugin>

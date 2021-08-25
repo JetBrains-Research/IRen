@@ -3,13 +3,13 @@ package tools.graphVarMiner;
 import com.intellij.openapi.util.TextRange;
 import com.intellij.psi.*;
 import org.jetbrains.annotations.Nullable;
-import org.jetbrains.id.names.suggesting.utils.PsiUtils;
+import org.jetbrains.iren.utils.PsiUtils;
 
 import java.util.HashMap;
 import java.util.Map;
 import java.util.stream.Stream;
 
-import static org.jetbrains.id.names.suggesting.utils.PsiUtils.*;
+import static org.jetbrains.iren.utils.PsiUtils.*;
 
 public class JavaGraphExtractor {
     public final static String NEXT_TOKEN = "NextToken";

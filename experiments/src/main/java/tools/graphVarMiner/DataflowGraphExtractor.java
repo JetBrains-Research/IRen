@@ -3,7 +3,7 @@ package tools.graphVarMiner;
 import com.intellij.psi.*;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.jetbrains.id.names.suggesting.utils.PsiUtils;
+import org.jetbrains.iren.utils.PsiUtils;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -11,7 +11,7 @@ import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import static org.jetbrains.id.names.suggesting.utils.PsiUtils.*;
+import static org.jetbrains.iren.utils.PsiUtils.*;
 
 public class DataflowGraphExtractor extends JavaElementVisitor implements PsiRecursiveVisitor {
     public static final String LAST_USE = "LastUse";

@@ -4,8 +4,9 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import com.intellij.ide.impl.ProjectUtil
 import com.intellij.openapi.application.ApplicationStarter
 import com.intellij.openapi.project.Project
-import org.jetbrains.id.names.suggesting.contributors.NGramVariableNamesContributor
-import org.jetbrains.id.names.suggesting.impl.NGramModelRunner
+import com.intellij.openapi.project.ProjectManager
+import org.jetbrains.iren.contributors.NGramVariableNamesContributor
+import org.jetbrains.iren.impl.NGramModelRunner
 import java.io.File
 import java.nio.file.Path
 import java.nio.file.Paths
@@ -69,7 +70,7 @@ class PluginRunner : ApplicationStarter {
             }
             projectTime.put(projectDir, trainingTime)
             if (projectToClose != null) {
-                ProjectUtil.closeAndDispose(projectToClose)
+                ProjectManager.getInstance().closeAndDispose(projectToClose)
             }
             projectToClose = project
         }

@@ -128,7 +128,7 @@ tasks {
     }
 
     runIde {
-        jvmArgs = listOf("-Xmx8G")
+        jvmArgs = listOf("-Xmx12G", "-XX:+UnlockDiagnosticVMOptions")
     }
 
     register("generateUpdatePluginsXML") {
