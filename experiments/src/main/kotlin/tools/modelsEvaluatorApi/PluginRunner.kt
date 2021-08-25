@@ -3,7 +3,8 @@ package tools.modelsEvaluatorApi
 import com.intellij.ide.impl.ProjectUtil
 import com.intellij.openapi.application.ApplicationStarter
 import com.intellij.openapi.project.Project
-import org.jetbrains.id.names.suggesting.IdNamesSuggestingModelManager
+import com.intellij.openapi.project.ProjectManager
+import org.jetbrains.id.names.suggesting.ModelTrainer
 import java.io.File
 import java.nio.file.Path
 import java.nio.file.Paths
@@ -47,12 +48,12 @@ abstract class PluginRunner : ApplicationStarter {
             println("Opening project $projectDir...")
             val project = ProjectUtil.openOrImport(projectPath.path, projectToClose, true) ?: continue
 
-            IdNamesSuggestingModelManager.getInstance().trainGlobalNGramModel(project, null, false)
+            ModelTrainer.trainGlobalNGramModel(project, null, false)
 
             projectToClose = project
         }
         if (projectToClose != null) {
-            ProjectUtil.closeAndDispose(projectToClose)
+            ProjectManager.getInstance().closeAndDispose(projectToClose)
         }
     }
 
@@ -70,14 +71,14 @@ abstract class PluginRunner : ApplicationStarter {
             val project = ProjectUtil.openOrImport(projectPath.path, projectToClose, true) ?: continue
 
             if (ngramContributorType == "project") {
-                IdNamesSuggestingModelManager.getInstance().trainProjectNGramModel(project, null)
+                ModelTrainer.trainProjectNGramModel(project, null, false)
             }
             predict(project, dir, ngramContributorType)
 
             projectToClose = project
         }
         if (projectToClose != null) {
-            ProjectUtil.closeAndDispose(projectToClose)
+            ProjectManager.getInstance().closeAndDispose(projectToClose)
         }
     }
 

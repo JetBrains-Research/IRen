@@ -12,7 +12,7 @@ import com.intellij.psi.*
 import com.intellij.psi.search.FileTypeIndex
 import com.intellij.psi.search.GlobalSearchScope
 import com.jetbrains.rd.util.string.printToString
-import org.jetbrains.id.names.suggesting.IdNamesSuggestingModelManager
+import org.jetbrains.id.names.suggesting.ModelManager
 import org.jetbrains.id.names.suggesting.api.VariableNamesContributor
 import org.jetbrains.id.names.suggesting.contributors.GlobalVariableNamesContributor
 import org.jetbrains.id.names.suggesting.contributors.NGramVariableNamesContributor
@@ -98,9 +98,9 @@ abstract class VarNamer {
                 ), true
             )!!
             if (ngramContributorClass == ProjectVariableNamesContributor::class.java) {
-                IdNamesSuggestingModelManager.getInstance()
+                ModelManager.getInstance()
                     .getModelRunner(ProjectVariableNamesContributor::class.java, file.project)
-                    .forgetPsiFile(file)
+                    ?.forgetPsiFile(file)
             }
             val predictionsList = SyntaxTraverser.psiTraverser()
                 .withRoot(file)
@@ -118,9 +118,9 @@ abstract class VarNamer {
             return null
         } finally {
             if (ngramContributorClass == ProjectVariableNamesContributor::class.java) {
-                IdNamesSuggestingModelManager.getInstance()
+                ModelManager.getInstance()
                     .getModelRunner(ProjectVariableNamesContributor::class.java, file.project)
-                    .learnPsiFile(file)
+                    ?.learnPsiFile(file)
             }
             fileEditorManager.closeFile(file.virtualFile)
         }

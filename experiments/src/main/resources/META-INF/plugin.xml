@@ -27,24 +27,9 @@
         <intentionAction>
             <className>org.jetbrains.id.names.suggesting.impl.SuggestVariableNamesIntention</className>
         </intentionAction>
-        <applicationService serviceImplementation="org.jetbrains.id.names.suggesting.IdNamesSuggestingModelManager"/>
+        <applicationService serviceImplementation="org.jetbrains.id.names.suggesting.ModelManager"/>
+        <applicationService serviceImplementation="org.jetbrains.id.names.suggesting.ModelStatsService"/>
         <applicationService serviceImplementation="org.jetbrains.id.names.suggesting.IdNamesSuggestingService"/>
-        <backgroundPostStartupActivity
-                implementation="org.jetbrains.id.names.suggesting.LoadingModelsStartupActivity"/>
-        <inspectionToolProvider
-                implementation="org.jetbrains.id.names.suggesting.inspections.variable.VariableNamesProvider"/>
-        <!-- Astrid part-->
-        <intentionAction>
-            <className>org.jetbrains.astrid.actions.SuggestionIntentionAction</className>
-            <category>Suggestions list</category>
-            <descriptionDirectoryName>SuggestionIntentionAction</descriptionDirectoryName>
-        </intentionAction>
-
-        <inspectionToolProvider implementation="org.jetbrains.astrid.inspections.method.MethodNamesProvider"/>
-        <inspectionToolProvider implementation="org.jetbrains.astrid.inspections.ifstatement.IfStatementProvider"/>
-
-        <applicationService serviceImplementation="org.jetbrains.astrid.stats.RenameMethodStatistics"/>
-        <!-- End of Astrid part-->
     </extensions>
     <extensions defaultExtensionNs="org.jetbrains.id.names.suggesting">
         <variableNamesContributor
@@ -54,21 +39,6 @@
         <variableNamesContributor
                 implementation="org.jetbrains.id.names.suggesting.contributors.GlobalVariableNamesContributor"/>
     </extensions>
-    <actions>
-        <action id="train.project.id.model" class="org.jetbrains.id.names.suggesting.impl.TrainProjectNGramModelAction"
-                text="Train Project Id Model">
-            <add-to-group group-id="AnalyzeMenu" anchor="first"/>
-            <keyboard-shortcut keymap="$default" first-keystroke="ctrl alt shift Z"/>
-        </action>
-        <action id="train.global.id.model" class="org.jetbrains.id.names.suggesting.impl.TrainGlobalNGramModelAction"
-                text="Add Project To Global Id Model">
-            <add-to-group group-id="AnalyzeMenu" anchor="first"/>
-        </action>
-        <action id="build.dataset.from.project" class="tools.varMiner.DatasetBuildAction"
-                text="Build Dataset From Project">
-            <add-to-group group-id="AnalyzeMenu" anchor="first"/>
-        </action>
-    </actions>
     <extensionPoints>
         <extensionPoint qualifiedName="org.jetbrains.id.names.suggesting.variableNamesContributor"
                         interface="org.jetbrains.id.names.suggesting.api.VariableNamesContributor" dynamic="true"/>
