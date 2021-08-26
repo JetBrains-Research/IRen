@@ -8,6 +8,7 @@ import com.intellij.codeInsight.template.ExpressionContext;
 import com.intellij.openapi.editor.Editor;
 import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiNamedElement;
+import com.intellij.refactoring.rename.NameSuggestionProvider;
 import com.intellij.refactoring.rename.inplace.MemberInplaceRenamer;
 import com.intellij.refactoring.rename.inplace.MyLookupExpression;
 import org.jetbrains.annotations.NotNull;
@@ -18,7 +19,7 @@ import org.jetbrains.iren.stats.RenameVariableStatistics;
 import java.util.*;
 
 public class MyMemberInplaceRenamer extends MemberInplaceRenamer {
-    private LinkedHashMap<String, Double> myNameSuggestions;
+    private LinkedHashMap<String, Double> myNameProbs;
 
     public MyMemberInplaceRenamer(@NotNull PsiNamedElement elementToRename, @Nullable PsiElement substituted, @NotNull Editor editor) {
         super(elementToRename, substituted, editor);
@@ -28,54 +29,63 @@ public class MyMemberInplaceRenamer extends MemberInplaceRenamer {
         this(variable, null, editor);
     }
 
-    public boolean performInplaceRefactoring(@NotNull LinkedHashMap<String, Double> nameSuggestions) {
-        this.myNameSuggestions = nameSuggestions;
-        return super.performInplaceRefactoring(new LinkedHashSet<>(myNameSuggestions.keySet()));
+    public boolean performInplaceRefactoring(@NotNull LinkedHashMap<String, Double> nameProbs) {
+        this.myNameProbs = nameProbs;
+        return super.performInplaceRefactoring(new LinkedHashSet<>(myNameProbs.keySet()));
     }
 
     @Override
     protected MyLookupExpression createLookupExpression(PsiElement selectedElement) {
-        return new NewLookupExpression(getInitialName(), myNameSuggestions, myElementToRename, selectedElement, shouldSelectAll(), myAdvertisementText);
+        LinkedHashSet<String> names = new LinkedHashSet<>();
+        NameSuggestionProvider.suggestNames(myElementToRename, selectedElement, names);
+        names.addAll(myNameProbs.keySet());
+//        TODO: think about file relearning after insertion of the name
+        return new NewLookupExpression(getInitialName(), names, myElementToRename, selectedElement, shouldSelectAll(), myAdvertisementText, myNameProbs);
     }
 
     static class NewLookupExpression extends MyLookupExpression {
         private final LinkedHashMap<String, Double> namesProbs;
+        private final HashMap<String, Integer> namesIndex = new HashMap<>();
 
-        public NewLookupExpression(String name, @NotNull LinkedHashMap<String, Double> namesProbs, @Nullable PsiNamedElement elementToRename, @Nullable PsiElement nameSuggestionContext, boolean shouldSelectAll, String advertisement) {
-            super(name, new LinkedHashSet<>(namesProbs.keySet()), elementToRename, nameSuggestionContext, shouldSelectAll, advertisement);
+        public NewLookupExpression(String name, @Nullable LinkedHashSet<String> names, @Nullable PsiNamedElement elementToRename, @Nullable PsiElement nameSuggestionContext, boolean shouldSelectAll, String advertisement, @NotNull LinkedHashMap<String, Double> namesProbs) {
+            super(name, names, elementToRename, nameSuggestionContext, shouldSelectAll, advertisement);
             this.namesProbs = namesProbs;
+            int i = 0;
+            for (String key : namesProbs.keySet()) {
+                namesIndex.put(key, i++);
+            }
         }
 
         @Override
         public LookupElement[] calculateLookupItems(ExpressionContext context) {
             LookupElement[] lookupElements = super.calculateLookupItems(context);
-            List<LookupElement> lookupElementsList = Arrays.asList(lookupElements);
             List<LookupElement> newLookupElements = new ArrayList<>();
             boolean sendStatistics = AppSettingsState.getInstance().sendStatistics;
             RenameVariableStatistics stats = RenameVariableStatistics.getInstance();
             if (sendStatistics) {
                 stats.total++;
             }
-            ListIterator<LookupElement> it = lookupElementsList.listIterator();
-            while (it.hasNext()) {
-                int i = it.nextIndex();
-                LookupElement lookupElement = it.next();
-                newLookupElements.add(new LookupElementDecorator<LookupElement>(lookupElement) {
-                    @Override
-                    public void renderElement(LookupElementPresentation presentation) {
-                        super.renderElement(presentation);
-                        presentation.setTypeText(String.format("%.3f", namesProbs.get(lookupElement.getLookupString())));
-                    }
+            for (LookupElement lookupElement : lookupElements) {
+                @NotNull String name = lookupElement.getLookupString();
+                newLookupElements.add(
+                        namesProbs.containsKey(name) ?
+                                new LookupElementDecorator<LookupElement>(lookupElement) {
+                                    @Override
+                                    public void renderElement(LookupElementPresentation presentation) {
+                                        super.renderElement(presentation);
+                                        presentation.setTypeText(String.format("%.3f", namesProbs.get(name)));
+                                    }
 
-                    @Override
-                    public void handleInsert(@NotNull InsertionContext context) {
-                        super.handleInsert(context);
-                        if (sendStatistics) {
-                            stats.applied++;
-                            stats.ranks.add(i);
-                        }
-                    }
-                });
+                                    @Override
+                                    public void handleInsert(@NotNull InsertionContext context) {
+                                        super.handleInsert(context);
+                                        if (sendStatistics) {
+                                            stats.applied++;
+                                            stats.ranks.add(namesIndex.get(name));
+                                        }
+                                    }
+                                } :
+                                lookupElement);
             }
             return newLookupElements.toArray(lookupElements);
         }
