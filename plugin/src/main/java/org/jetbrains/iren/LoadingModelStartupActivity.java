@@ -6,6 +6,9 @@ import com.intellij.openapi.progress.ProgressManager;
 import com.intellij.openapi.progress.Task;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.startup.StartupActivity;
+import com.intellij.refactoring.rename.RenameHandler;
+import com.intellij.refactoring.rename.inplace.MemberInplaceRenameHandler;
+import com.intellij.refactoring.rename.inplace.VariableInplaceRenameHandler;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.iren.contributors.NGramVariableNamesContributor;
 import org.jetbrains.iren.contributors.ProjectVariableNamesContributor;
@@ -17,6 +20,8 @@ import static org.jetbrains.iren.PluginLoadedListener.askPermissions;
 public class LoadingModelStartupActivity implements StartupActivity.Background {
     @Override
     public void runActivity(@NotNull Project project) {
+        RenameHandler.EP_NAME.getPoint().unregisterExtension(VariableInplaceRenameHandler.class);
+        RenameHandler.EP_NAME.getPoint().unregisterExtension(MemberInplaceRenameHandler.class);
         askPermissions();
         ProgressManager.getInstance().run(new Task.Backgroundable(project, IdNamesSuggestingBundle.message("loading.project.model", project.getName())) {
             @Override

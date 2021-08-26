@@ -8,7 +8,7 @@ import com.intellij.psi.PsiElementVisitor
 import com.intellij.psi.PsiVariable
 import com.intellij.psi.SmartPsiElementPointer
 import com.intellij.refactoring.suggested.createSmartPointer
-import org.jetbrains.iren.ModifiedMemberInplaceRenamer
+import org.jetbrains.iren.rename.MyMemberInplaceRenamer
 
 class VariableNamesInspection : AbstractBaseJavaLocalInspectionTool() {
 
@@ -44,7 +44,8 @@ class VariableNamesInspection : AbstractBaseJavaLocalInspectionTool() {
     ) : LocalQuickFix {
         override fun applyFix(project: Project, descriptor: ProblemDescriptor) {
             val editor = FileEditorManager.getInstance(project).selectedTextEditor!!
-            val inplaceRefactoring = ModifiedMemberInplaceRenamer(variable.element!!, null, editor)
+            val inplaceRefactoring =
+                MyMemberInplaceRenamer(variable.element!!, null, editor)
             inplaceRefactoring.performInplaceRefactoring(predictions)
         }
 

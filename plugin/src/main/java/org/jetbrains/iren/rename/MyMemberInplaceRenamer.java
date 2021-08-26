@@ -1,4 +1,4 @@
-package org.jetbrains.iren;
+package org.jetbrains.iren.rename;
 
 import com.intellij.codeInsight.completion.InsertionContext;
 import com.intellij.codeInsight.lookup.LookupElement;
@@ -17,14 +17,14 @@ import org.jetbrains.iren.stats.RenameVariableStatistics;
 
 import java.util.*;
 
-public class ModifiedMemberInplaceRenamer extends MemberInplaceRenamer {
+public class MyMemberInplaceRenamer extends MemberInplaceRenamer {
     private LinkedHashMap<String, Double> myNameSuggestions;
 
-    public ModifiedMemberInplaceRenamer(@NotNull PsiNamedElement elementToRename, @Nullable PsiElement substituted, @NotNull Editor editor) {
+    public MyMemberInplaceRenamer(@NotNull PsiNamedElement elementToRename, @Nullable PsiElement substituted, @NotNull Editor editor) {
         super(elementToRename, substituted, editor);
     }
 
-    public ModifiedMemberInplaceRenamer(@NotNull PsiNamedElement variable, @NotNull Editor editor) {
+    public MyMemberInplaceRenamer(@NotNull PsiNamedElement variable, @NotNull Editor editor) {
         this(variable, null, editor);
     }
 

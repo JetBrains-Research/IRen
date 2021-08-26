@@ -10,7 +10,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.iren.IdNamesSuggestingBundle;
 import org.jetbrains.iren.IdNamesSuggestingService;
-import org.jetbrains.iren.ModifiedMemberInplaceRenamer;
+import org.jetbrains.iren.rename.MyMemberInplaceRenamer;
 import org.jetbrains.iren.api.SuggestIdNamesIntentionBase;
 
 public class SuggestVariableNamesIntention extends SuggestIdNamesIntentionBase<PsiVariable> {
@@ -21,7 +21,7 @@ public class SuggestVariableNamesIntention extends SuggestIdNamesIntentionBase<P
 
     @Override
     protected void processIntention(@NotNull Project project, @NotNull Editor editor, @NotNull PsiVariable variable) {
-        ModifiedMemberInplaceRenamer inplaceRefactoring = new ModifiedMemberInplaceRenamer(variable, editor);
+        MyMemberInplaceRenamer inplaceRefactoring = new MyMemberInplaceRenamer(variable, editor);
         inplaceRefactoring.performInplaceRefactoring(IdNamesSuggestingService.getInstance()
                                                                              .suggestVariableName(variable));
     }
