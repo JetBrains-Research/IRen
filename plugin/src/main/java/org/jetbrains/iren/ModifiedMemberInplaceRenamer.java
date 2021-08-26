@@ -1,5 +1,6 @@
 package org.jetbrains.iren;
 
+import com.intellij.codeInsight.completion.InsertionContext;
 import com.intellij.codeInsight.lookup.LookupElement;
 import com.intellij.codeInsight.lookup.LookupElementDecorator;
 import com.intellij.codeInsight.lookup.LookupElementPresentation;
@@ -11,11 +12,10 @@ import com.intellij.refactoring.rename.inplace.MemberInplaceRenamer;
 import com.intellij.refactoring.rename.inplace.MyLookupExpression;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.iren.settings.AppSettingsState;
+import org.jetbrains.iren.stats.RenameVariableStatistics;
 
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
-import java.util.List;
+import java.util.*;
 
 public class ModifiedMemberInplaceRenamer extends MemberInplaceRenamer {
     private LinkedHashMap<String, Double> myNameSuggestions;
@@ -24,9 +24,13 @@ public class ModifiedMemberInplaceRenamer extends MemberInplaceRenamer {
         super(elementToRename, substituted, editor);
     }
 
-    public void performInplaceRefactoring(@NotNull LinkedHashMap<String, Double> nameSuggestions) {
+    public ModifiedMemberInplaceRenamer(@NotNull PsiNamedElement variable, @NotNull Editor editor) {
+        this(variable, null, editor);
+    }
+
+    public boolean performInplaceRefactoring(@NotNull LinkedHashMap<String, Double> nameSuggestions) {
         this.myNameSuggestions = nameSuggestions;
-        super.performInplaceRefactoring(new LinkedHashSet<>(myNameSuggestions.keySet()));
+        return super.performInplaceRefactoring(new LinkedHashSet<>(myNameSuggestions.keySet()));
     }
 
     @Override
@@ -45,13 +49,31 @@ public class ModifiedMemberInplaceRenamer extends MemberInplaceRenamer {
         @Override
         public LookupElement[] calculateLookupItems(ExpressionContext context) {
             LookupElement[] lookupElements = super.calculateLookupItems(context);
+            List<LookupElement> lookupElementsList = Arrays.asList(lookupElements);
             List<LookupElement> newLookupElements = new ArrayList<>();
-            for (LookupElement lookupElement : lookupElements) {
+            boolean sendStatistics = AppSettingsState.getInstance().sendStatistics;
+            RenameVariableStatistics stats = RenameVariableStatistics.getInstance();
+            if (sendStatistics) {
+                stats.total++;
+            }
+            ListIterator<LookupElement> it = lookupElementsList.listIterator();
+            while (it.hasNext()) {
+                int i = it.nextIndex();
+                LookupElement lookupElement = it.next();
                 newLookupElements.add(new LookupElementDecorator<LookupElement>(lookupElement) {
                     @Override
                     public void renderElement(LookupElementPresentation presentation) {
                         super.renderElement(presentation);
                         presentation.setTypeText(String.format("%.3f", namesProbs.get(lookupElement.getLookupString())));
+                    }
+
+                    @Override
+                    public void handleInsert(@NotNull InsertionContext context) {
+                        super.handleInsert(context);
+                        if (sendStatistics) {
+                            stats.applied++;
+                            stats.ranks.add(i);
+                        }
                     }
                 });
             }

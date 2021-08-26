@@ -21,7 +21,7 @@ public class SuggestVariableNamesIntention extends SuggestIdNamesIntentionBase<P
 
     @Override
     protected void processIntention(@NotNull Project project, @NotNull Editor editor, @NotNull PsiVariable variable) {
-        ModifiedMemberInplaceRenamer inplaceRefactoring = new ModifiedMemberInplaceRenamer(variable, null, editor);
+        ModifiedMemberInplaceRenamer inplaceRefactoring = new ModifiedMemberInplaceRenamer(variable, editor);
         inplaceRefactoring.performInplaceRefactoring(IdNamesSuggestingService.getInstance()
                                                                              .suggestVariableName(variable));
     }

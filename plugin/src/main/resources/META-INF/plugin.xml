@@ -30,6 +30,7 @@
         <intentionAction>
             <className>org.jetbrains.iren.impl.SuggestVariableNamesIntention</className>
         </intentionAction>
+        <applicationService serviceImplementation="org.jetbrains.iren.stats.RenameVariableStatistics"/>
         <applicationService serviceImplementation="org.jetbrains.iren.ModelStatsService"/>
         <applicationService serviceImplementation="org.jetbrains.iren.ModelManager"/>
         <applicationService serviceImplementation="org.jetbrains.iren.IdNamesSuggestingService"/>
@@ -37,7 +38,7 @@
         <backgroundPostStartupActivity
                 implementation="org.jetbrains.iren.LoadingModelStartupActivity"/>
         <inspectionToolProvider
-                implementation="org.jetbrains.id.names.suggesting.inspections.variable.VariableNamesProvider"/>
+                implementation="org.jetbrains.iren.inspections.variable.VariableNamesProvider"/>
         <!-- Astrid part-->
         <intentionAction>
             <className>org.jetbrains.astrid.actions.SuggestionIntentionAction</className>
@@ -67,6 +68,7 @@
                         interface="org.jetbrains.iren.api.VariableNamesContributor" dynamic="true"/>
     </extensionPoints>
     <applicationListeners>
-        <listener class="org.jetbrains.iren.PluginLoadedListener" topic="com.intellij.ide.plugins.DynamicPluginListener"/>
+        <listener class="org.jetbrains.iren.PluginLoadedListener"
+                  topic="com.intellij.ide.plugins.DynamicPluginListener"/>
     </applicationListeners>
 </idea-plugin>
