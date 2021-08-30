@@ -54,7 +54,7 @@
         <applicationService serviceImplementation="org.jetbrains.astrid.stats.RenameMethodStatistics"/>
         <!-- End of Astrid part-->
     </extensions>
-    <extensions defaultExtensionNs="org.jetbrains.id.names.suggesting">
+    <extensions defaultExtensionNs="org.jetbrains.iren">
         <variableNamesContributor
                 implementation="org.jetbrains.iren.contributors.ProjectVariableNamesContributor"/>
     </extensions>
@@ -66,7 +66,7 @@
         </action>
     </actions>
     <extensionPoints>
-        <extensionPoint qualifiedName="org.jetbrains.id.names.suggesting.variableNamesContributor"
+        <extensionPoint qualifiedName="org.jetbrains.iren.variableNamesContributor"
                         interface="org.jetbrains.iren.api.VariableNamesContributor" dynamic="true"/>
     </extensionPoints>
     <applicationListeners>

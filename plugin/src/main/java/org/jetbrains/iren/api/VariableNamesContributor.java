@@ -10,7 +10,7 @@ import java.util.List;
 
 public interface VariableNamesContributor {
     ExtensionPointName<VariableNamesContributor> EP_NAME =
-            ExtensionPointName.create("org.jetbrains.id.names.suggesting.variableNamesContributor");
+            ExtensionPointName.create("org.jetbrains.iren.variableNamesContributor");
 
     /**
      * Contribute some variable names.
