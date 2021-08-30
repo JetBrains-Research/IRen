@@ -7,9 +7,6 @@ import com.intellij.ui.components.JBCheckBox;
 import com.intellij.ui.components.JBLabel;
 import com.intellij.ui.components.fields.IntegerField;
 import com.intellij.util.ui.FormBuilder;
-import com.intellij.util.ui.JBUI;
-import com.intellij.util.ui.UIUtil;
-import org.jetbrains.annotations.NotNull;
 
 import javax.swing.*;
 import java.time.temporal.ChronoUnit;
@@ -23,7 +20,6 @@ public class AppSettingsComponent {
 
     private final JPanel myMainPanel;
     private final JBCheckBox myAutomaticTrainingStatus = new JBCheckBox("Automatic training of models.");
-    private final JBCheckBox mySendStatisticsStatus = new JBCheckBox("Send anonymous statistics.");
     private final IntegerField myMaxTrainingTimeText = new IntegerField("30", 0, 10000);
     private final IntegerField myVocabularyCutOff = new IntegerField("0", 0, 20);
     private final IntegerField myModelsLifetime = new IntegerField();
@@ -37,8 +33,6 @@ public class AppSettingsComponent {
         myModelsLifetime.setColumns(columnWidth);
         myMainPanel = FormBuilder.createFormBuilder()
                 .addComponent(myAutomaticTrainingStatus, 1)
-                .addComponent(mySendStatisticsStatus, 1)
-                .addComponent(createToolTip("We collect only variable name predictions."))
                 .addVerticalGap(10)
                 .addLabeledComponent(new JBLabel("Maximal training time of models (s): "), myMaxTrainingTimeText, 1, false)
                 .addLabeledComponent(new JBLabel("Vocabulary cutoff: "), myVocabularyCutOff, 1, false)
@@ -48,12 +42,6 @@ public class AppSettingsComponent {
                 .addTooltip("The time after which model will be retrained.")
                 .addComponentFillVertically(new JPanel(), 0)
                 .getPanel();
-    }
-
-    private @NotNull JComponent createToolTip(String text) {
-        final JBLabel toolTip = new JBLabel(text, UIUtil.ComponentStyle.SMALL, UIUtil.FontColor.BRIGHTER);
-        toolTip.setBorder(JBUI.Borders.emptyLeft(10));
-        return toolTip;
     }
 
     public JPanel getPanel() {
@@ -70,14 +58,6 @@ public class AppSettingsComponent {
 
     public void setAutomaticTrainingStatus(boolean newStatus) {
         myAutomaticTrainingStatus.setSelected(newStatus);
-    }
-
-    public boolean getSendStatisticsStatus() {
-        return mySendStatisticsStatus.isSelected();
-    }
-
-    public void setSendStatisticsStatus(boolean newStatus) {
-        mySendStatisticsStatus.setSelected(newStatus);
     }
 
     public int getMaxTrainingTime() {

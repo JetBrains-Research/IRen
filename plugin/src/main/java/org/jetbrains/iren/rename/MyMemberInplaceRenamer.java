@@ -5,6 +5,7 @@ import com.intellij.codeInsight.lookup.LookupElement;
 import com.intellij.codeInsight.lookup.LookupElementDecorator;
 import com.intellij.codeInsight.lookup.LookupElementPresentation;
 import com.intellij.codeInsight.template.ExpressionContext;
+import com.intellij.internal.statistic.persistence.UsageStatisticsPersistenceComponent;
 import com.intellij.openapi.editor.Editor;
 import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiNamedElement;
@@ -60,7 +61,7 @@ public class MyMemberInplaceRenamer extends MemberInplaceRenamer {
         public LookupElement[] calculateLookupItems(ExpressionContext context) {
             LookupElement[] lookupElements = super.calculateLookupItems(context);
             List<LookupElement> newLookupElements = new ArrayList<>();
-            boolean sendStatistics = AppSettingsState.getInstance().sendStatistics;
+            boolean sendStatistics = UsageStatisticsPersistenceComponent.getInstance().isAllowed();
             RenameVariableStatistics stats = RenameVariableStatistics.getInstance();
             if (sendStatistics) {
                 stats.total++;

@@ -35,26 +35,6 @@ public class PluginLoadedListener implements DynamicPluginListener {
     public static void askPermissions() {
         AppSettingsState settings = AppSettingsState.getInstance();
         if (settings.firstOpen) {
-            Notification notification1 = new Notification(IdNamesSuggestingBundle.message("name"),
-                    "IRen: send anonymous statistics",
-                    "Do You allow sending anonymous statistics? We will only collect variable name predictions.",
-                    NotificationType.INFORMATION);
-            notification1.addAction(new NotificationAction("Yes (default)") {
-                @Override
-                public void actionPerformed(@NotNull AnActionEvent e, @NotNull Notification notification) {
-                    settings.sendStatistics = true;
-                    notification.expire();
-                }
-            });
-            notification1.addAction(new NotificationAction("No") {
-                @Override
-                public void actionPerformed(@NotNull AnActionEvent e, @NotNull Notification notification) {
-                    settings.sendStatistics = false;
-                    notification.expire();
-                }
-            });
-            Notifications.Bus.notify(notification1);
-
             Notification notification2 = new Notification(IdNamesSuggestingBundle.message("name"),
                     "IRen: automatic training permission",
                     "Do You allow automatic training of models?",
