@@ -33,6 +33,7 @@
         <applicationService serviceImplementation="org.jetbrains.iren.stats.RenameVariableStatistics"/>
         <applicationService serviceImplementation="org.jetbrains.iren.ModelStatsService"/>
         <applicationService serviceImplementation="org.jetbrains.iren.ModelManager"/>
+        <applicationService serviceImplementation="org.jetbrains.iren.InvokeLaterService"/>
         <applicationService serviceImplementation="org.jetbrains.iren.IdNamesSuggestingService"/>
         <applicationService serviceImplementation="org.jetbrains.iren.inspections.variable.PredictionsStorage"/>
         <backgroundPostStartupActivity

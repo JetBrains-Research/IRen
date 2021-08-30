@@ -17,6 +17,7 @@ public class RenameVariableStatistics implements PersistentStateComponent<Rename
     public int total = 0;
     public int applied = 0;
     public List<Integer> ranks = new ArrayList<>();
+    public int appliedDefault = 0;
 
     public static RenameVariableStatistics getInstance() {
         return ApplicationManager.getApplication().getService(RenameVariableStatistics.class);

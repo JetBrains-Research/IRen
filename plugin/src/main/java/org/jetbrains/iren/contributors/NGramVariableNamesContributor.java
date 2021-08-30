@@ -6,6 +6,7 @@ import com.intellij.psi.PsiVariable;
 import kotlin.Pair;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.iren.InvokeLaterService;
 import org.jetbrains.iren.api.VariableNamesContributor;
 import org.jetbrains.iren.impl.NGramModelRunner;
 import org.jetbrains.iren.storages.VarNamePrediction;
@@ -34,7 +35,7 @@ public abstract class NGramVariableNamesContributor implements VariableNamesCont
         predictionList.addAll(modelRunner.suggestNames(variable, forgetContext()));
 
         if (this.forgetFile()) {
-            modelRunner.learnPsiFile(file);
+            InvokeLaterService.getInstance().save((String x) -> modelRunner.learnPsiFile(file));
         }
         return modelRunner.getModelPriority();
     }

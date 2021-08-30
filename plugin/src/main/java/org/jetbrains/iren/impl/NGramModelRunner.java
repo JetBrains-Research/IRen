@@ -23,6 +23,8 @@ import kotlin.Pair;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.iren.IdNamesSuggestingBundle;
+import org.jetbrains.iren.IdNamesSuggestingService;
+import org.jetbrains.iren.InvokeLaterService;
 import org.jetbrains.iren.VocabularyManager;
 import org.jetbrains.iren.settings.AppSettingsState;
 import org.jetbrains.iren.storages.Context;
@@ -30,7 +32,6 @@ import org.jetbrains.iren.storages.StringCounter;
 import org.jetbrains.iren.storages.VarNamePrediction;
 import org.jetbrains.iren.utils.NotificationsUtil;
 import org.jetbrains.iren.utils.PsiUtils;
-import org.jetbrains.iren.IdNamesSuggestingService;
 
 import java.io.*;
 import java.nio.charset.StandardCharsets;
@@ -94,7 +95,7 @@ public class NGramModelRunner {
         @NotNull List<VarNamePrediction> result = rankCandidates(candidates, unknownContext);
 
         if (forgetContext) {
-            learnContext(intContext);
+            InvokeLaterService.getInstance().save((String x) -> learnContext(intContext.with(myVocabulary.toIndex(x))));
         }
         return result;
     }

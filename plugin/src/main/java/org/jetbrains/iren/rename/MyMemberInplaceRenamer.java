@@ -14,7 +14,7 @@ import com.intellij.refactoring.rename.inplace.MemberInplaceRenamer;
 import com.intellij.refactoring.rename.inplace.MyLookupExpression;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.jetbrains.iren.settings.AppSettingsState;
+import org.jetbrains.iren.InvokeLaterService;
 import org.jetbrains.iren.stats.RenameVariableStatistics;
 
 import java.util.*;
@@ -37,10 +37,8 @@ public class MyMemberInplaceRenamer extends MemberInplaceRenamer {
 
     @Override
     protected MyLookupExpression createLookupExpression(PsiElement selectedElement) {
-        LinkedHashSet<String> names = new LinkedHashSet<>();
+        LinkedHashSet<String> names = new LinkedHashSet<>(myNameProbs.keySet());
         NameSuggestionProvider.suggestNames(myElementToRename, selectedElement, names);
-        names.addAll(myNameProbs.keySet());
-//        TODO: think about file relearning after insertion of the name
         return new NewLookupExpression(getInitialName(), names, myElementToRename, selectedElement, shouldSelectAll(), myAdvertisementText, myNameProbs);
     }
 
@@ -80,13 +78,23 @@ public class MyMemberInplaceRenamer extends MemberInplaceRenamer {
                                     @Override
                                     public void handleInsert(@NotNull InsertionContext context) {
                                         super.handleInsert(context);
+                                        InvokeLaterService.getInstance().acceptAll(getLookupString());
                                         if (sendStatistics) {
                                             stats.applied++;
                                             stats.ranks.add(namesIndex.get(name));
                                         }
                                     }
                                 } :
-                                lookupElement);
+                                new LookupElementDecorator<LookupElement>(lookupElement) {
+                                    @Override
+                                    public void handleInsert(@NotNull InsertionContext context) {
+                                        super.handleInsert(context);
+                                        InvokeLaterService.getInstance().acceptAll(getLookupString());
+                                        if (sendStatistics) {
+                                            stats.appliedDefault++;
+                                        }
+                                    }
+                                });
             }
             return newLookupElements.toArray(lookupElements);
         }
