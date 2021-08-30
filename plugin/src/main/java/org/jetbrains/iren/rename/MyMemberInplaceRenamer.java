@@ -78,7 +78,7 @@ public class MyMemberInplaceRenamer extends MemberInplaceRenamer {
                                     @Override
                                     public void handleInsert(@NotNull InsertionContext context) {
                                         super.handleInsert(context);
-                                        InvokeLaterService.getInstance().acceptAll(getLookupString());
+                                        InvokeLaterService.getInstance().acceptAll(name);
                                         if (sendStatistics) {
                                             stats.applied++;
                                             stats.ranks.add(namesIndex.get(name));
@@ -89,7 +89,7 @@ public class MyMemberInplaceRenamer extends MemberInplaceRenamer {
                                     @Override
                                     public void handleInsert(@NotNull InsertionContext context) {
                                         super.handleInsert(context);
-                                        InvokeLaterService.getInstance().acceptAll(getLookupString());
+                                        InvokeLaterService.getInstance().acceptAll(name);
                                         if (sendStatistics) {
                                             stats.appliedDefault++;
                                         }
