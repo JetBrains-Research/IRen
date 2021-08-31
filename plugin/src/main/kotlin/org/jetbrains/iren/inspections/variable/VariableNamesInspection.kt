@@ -22,7 +22,7 @@ class VariableNamesInspection : AbstractBaseJavaLocalInspectionTool() {
         override fun visitVariable(variable: PsiVariable?) {
             if (variable == null || !ModelStatsService.getInstance().isLoaded(ProjectVariableNamesContributor::class.java, variable.project)) return
             val predictions = thereIsBetterName(variable)
-            if (predictions.isNotEmpty()) {
+            if (predictions.size > 5) {
                 holder.registerProblem(
                     variable.nameIdentifier ?: variable,
                     "There are suggestions for variable name",
@@ -34,7 +34,8 @@ class VariableNamesInspection : AbstractBaseJavaLocalInspectionTool() {
         }
 
         private fun thereIsBetterName(variable: PsiVariable): LinkedHashMap<String, Double> {
-            val predictions = PredictionsStorage.getInstance().getPrediction(variable.createSmartPointer()) ?: LinkedHashMap()
+            val predictions =
+                PredictionsStorage.getInstance().getPrediction(variable.createSmartPointer()) ?: LinkedHashMap()
             val threshold = predictions[variable.name] ?: return predictions
             return predictions.filterValues { v -> v > threshold }.toMap(LinkedHashMap())
         }
@@ -46,8 +47,7 @@ class VariableNamesInspection : AbstractBaseJavaLocalInspectionTool() {
     ) : LocalQuickFix {
         override fun applyFix(project: Project, descriptor: ProblemDescriptor) {
             val editor = FileEditorManager.getInstance(project).selectedTextEditor!!
-            val inplaceRefactoring =
-                MyMemberInplaceRenamer(variable.element!!, null, editor)
+            val inplaceRefactoring = MyMemberInplaceRenamer(variable.element!!, null, editor)
             inplaceRefactoring.performInplaceRefactoring(predictions)
         }
 
