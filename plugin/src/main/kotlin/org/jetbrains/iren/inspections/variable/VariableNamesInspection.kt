@@ -68,4 +68,7 @@ class VariableNamesInspection : AbstractBaseJavaLocalInspectionTool() {
         return "VariableNamesInspection"
     }
 
+    override fun isEnabledByDefault(): Boolean {
+        return true
+    }
 }
