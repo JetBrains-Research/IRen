@@ -23,11 +23,11 @@ public class LoadingModelStartupActivity implements StartupActivity.Background {
         RenameHandler.EP_NAME.getPoint().unregisterExtension(VariableInplaceRenameHandler.class);
         RenameHandler.EP_NAME.getPoint().unregisterExtension(MemberInplaceRenameHandler.class);
         askPermissions();
-        ProgressManager.getInstance().run(new Task.Backgroundable(project, IdNamesSuggestingBundle.message("loading.project.model", project.getName())) {
+        ProgressManager.getInstance().run(new Task.Backgroundable(project, IRenBundle.message("loading.project.model", project.getName())) {
             @Override
             public void run(@NotNull ProgressIndicator indicator) {
                 if (ModelStatsService.getInstance().needRetraining(ProjectVariableNamesContributor.class, project)) {
-                    indicator.setText(IdNamesSuggestingBundle.message("training.progress.indicator.text", project.getName()));
+                    indicator.setText(IRenBundle.message("training.progress.indicator.text", project.getName()));
                     ReadAction.nonBlocking(() -> ModelTrainer.trainProjectNGramModel(project, indicator, true))
                             .inSmartMode(project).executeSynchronously();
                     return;
@@ -41,7 +41,7 @@ public class LoadingModelStartupActivity implements StartupActivity.Background {
                     ModelStatsService.getInstance().setLoaded(ProjectVariableNamesContributor.class, project, true);
                     NotificationsUtil.notify(project, "Model is loaded", "");
                 } else {
-                    indicator.setText(IdNamesSuggestingBundle.message("training.progress.indicator.text", project.getName()));
+                    indicator.setText(IRenBundle.message("training.progress.indicator.text", project.getName()));
                     ReadAction.nonBlocking(() -> ModelTrainer.trainProjectNGramModel(project, indicator, true))
                             .inSmartMode(project).executeSynchronously();
                 }

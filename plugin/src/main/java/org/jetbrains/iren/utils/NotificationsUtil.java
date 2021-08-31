@@ -5,7 +5,7 @@ import com.intellij.notification.NotificationType;
 import com.intellij.notification.Notifications;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.registry.Registry;
-import org.jetbrains.iren.IdNamesSuggestingBundle;
+import org.jetbrains.iren.IRenBundle;
 
 public class NotificationsUtil {
     /**
@@ -14,7 +14,7 @@ public class NotificationsUtil {
     public static void notify(Project project, String title, String context) {
         if (isDeveloperMode()) {
             Notifications.Bus.notify(
-                    new Notification(IdNamesSuggestingBundle.message("name"),
+                    new Notification(IRenBundle.message("name"),
                             title,
                             context,
                             NotificationType.INFORMATION),

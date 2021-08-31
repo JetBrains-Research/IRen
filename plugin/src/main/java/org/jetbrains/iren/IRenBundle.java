@@ -7,12 +7,12 @@ import org.jetbrains.annotations.PropertyKey;
 
 import java.util.function.Supplier;
 
-public class IdNamesSuggestingBundle extends DynamicBundle {
+public class IRenBundle extends DynamicBundle {
     @NonNls
     private static final String BUNDLE = "messages.IRen";
-    private static final IdNamesSuggestingBundle INSTANCE = new IdNamesSuggestingBundle();
+    private static final IRenBundle INSTANCE = new IRenBundle();
 
-    private IdNamesSuggestingBundle() {
+    private IRenBundle() {
         super(BUNDLE);
     }
 

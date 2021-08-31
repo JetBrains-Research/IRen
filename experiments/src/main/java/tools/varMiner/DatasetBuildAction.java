@@ -11,7 +11,7 @@ import com.intellij.openapi.project.Project;
 import com.intellij.psi.search.FileTypeIndex;
 import com.intellij.psi.search.GlobalSearchScope;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.iren.IdNamesSuggestingBundle;
+import org.jetbrains.iren.IRenBundle;
 import org.jetbrains.iren.utils.NotificationsUtil;
 
 import java.time.Duration;
@@ -23,10 +23,10 @@ public class DatasetBuildAction extends AnAction {
         Project project = e.getProject();
         if (project != null &&
                 FileTypeIndex.containsFileOfType(JavaFileType.INSTANCE, GlobalSearchScope.projectScope(project))) {
-            ProgressManager.getInstance().run(new Task.Backgroundable(project, IdNamesSuggestingBundle.message("building.dataset.title")) {
+            ProgressManager.getInstance().run(new Task.Backgroundable(project, IRenBundle.message("building.dataset.title")) {
                 @Override
                 public void run(@NotNull ProgressIndicator progressIndicator) {
-                    progressIndicator.setText(IdNamesSuggestingBundle.message("building.dataset.for.project", project.getName()));
+                    progressIndicator.setText(IRenBundle.message("building.dataset.for.project", project.getName()));
                     ReadAction.nonBlocking(() -> {
                         Instant start = Instant.now();
                         DatasetExtractor.build(project, progressIndicator);

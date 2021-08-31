@@ -1,8 +1,8 @@
 <idea-plugin>
-    <id>com.github.davidenkoim.idnamessuggestingplugin</id>
-    <name>Id Names Suggesting</name>
+    <id>com.github.davidenkoim.irenplugin</id>
+    <name>IRen</name>
     <vendor>davidenkoim</vendor>
-    <resource-bundle>messages.IdNamesSuggesting</resource-bundle>
+    <resource-bundle>messages.IRen</resource-bundle>
     <!-- Product and plugin compatibility requirements -->
     <!-- https://www.jetbrains.org/intellij/sdk/docs/basics/getting_started/plugin_compatibility.html -->
 
@@ -29,9 +29,9 @@
         </intentionAction>
         <applicationService serviceImplementation="org.jetbrains.iren.ModelManager"/>
         <applicationService serviceImplementation="org.jetbrains.iren.ModelStatsService"/>
-        <applicationService serviceImplementation="org.jetbrains.iren.IdNamesSuggestingService"/>
+        <applicationService serviceImplementation="org.jetbrains.iren.IRenSuggestingService"/>
     </extensions>
-    <extensions defaultExtensionNs="org.jetbrains.id.names.suggesting">
+    <extensions defaultExtensionNs="org.jetbrains.iren">
         <variableNamesContributor
                 implementation="org.jetbrains.iren.contributors.FileVariableNamesContributor"/>
         <variableNamesContributor
@@ -40,7 +40,7 @@
                 implementation="org.jetbrains.iren.contributors.GlobalVariableNamesContributor"/>
     </extensions>
     <extensionPoints>
-        <extensionPoint qualifiedName="org.jetbrains.id.names.suggesting.variableNamesContributor"
+        <extensionPoint qualifiedName="org.jetbrains.iren.variableNamesContributor"
                         interface="org.jetbrains.iren.api.VariableNamesContributor" dynamic="true"/>
     </extensionPoints>
 </idea-plugin>

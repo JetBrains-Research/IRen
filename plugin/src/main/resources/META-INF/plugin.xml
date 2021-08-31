@@ -1,4 +1,4 @@
-<idea-plugin require-restart="false">
+<idea-plugin require-restart="true">
     <id>com.github.davidenkoim.irenplugin</id>
     <name>IRen</name>
     <vendor>davidenkoim</vendor>
@@ -34,7 +34,7 @@
         <applicationService serviceImplementation="org.jetbrains.iren.stats.RenameVariableStatistics"/>
         <applicationService serviceImplementation="org.jetbrains.iren.ModelStatsService"/>
         <applicationService serviceImplementation="org.jetbrains.iren.ModelManager"/>
-        <applicationService serviceImplementation="org.jetbrains.iren.IdNamesSuggestingService"/>
+        <applicationService serviceImplementation="org.jetbrains.iren.IRenSuggestingService"/>
         <applicationService serviceImplementation="org.jetbrains.iren.inspections.variable.PredictionsStorage"/>
         <backgroundPostStartupActivity
                 implementation="org.jetbrains.iren.LoadingModelStartupActivity"/>

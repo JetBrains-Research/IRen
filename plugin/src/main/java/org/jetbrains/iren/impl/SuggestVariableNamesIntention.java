@@ -8,21 +8,21 @@ import com.intellij.psi.PsiReferenceExpression;
 import com.intellij.psi.PsiVariable;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.jetbrains.iren.IdNamesSuggestingBundle;
-import org.jetbrains.iren.IdNamesSuggestingService;
+import org.jetbrains.iren.IRenBundle;
+import org.jetbrains.iren.IRenSuggestingService;
+import org.jetbrains.iren.api.IRenIntentionBase;
 import org.jetbrains.iren.rename.MyMemberInplaceRenamer;
-import org.jetbrains.iren.api.SuggestIdNamesIntentionBase;
 
-public class SuggestVariableNamesIntention extends SuggestIdNamesIntentionBase<PsiVariable> {
+public class SuggestVariableNamesIntention extends IRenIntentionBase<PsiVariable> {
     @Override
     public @NotNull String getText() {
-        return IdNamesSuggestingBundle.message("intention.text");
+        return IRenBundle.message("intention.text");
     }
 
     @Override
     protected void processIntention(@NotNull Project project, @NotNull Editor editor, @NotNull PsiVariable variable) {
         MyMemberInplaceRenamer inplaceRefactoring = new MyMemberInplaceRenamer(variable, editor);
-        inplaceRefactoring.performInplaceRefactoring(IdNamesSuggestingService.getInstance()
+        inplaceRefactoring.performInplaceRefactoring(IRenSuggestingService.getInstance()
                                                                              .suggestVariableName(variable));
     }
 

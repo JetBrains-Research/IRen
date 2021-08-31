@@ -3,7 +3,7 @@ package org.jetbrains.iren.test;
 import com.intellij.codeInsight.intention.IntentionAction;
 import com.intellij.util.containers.ContainerUtil;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.iren.IdNamesSuggestingBundle;
+import org.jetbrains.iren.IRenBundle;
 import org.jetbrains.iren.impl.TrainProjectNGramModelAction;
 
 public class SuggestVariableNamesIntentionTest extends IdNamesSuggestingTestCase {
@@ -32,13 +32,13 @@ public class SuggestVariableNamesIntentionTest extends IdNamesSuggestingTestCase
         configureByFile();
         myFixture.testAction(new TrainProjectNGramModelAction());
         assertContainsElements(ContainerUtil.map(myFixture.getAvailableIntentions(), IntentionAction::getText),
-                IdNamesSuggestingBundle.message("intention.text"));
+                IRenBundle.message("intention.text"));
     }
 
     private void doTestIntentionIsNotAvailable() {
         configureByFile();
         myFixture.testAction(new TrainProjectNGramModelAction());
         assertDoesntContain(ContainerUtil.map(myFixture.getAvailableIntentions(), IntentionAction::getText),
-                IdNamesSuggestingBundle.message("intention.text"));
+                IRenBundle.message("intention.text"));
     }
 }

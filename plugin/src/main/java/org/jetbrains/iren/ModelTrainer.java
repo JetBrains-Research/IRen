@@ -28,7 +28,7 @@ public class ModelTrainer {
         ModelManager.getInstance().putModelRunner(ProjectVariableNamesContributor.class, project, modelRunner);
         if (save) {
             if (progressIndicator != null) {
-                progressIndicator.setText(IdNamesSuggestingBundle.message("saving.project.model", project.getName()));
+                progressIndicator.setText(IRenBundle.message("saving.project.model", project.getName()));
             }
             double size = modelRunner.save(ModelManager.getPath(project), progressIndicator);
             int vocabSize = modelRunner.getVocabulary().size();
@@ -59,7 +59,7 @@ public class ModelTrainer {
         ModelManager.getInstance().putModelRunner(GlobalVariableNamesContributor.class, modelRunner);
         if (save) {
             if (progressIndicator != null) {
-                progressIndicator.setText(IdNamesSuggestingBundle.message("saving.global.model"));
+                progressIndicator.setText(IRenBundle.message("saving.global.model"));
             }
             double size = modelRunner.save(ModelManager.getGlobalPath(), progressIndicator);
             int vocabSize = modelRunner.getVocabulary().size();

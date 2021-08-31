@@ -18,11 +18,11 @@ import java.time.Instant;
 import java.util.*;
 import java.util.stream.Collectors;
 
-public class IdNamesSuggestingService {
+public class IRenSuggestingService {
     public static final int PREDICTION_CUTOFF = 10;
 
-    public static IdNamesSuggestingService getInstance() {
-        return ServiceManager.getService(IdNamesSuggestingService.class);
+    public static IRenSuggestingService getInstance() {
+        return ServiceManager.getService(IRenSuggestingService.class);
     }
 
     public LinkedHashMap<String, Double> suggestVariableName(@NotNull PsiVariable variable) {
@@ -59,7 +59,7 @@ public class IdNamesSuggestingService {
                     kv.getValue()));
         }
         NotificationsUtil.notify(project,
-                "Id Names Suggesting Stats",
+                "IRen Stats",
                 notifications.toString());
     }
 

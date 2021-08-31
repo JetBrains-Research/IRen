@@ -7,7 +7,7 @@ import com.intellij.openapi.Disposable
 import com.intellij.openapi.components.ServiceManager
 import com.intellij.psi.PsiVariable
 import com.intellij.psi.SmartPsiElementPointer
-import org.jetbrains.iren.IdNamesSuggestingService
+import org.jetbrains.iren.IRenSuggestingService
 
 
 class PredictionsStorage : Disposable {
@@ -23,7 +23,7 @@ class PredictionsStorage : Disposable {
             object : CacheLoader<SmartPsiElementPointer<PsiVariable>?, LinkedHashMap<String, Double>?>() {
                 override fun load(key: SmartPsiElementPointer<PsiVariable>?): LinkedHashMap<String, Double>? { // no checked exception
                     if (key != null) {
-                        return IdNamesSuggestingService.getInstance().suggestVariableName(key.element ?: return null)
+                        return IRenSuggestingService.getInstance().suggestVariableName(key.element ?: return null)
                     }
                     return null
                 }

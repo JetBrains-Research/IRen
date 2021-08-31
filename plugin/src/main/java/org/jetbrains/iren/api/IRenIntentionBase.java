@@ -13,7 +13,7 @@ import org.jetbrains.annotations.Nullable;
 import org.jetbrains.iren.ModelStatsService;
 import org.jetbrains.iren.contributors.ProjectVariableNamesContributor;
 
-public abstract class SuggestIdNamesIntentionBase<T extends PsiNameIdentifierOwner> extends BaseElementAtCaretIntentionAction {
+public abstract class IRenIntentionBase<T extends PsiNameIdentifierOwner> extends BaseElementAtCaretIntentionAction {
     @Override
     public @NotNull String getFamilyName() {
         return getText();

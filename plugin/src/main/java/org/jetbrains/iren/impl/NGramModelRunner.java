@@ -22,8 +22,8 @@ import com.intellij.util.ObjectUtils;
 import kotlin.Pair;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.jetbrains.iren.IdNamesSuggestingBundle;
-import org.jetbrains.iren.IdNamesSuggestingService;
+import org.jetbrains.iren.IRenBundle;
+import org.jetbrains.iren.IRenSuggestingService;
 import org.jetbrains.iren.ModelManager;
 import org.jetbrains.iren.VocabularyManager;
 import org.jetbrains.iren.settings.AppSettingsState;
@@ -115,7 +115,7 @@ public class NGramModelRunner {
                     getModelPriority()));
         }
         predictions.sort((a, b) -> -Double.compare(a.getProbability(), b.getProbability()));
-        return predictions.subList(0, Math.min(predictions.size(), IdNamesSuggestingService.PREDICTION_CUTOFF));
+        return predictions.subList(0, Math.min(predictions.size(), IRenSuggestingService.PREDICTION_CUTOFF));
     }
 
     private static @NotNull List<Double> softmax(@NotNull List<Double> logits, double temperature) {
@@ -307,7 +307,7 @@ public class NGramModelRunner {
         try {
             if (progressIndicator != null) {
                 progressIndicator.setIndeterminate(true);
-                progressIndicator.setText2(IdNamesSuggestingBundle.message("saving.file", counterFile.getName()));
+                progressIndicator.setText2(IRenBundle.message("saving.file", counterFile.getName()));
             }
             counterFile.getParentFile().mkdirs();
             counterFile.createNewFile();
@@ -318,7 +318,7 @@ public class NGramModelRunner {
             fileOutputStream.close();
 
             if (progressIndicator != null) {
-                progressIndicator.setText2(IdNamesSuggestingBundle.message("saving.file", rememberedVariablesFile.getName()));
+                progressIndicator.setText2(IRenBundle.message("saving.file", rememberedVariablesFile.getName()));
             }
             rememberedVariablesFile.createNewFile();
             Gson gson = new GsonBuilder().create();
@@ -332,7 +332,7 @@ public class NGramModelRunner {
             }
 
             if (progressIndicator != null) {
-                progressIndicator.setText2(IdNamesSuggestingBundle.message("saving.file", vocabularyFile.getName()));
+                progressIndicator.setText2(IRenBundle.message("saving.file", vocabularyFile.getName()));
             }
             vocabularyFile.createNewFile();
             VocabularyRunner.INSTANCE.write(myVocabulary, vocabularyFile);
@@ -350,7 +350,7 @@ public class NGramModelRunner {
             try {
                 if (progressIndicator != null) {
                     progressIndicator.setIndeterminate(true);
-                    progressIndicator.setText2(IdNamesSuggestingBundle.message("loading.file", counterFile.getName()));
+                    progressIndicator.setText2(IRenBundle.message("loading.file", counterFile.getName()));
                 }
                 FileInputStream fileInputStream = new FileInputStream(counterFile);
                 ObjectInputStream objectInputStream = new ObjectInputStream(fileInputStream);
@@ -362,14 +362,14 @@ public class NGramModelRunner {
                 }
 
                 if (progressIndicator != null) {
-                    progressIndicator.setText2(IdNamesSuggestingBundle.message("loading.file", rememberedVariablesFile.getName()));
+                    progressIndicator.setText2(IRenBundle.message("loading.file", rememberedVariablesFile.getName()));
                 }
                 Gson gson = new Gson();
                 JsonReader reader = new JsonReader(new FileReader(rememberedVariablesFile));
                 mapToRemember(gson.fromJson(reader, HashMap.class));
 
                 if (progressIndicator != null) {
-                    progressIndicator.setText2(IdNamesSuggestingBundle.message("loading.file", vocabularyFile.getName()));
+                    progressIndicator.setText2(IRenBundle.message("loading.file", vocabularyFile.getName()));
                 }
                 VocabularyManager.clear(myVocabulary);
                 VocabularyManager.read(vocabularyFile, myVocabulary);

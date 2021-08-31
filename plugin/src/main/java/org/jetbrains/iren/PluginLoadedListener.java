@@ -35,7 +35,7 @@ public class PluginLoadedListener implements DynamicPluginListener {
     public static void askPermissions() {
         AppSettingsState settings = AppSettingsState.getInstance();
         if (settings.firstOpen) {
-            Notification notification2 = new Notification(IdNamesSuggestingBundle.message("name"),
+            Notification notification2 = new Notification(IRenBundle.message("name"),
                     "IRen: automatic training permission",
                     "Do You allow automatic training of models?",
                     NotificationType.INFORMATION);
@@ -46,10 +46,10 @@ public class PluginLoadedListener implements DynamicPluginListener {
                     notification.expire();
                     @Nullable Project project = e.getProject();
                     if (project == null) return;
-                    ProgressManager.getInstance().run(new Task.Backgroundable(project, IdNamesSuggestingBundle.message("loading.project.model", project.getName())) {
+                    ProgressManager.getInstance().run(new Task.Backgroundable(project, IRenBundle.message("loading.project.model", project.getName())) {
                         @Override
                         public void run(@NotNull ProgressIndicator indicator) {
-                            indicator.setText(IdNamesSuggestingBundle.message("training.progress.indicator.text", project.getName()));
+                            indicator.setText(IRenBundle.message("training.progress.indicator.text", project.getName()));
                             ReadAction.nonBlocking(() -> ModelTrainer.trainProjectNGramModel(project, indicator, true))
                                     .inSmartMode(project).executeSynchronously();
                         }

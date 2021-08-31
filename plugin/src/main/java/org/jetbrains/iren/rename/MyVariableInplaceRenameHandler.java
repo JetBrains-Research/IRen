@@ -12,7 +12,7 @@ import com.intellij.refactoring.rename.inplace.InplaceRefactoring;
 import com.intellij.refactoring.rename.inplace.VariableInplaceRenameHandler;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.jetbrains.iren.IdNamesSuggestingService;
+import org.jetbrains.iren.IRenSuggestingService;
 import org.jetbrains.iren.ModelStatsService;
 import org.jetbrains.iren.contributors.ProjectVariableNamesContributor;
 
@@ -28,7 +28,7 @@ public class MyVariableInplaceRenameHandler extends VariableInplaceRenameHandler
             @Nullable PsiVariable variable = (PsiVariable) elementToRename;
             MyMemberInplaceRenamer renamer = createMyRenamer(variable, editor);
             boolean startedRename = renamer != null && renamer.performInplaceRefactoring(
-                    IdNamesSuggestingService.getInstance().suggestVariableName(variable));
+                    IRenSuggestingService.getInstance().suggestVariableName(variable));
 
             if (!startedRename) {
                 performDialogRename(variable, editor, dataContext, renamer != null ? variable.getName() : null);

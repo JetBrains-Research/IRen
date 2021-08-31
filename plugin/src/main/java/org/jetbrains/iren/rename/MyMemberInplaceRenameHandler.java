@@ -24,7 +24,7 @@ import com.intellij.refactoring.rename.inplace.MemberInplaceRenamer;
 import com.intellij.util.ObjectUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.jetbrains.iren.IdNamesSuggestingService;
+import org.jetbrains.iren.IRenSuggestingService;
 import org.jetbrains.iren.ModelStatsService;
 import org.jetbrains.iren.contributors.ProjectVariableNamesContributor;
 
@@ -52,7 +52,7 @@ public class MyMemberInplaceRenameHandler extends MemberInplaceRenameHandler {
                             public void pass(PsiElement element) {
                                 if (elementToRename instanceof PsiVariable) {
                                     final MyMemberInplaceRenamer renamer = new MyMemberInplaceRenamer((PsiNameIdentifierOwner) elementToRename, element, editor);
-                                    if (!renamer.performInplaceRefactoring(IdNamesSuggestingService.getInstance().suggestVariableName((PsiVariable) elementToRename))) {
+                                    if (!renamer.performInplaceRefactoring(IRenSuggestingService.getInstance().suggestVariableName((PsiVariable) elementToRename))) {
                                         performDialogRename(elementToRename, editor, createDataContext(contextComponent, newName, elementToRename), renamer.getInitialName());
                                     }
                                 } else {
