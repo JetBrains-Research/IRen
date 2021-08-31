@@ -20,6 +20,7 @@ import com.intellij.refactoring.rename.PsiElementRenameHandler;
 import com.intellij.refactoring.rename.RenamePsiElementProcessor;
 import com.intellij.refactoring.rename.inplace.InplaceRefactoring;
 import com.intellij.refactoring.rename.inplace.MemberInplaceRenameHandler;
+import com.intellij.refactoring.rename.inplace.MemberInplaceRenamer;
 import com.intellij.util.ObjectUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -49,11 +50,16 @@ public class MyMemberInplaceRenameHandler extends MemberInplaceRenameHandler {
                         processor.substituteElementToRename(elementToRename, editor, new Pass<PsiElement>() {
                             @Override
                             public void pass(PsiElement element) {
-                                PsiVariable variable = (PsiVariable) elementToRename;
-                                final MyMemberInplaceRenamer renamer = createMyMemberRenamer(element, (PsiNameIdentifierOwner) elementToRename, editor);
-                                boolean startedRename = renamer.performInplaceRefactoring(IdNamesSuggestingService.getInstance().suggestVariableName(variable));
-                                if (!startedRename) {
-                                    performDialogRename(elementToRename, editor, createDataContext(contextComponent, newName, elementToRename), variable.getName());
+                                if (elementToRename instanceof PsiVariable) {
+                                    final MyMemberInplaceRenamer renamer = new MyMemberInplaceRenamer((PsiNameIdentifierOwner) elementToRename, element, editor);
+                                    if (!renamer.performInplaceRefactoring(IdNamesSuggestingService.getInstance().suggestVariableName((PsiVariable) elementToRename))) {
+                                        performDialogRename(elementToRename, editor, createDataContext(contextComponent, newName, elementToRename), renamer.getInitialName());
+                                    }
+                                } else {
+                                    final MemberInplaceRenamer renamer = createMemberRenamer(element, (PsiNameIdentifierOwner) elementToRename, editor);
+                                    if (!renamer.performInplaceRename()) {
+                                        performDialogRename(elementToRename, editor, createDataContext(contextComponent, newName, elementToRename), renamer.getInitialName());
+                                    }
                                 }
                             }
                         });
