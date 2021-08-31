@@ -12,6 +12,7 @@ import org.jetbrains.iren.utils.NotificationsUtil;
 
 public class ModelTrainer {
     public static void trainProjectNGramModel(@NotNull Project project, @Nullable ProgressIndicator progressIndicator, boolean save) {
+        if (ModelStatsService.getInstance().isTraining()) return;
         @NotNull ModelStatsService loadingService = ModelStatsService.getInstance();
         loadingService.setTrained(ProjectVariableNamesContributor.class, project, false);
         loadingService.setLoaded(ProjectVariableNamesContributor.class, project, false);
