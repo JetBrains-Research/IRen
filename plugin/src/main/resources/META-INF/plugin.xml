@@ -1,12 +1,13 @@
 <idea-plugin require-restart="false">
-    <id>com.github.davidenkoim.idnamessuggestingplugin</id>
-    <name>Id Names Suggesting</name>
+    <id>com.github.davidenkoim.irenplugin</id>
+    <name>IRen</name>
     <vendor>davidenkoim</vendor>
-    <resource-bundle>messages.IdNamesSuggesting</resource-bundle>
+    <resource-bundle>messages.IRen</resource-bundle>
     <!-- Product and plugin compatibility requirements -->
     <!-- https://www.jetbrains.org/intellij/sdk/docs/basics/getting_started/plugin_compatibility.html -->
 
     <description>
+<!--        TODO: update description-->
         <![CDATA[
       <p>Provides assistance in naming variables.</p>
 

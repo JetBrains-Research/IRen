@@ -9,7 +9,7 @@ import java.util.function.Supplier;
 
 public class IdNamesSuggestingBundle extends DynamicBundle {
     @NonNls
-    private static final String BUNDLE = "messages.IdNamesSuggesting";
+    private static final String BUNDLE = "messages.IRen";
     private static final IdNamesSuggestingBundle INSTANCE = new IdNamesSuggestingBundle();
 
     private IdNamesSuggestingBundle() {
