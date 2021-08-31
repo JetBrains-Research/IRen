@@ -23,15 +23,13 @@ public class LoadingModelStartupActivity implements StartupActivity.Background {
         RenameHandler.EP_NAME.getPoint().unregisterExtension(VariableInplaceRenameHandler.class);
         RenameHandler.EP_NAME.getPoint().unregisterExtension(MemberInplaceRenameHandler.class);
         askPermissions();
+        if (ModelStatsService.getInstance().needRetraining(ProjectVariableNamesContributor.class, project)) {
+            ModelTrainer.trainProjectNGramModelInBackground(project);
+            return;
+        }
         ProgressManager.getInstance().run(new Task.Backgroundable(project, IRenBundle.message("loading.project.model", project.getName())) {
             @Override
             public void run(@NotNull ProgressIndicator indicator) {
-                if (ModelStatsService.getInstance().needRetraining(ProjectVariableNamesContributor.class, project)) {
-                    indicator.setText(IRenBundle.message("training.progress.indicator.text", project.getName()));
-                    ReadAction.nonBlocking(() -> ModelTrainer.trainProjectNGramModel(project, indicator, true))
-                            .inSmartMode(project).executeSynchronously();
-                    return;
-                }
                 NGramModelRunner modelRunner = new NGramModelRunner(NGramVariableNamesContributor.SUPPORTED_TYPES, true);
                 NotificationsUtil.notify(project, "Loading model", "");
                 if (modelRunner.load(ModelManager.getPath(project), indicator)) {

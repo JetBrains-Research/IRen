@@ -61,6 +61,7 @@ public class ModelManager implements Disposable {
     }
 
     private final Map<String, Consumer<String>> consumerMap = new HashMap<>();
+
     public void invokeLater(@NotNull Project project, Consumer<String> consumer) {
         invoke(project, null);
         consumerMap.put(project.getLocationHash(), consumer);
@@ -69,7 +70,11 @@ public class ModelManager implements Disposable {
     public void invoke(@NotNull Project project, String name) {
         Consumer<String> consumer = consumerMap.remove(project.getLocationHash());
         if (consumer != null) {
-            consumer.accept(name);
+            try {
+                consumer.accept(name);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
         }
     }
 }

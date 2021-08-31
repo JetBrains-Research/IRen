@@ -7,10 +7,6 @@ import com.intellij.notification.NotificationAction;
 import com.intellij.notification.NotificationType;
 import com.intellij.notification.Notifications;
 import com.intellij.openapi.actionSystem.AnActionEvent;
-import com.intellij.openapi.application.ReadAction;
-import com.intellij.openapi.progress.ProgressIndicator;
-import com.intellij.openapi.progress.ProgressManager;
-import com.intellij.openapi.progress.Task;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.Disposer;
 import org.jetbrains.annotations.NotNull;
@@ -46,14 +42,7 @@ public class PluginLoadedListener implements DynamicPluginListener {
                     notification.expire();
                     @Nullable Project project = e.getProject();
                     if (project == null) return;
-                    ProgressManager.getInstance().run(new Task.Backgroundable(project, IRenBundle.message("loading.project.model", project.getName())) {
-                        @Override
-                        public void run(@NotNull ProgressIndicator indicator) {
-                            indicator.setText(IRenBundle.message("training.progress.indicator.text", project.getName()));
-                            ReadAction.nonBlocking(() -> ModelTrainer.trainProjectNGramModel(project, indicator, true))
-                                    .inSmartMode(project).executeSynchronously();
-                        }
-                    });
+                    ModelTrainer.trainProjectNGramModelInBackground(project);
                 }
             });
             notification2.addAction(new NotificationAction("No") {
