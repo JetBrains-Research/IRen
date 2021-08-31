@@ -31,11 +31,11 @@ public class PluginLoadedListener implements DynamicPluginListener {
     public static void askPermissions() {
         AppSettingsState settings = AppSettingsState.getInstance();
         if (settings.firstOpen) {
-            Notification notification2 = new Notification(IRenBundle.message("name"),
+            Notification notification = new Notification(IRenBundle.message("name"),
                     "IRen: automatic training permission",
                     "Do You allow automatic training of models?",
                     NotificationType.INFORMATION);
-            notification2.addAction(new NotificationAction("Yes (default)") {
+            notification.addAction(new NotificationAction("Yes (default)") {
                 @Override
                 public void actionPerformed(@NotNull AnActionEvent e, @NotNull Notification notification) {
                     settings.automaticTraining = true;
@@ -45,14 +45,14 @@ public class PluginLoadedListener implements DynamicPluginListener {
                     ModelTrainer.trainProjectNGramModelInBackground(project);
                 }
             });
-            notification2.addAction(new NotificationAction("No") {
+            notification.addAction(new NotificationAction("No") {
                 @Override
                 public void actionPerformed(@NotNull AnActionEvent e, @NotNull Notification notification) {
                     settings.automaticTraining = false;
                     notification.expire();
                 }
             });
-            Notifications.Bus.notify(notification2);
+            Notifications.Bus.notify(notification);
 
             settings.firstOpen = false;
         }
