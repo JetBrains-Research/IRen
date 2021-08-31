@@ -84,11 +84,11 @@ public class NGramModelRunner {
     public @NotNull List<VarNamePrediction> suggestNames(@NotNull PsiVariable variable, boolean forgetContext) {
         @NotNull Context<Integer> intContext = Context.fromStringToInt(PsiUtils.getContext(variable, false), myVocabulary);
         if (forgetContext) {
-            forgetContext(intContext);
             ModelManager.getInstance().invokeLater(variable.getProject(),
-                    (String x) -> learnContext(x != null ?
-                            intContext.with(myVocabulary.toIndex(x)) :
+                    (String name) -> learnContext(name != null ?
+                            intContext.with(myVocabulary.toIndex(name)) :
                             intContext));
+            forgetContext(intContext);
         }
 
         Context<Integer> unknownContext = intContext.with(0);

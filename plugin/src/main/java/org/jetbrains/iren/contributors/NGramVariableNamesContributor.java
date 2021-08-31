@@ -29,8 +29,8 @@ public abstract class NGramVariableNamesContributor implements VariableNamesCont
         }
         PsiFile file = variable.getContainingFile();
         if (this.forgetFile()) {
+            ModelManager.getInstance().invokeLater(file.getProject(), (String name) -> modelRunner.learnPsiFile(file));
             modelRunner.forgetPsiFile(file);
-            ModelManager.getInstance().invokeLater(file.getProject(), (String x) -> modelRunner.learnPsiFile(file));
         }
 
         predictionList.addAll(modelRunner.suggestNames(variable, forgetContext()));
