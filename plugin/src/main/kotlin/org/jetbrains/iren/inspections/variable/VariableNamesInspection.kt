@@ -8,6 +8,8 @@ import com.intellij.psi.PsiElementVisitor
 import com.intellij.psi.PsiVariable
 import com.intellij.psi.SmartPsiElementPointer
 import com.intellij.refactoring.suggested.createSmartPointer
+import org.jetbrains.iren.ModelStatsService
+import org.jetbrains.iren.contributors.ProjectVariableNamesContributor
 import org.jetbrains.iren.rename.MyMemberInplaceRenamer
 
 class VariableNamesInspection : AbstractBaseJavaLocalInspectionTool() {
@@ -18,7 +20,7 @@ class VariableNamesInspection : AbstractBaseJavaLocalInspectionTool() {
 
     class VariableVisitor(private val holder: ProblemsHolder) : JavaElementVisitor() {
         override fun visitVariable(variable: PsiVariable?) {
-            if (variable == null) return
+            if (variable == null || !ModelStatsService.getInstance().isLoaded(ProjectVariableNamesContributor::class.java, variable.project)) return
             val predictions = thereIsBetterName(variable)
             if (predictions.isNotEmpty()) {
                 holder.registerProblem(
