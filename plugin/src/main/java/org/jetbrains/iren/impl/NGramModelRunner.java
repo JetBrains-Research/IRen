@@ -24,7 +24,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.iren.IdNamesSuggestingBundle;
 import org.jetbrains.iren.IdNamesSuggestingService;
-import org.jetbrains.iren.InvokeLaterService;
+import org.jetbrains.iren.ModelManager;
 import org.jetbrains.iren.VocabularyManager;
 import org.jetbrains.iren.settings.AppSettingsState;
 import org.jetbrains.iren.storages.Context;
@@ -85,6 +85,10 @@ public class NGramModelRunner {
         @NotNull Context<Integer> intContext = Context.fromStringToInt(PsiUtils.getContext(variable, false), myVocabulary);
         if (forgetContext) {
             forgetContext(intContext);
+            ModelManager.getInstance().invokeLater(variable.getProject(),
+                    (String x) -> learnContext(x != null ?
+                            intContext.with(myVocabulary.toIndex(x)) :
+                            intContext));
         }
 
         Context<Integer> unknownContext = intContext.with(0);
@@ -92,12 +96,7 @@ public class NGramModelRunner {
         for (int idx : intContext.getVarIdxs()) {
             candidates.addAll(getCandidates(unknownContext.getTokens(), idx, getIdTypeFilter(variable.getClass())));
         }
-        @NotNull List<VarNamePrediction> result = rankCandidates(candidates, unknownContext);
-
-        if (forgetContext) {
-            InvokeLaterService.getInstance().save((String x) -> learnContext(intContext.with(myVocabulary.toIndex(x))));
-        }
-        return result;
+        return rankCandidates(candidates, unknownContext);
     }
 
     private @NotNull List<VarNamePrediction> rankCandidates(@NotNull Set<Integer> candidates, @NotNull Context<Integer> intContext) {

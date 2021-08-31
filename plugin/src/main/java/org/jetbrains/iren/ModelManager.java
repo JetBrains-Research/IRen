@@ -13,6 +13,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.function.Consumer;
 
 import static org.jetbrains.iren.utils.StringUtils.join;
 
@@ -57,5 +58,18 @@ public class ModelManager implements Disposable {
     @Override
     public void dispose() {
         myModelRunners.clear();
+    }
+
+    private final Map<String, Consumer<String>> consumerMap = new HashMap<>();
+    public void invokeLater(@NotNull Project project, Consumer<String> consumer) {
+        invoke(project, null);
+        consumerMap.put(project.getLocationHash(), consumer);
+    }
+
+    public void invoke(@NotNull Project project, String name) {
+        Consumer<String> consumer = consumerMap.remove(project.getLocationHash());
+        if (consumer != null) {
+            consumer.accept(name);
+        }
     }
 }

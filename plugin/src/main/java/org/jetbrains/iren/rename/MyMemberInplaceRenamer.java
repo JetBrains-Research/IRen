@@ -14,7 +14,7 @@ import com.intellij.refactoring.rename.inplace.MemberInplaceRenamer;
 import com.intellij.refactoring.rename.inplace.MyLookupExpression;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.jetbrains.iren.InvokeLaterService;
+import org.jetbrains.iren.ModelManager;
 import org.jetbrains.iren.stats.RenameVariableStatistics;
 
 import java.util.*;
@@ -78,7 +78,7 @@ public class MyMemberInplaceRenamer extends MemberInplaceRenamer {
                                     @Override
                                     public void handleInsert(@NotNull InsertionContext context) {
                                         super.handleInsert(context);
-                                        InvokeLaterService.getInstance().acceptAll(name);
+                                        ModelManager.getInstance().invoke(context.getProject(), name);
                                         if (sendStatistics) {
                                             stats.applied++;
                                             stats.ranks.add(namesIndex.get(name));
@@ -89,7 +89,7 @@ public class MyMemberInplaceRenamer extends MemberInplaceRenamer {
                                     @Override
                                     public void handleInsert(@NotNull InsertionContext context) {
                                         super.handleInsert(context);
-                                        InvokeLaterService.getInstance().acceptAll(name);
+                                        ModelManager.getInstance().invoke(context.getProject(), name);
                                         if (sendStatistics) {
                                             stats.appliedDefault++;
                                         }
