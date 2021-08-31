@@ -1,6 +1,5 @@
 package org.jetbrains.iren;
 
-import com.intellij.openapi.application.ReadAction;
 import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.progress.ProgressManager;
 import com.intellij.openapi.progress.Task;
@@ -81,8 +80,7 @@ public class ModelTrainer {
             @Override
             public void run(@NotNull ProgressIndicator indicator) {
                 indicator.setText(IRenBundle.message("training.progress.indicator.text", project.getName()));
-                ReadAction.nonBlocking(() -> ModelTrainer.trainProjectNGramModel(project, indicator, true))
-                        .inSmartMode(project).executeSynchronously();
+                ModelTrainer.trainProjectNGramModel(project, indicator, true);
             }
         });
     }

@@ -6,6 +6,7 @@ import com.intellij.openapi.components.State;
 import com.intellij.openapi.components.Storage;
 import com.intellij.openapi.project.Project;
 import com.intellij.util.xmlb.XmlSerializerUtil;
+import com.intellij.util.xmlb.annotations.Transient;
 import com.intellij.util.xmlb.annotations.XMap;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -24,9 +25,11 @@ import static org.jetbrains.iren.utils.StringUtils.join;
 @State(name = "ModelStatsService",
         storages = {@Storage("ModelSaveTime.xml")})
 public class ModelStatsService implements PersistentStateComponent<ModelStatsService> {
+    @Transient
     private boolean isTraining = false;
     @XMap(propertyElementName = "saveTime", keyAttributeName = "model", valueAttributeName = "time")
     public final Map<String, String> mySavingTime = new HashMap<>();
+    @Transient
     private final Set<String> loaded = new HashSet<>();
 
     @Override

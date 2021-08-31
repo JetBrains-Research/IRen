@@ -1,6 +1,5 @@
 package org.jetbrains.iren;
 
-import com.intellij.openapi.application.ReadAction;
 import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.progress.ProgressManager;
 import com.intellij.openapi.progress.Task;
@@ -40,8 +39,7 @@ public class LoadingModelStartupActivity implements StartupActivity.Background {
                     NotificationsUtil.notify(project, "Model is loaded", "");
                 } else {
                     indicator.setText(IRenBundle.message("training.progress.indicator.text", project.getName()));
-                    ReadAction.nonBlocking(() -> ModelTrainer.trainProjectNGramModel(project, indicator, true))
-                            .inSmartMode(project).executeSynchronously();
+                    ModelTrainer.trainProjectNGramModel(project, indicator, true);
                 }
             }
         });
