@@ -13,36 +13,49 @@ import org.jetbrains.iren.impl.NGramModelRunner;
 import org.jetbrains.iren.utils.NotificationsUtil;
 
 public class ModelTrainer {
+    public static void trainProjectNGramModelInBackground(Project project) {
+        ProgressManager.getInstance().run(new Task.Backgroundable(project, IRenBundle.message("training.task.title")) {
+            @Override
+            public void run(@NotNull ProgressIndicator indicator) {
+                indicator.setText(IRenBundle.message("training.progress.indicator.text", project.getName()));
+                ModelTrainer.trainProjectNGramModel(project, indicator, true);
+            }
+        });
+    }
+
     public static void trainProjectNGramModel(@NotNull Project project, @Nullable ProgressIndicator progressIndicator, boolean save) {
         if (ModelStatsService.getInstance().isTraining()) return;
-        @NotNull ModelStatsService loadingService = ModelStatsService.getInstance();
-        loadingService.setUsable(ProjectVariableNamesContributor.class, project, false);
-        loadingService.setTraining(true);
-        NGramModelRunner modelRunner = new NGramModelRunner(NGramVariableNamesContributor.SUPPORTED_TYPES, true);
+        @NotNull ModelStatsService modelStats = ModelStatsService.getInstance();
+        modelStats.setUsable(ProjectVariableNamesContributor.class, project, false);
+        modelStats.setTraining(true);
+        try {
+            NGramModelRunner modelRunner = new NGramModelRunner(NGramVariableNamesContributor.SUPPORTED_TYPES, true);
 
-        modelRunner.learnProject(project, progressIndicator);
-        if (progressIndicator != null) {
-            progressIndicator.setIndeterminate(true);
-            progressIndicator.setText2("Resolving counter...");
-        }
-        modelRunner.resolveCounter();
-        ModelManager.getInstance().putModelRunner(ProjectVariableNamesContributor.class, project, modelRunner);
-        if (save) {
+            modelRunner.learnProject(project, progressIndicator);
             if (progressIndicator != null) {
-                progressIndicator.setText(IRenBundle.message("saving.project.model", project.getName()));
+                progressIndicator.setIndeterminate(true);
+                progressIndicator.setText2("Resolving counter...");
             }
-            double size = modelRunner.save(ModelManager.getPath(project), progressIndicator);
-            int vocabSize = modelRunner.getVocabulary().size();
-            NotificationsUtil.notify(project,
-                    String.format("%s project model stats", project.getName()),
-                    String.format("Size: %.3f Mb, Vocab size: %d",
-                            size, vocabSize));
-            System.out.printf("%s project model size is %.3f Mb\n", project.getName(), size);
-            System.out.printf("Vocab size is %d\n", vocabSize);
+            modelRunner.resolveCounter();
+            ModelManager.getInstance().putModelRunner(ProjectVariableNamesContributor.class, project, modelRunner);
+            if (save) {
+                if (progressIndicator != null) {
+                    progressIndicator.setText(IRenBundle.message("saving.project.model", project.getName()));
+                }
+                double size = modelRunner.save(ModelManager.getPath(project), progressIndicator);
+                int vocabSize = modelRunner.getVocabulary().size();
+                NotificationsUtil.notify(project,
+                        String.format("%s project model stats", project.getName()),
+                        String.format("Size: %.3f Mb, Vocab size: %d",
+                                size, vocabSize));
+                System.out.printf("%s project model size is %.3f Mb\n", project.getName(), size);
+                System.out.printf("Vocab size is %d\n", vocabSize);
+            }
+            modelStats.setTrainedTime(ProjectVariableNamesContributor.class, project);
+            modelStats.setUsable(ProjectVariableNamesContributor.class, project, true);
+        } finally {
+            modelStats.setTraining(false);
         }
-        loadingService.setTrainedTime(ProjectVariableNamesContributor.class, project);
-        loadingService.setUsable(ProjectVariableNamesContributor.class, project, true);
-        loadingService.setTraining(false);
     }
 
     public static void trainGlobalNGramModel(@NotNull Project project, @Nullable ProgressIndicator progressIndicator, boolean save) {
@@ -72,15 +85,5 @@ public class ModelTrainer {
             System.out.printf("Vocab size is %d\n", vocabSize);
         }
         ModelStatsService.getInstance().setTrainedTime(GlobalVariableNamesContributor.class);
-    }
-
-    public static void trainProjectNGramModelInBackground(Project project) {
-        ProgressManager.getInstance().run(new Task.Backgroundable(project, IRenBundle.message("training.task.title")) {
-            @Override
-            public void run(@NotNull ProgressIndicator indicator) {
-                indicator.setText(IRenBundle.message("training.progress.indicator.text", project.getName()));
-                ModelTrainer.trainProjectNGramModel(project, indicator, true);
-            }
-        });
     }
 }
