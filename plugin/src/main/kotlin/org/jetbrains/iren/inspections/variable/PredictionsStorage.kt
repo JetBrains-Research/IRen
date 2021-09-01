@@ -8,6 +8,7 @@ import com.intellij.openapi.components.ServiceManager
 import com.intellij.psi.PsiVariable
 import com.intellij.psi.SmartPsiElementPointer
 import org.jetbrains.iren.IRenSuggestingService
+import java.util.concurrent.TimeUnit
 
 
 class PredictionsStorage : Disposable {
@@ -19,6 +20,7 @@ class PredictionsStorage : Disposable {
 
     private var storage: LoadingCache<SmartPsiElementPointer<PsiVariable>?, LinkedHashMap<String, Double>?> = CacheBuilder.newBuilder()
         .maximumSize(1000)
+        .expireAfterWrite(10, TimeUnit.MINUTES)
         .build(
             object : CacheLoader<SmartPsiElementPointer<PsiVariable>?, LinkedHashMap<String, Double>?>() {
                 override fun load(key: SmartPsiElementPointer<PsiVariable>?): LinkedHashMap<String, Double>? { // no checked exception
@@ -34,6 +36,6 @@ class PredictionsStorage : Disposable {
     }
 
     override fun dispose() {
-        storage.cleanUp()
+        storage.invalidateAll()
     }
 }

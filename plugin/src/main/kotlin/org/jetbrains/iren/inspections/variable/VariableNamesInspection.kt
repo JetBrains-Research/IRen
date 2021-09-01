@@ -31,7 +31,7 @@ class VariableNamesInspection : AbstractBaseJavaLocalInspectionTool() {
                         variable.nameIdentifier ?: variable,
                         "There are suggestions for variable name",
                         ProblemHighlightType.WEAK_WARNING,
-                        RenameMethodQuickFix(variable.createSmartPointer(), predictions)
+                        RenameMethodQuickFix(variable.createSmartPointer())
                     )
                 }
             } finally {
@@ -48,13 +48,12 @@ class VariableNamesInspection : AbstractBaseJavaLocalInspectionTool() {
     }
 
     class RenameMethodQuickFix(
-        private var variable: SmartPsiElementPointer<PsiVariable>,
-        private var predictions: LinkedHashMap<String, Double>
+        private var variable: SmartPsiElementPointer<PsiVariable>
     ) : LocalQuickFix {
         override fun applyFix(project: Project, descriptor: ProblemDescriptor) {
             val editor = FileEditorManager.getInstance(project).selectedTextEditor!!
             val inplaceRefactoring = MyMemberInplaceRenamer(variable.element!!, null, editor)
-            inplaceRefactoring.performInplaceRefactoring(predictions)
+            inplaceRefactoring.performInplaceRefactoring(PredictionsStorage.getInstance().getPrediction(variable))
         }
 
 
