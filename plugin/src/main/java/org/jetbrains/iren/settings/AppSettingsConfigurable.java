@@ -2,8 +2,16 @@
 package org.jetbrains.iren.settings;
 
 import com.intellij.openapi.options.Configurable;
+import com.intellij.openapi.progress.ProgressIndicator;
+import com.intellij.openapi.progress.ProgressManager;
+import com.intellij.openapi.progress.Task;
+import com.intellij.openapi.project.Project;
+import com.intellij.openapi.project.ProjectManager;
 import org.jetbrains.annotations.Nls;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.iren.IRenBundle;
+import org.jetbrains.iren.ModelTrainer;
 
 import javax.swing.*;
 
@@ -52,12 +60,24 @@ public class AppSettingsConfigurable implements Configurable {
 
     @Override
     public void apply() {
+        boolean modified = isModified();
         AppSettingsState settings = AppSettingsState.getInstance();
         settings.automaticTraining = mySettingsComponent.getAutomaticTrainingStatus();
         settings.maxTrainingTime = mySettingsComponent.getMaxTrainingTime();
         settings.vocabularyCutOff = mySettingsComponent.getVocabularyCutOff();
         settings.modelsLifetime = mySettingsComponent.getModelsLifetime();
         settings.modelsLifetimeUnit = mySettingsComponent.getModelsLifetimeUnit();
+        if (settings.automaticTraining && modified) {
+            ProgressManager.getInstance().run(new Task.Backgroundable(null, IRenBundle.message("training.task.title")) {
+                @Override
+                public void run(@NotNull ProgressIndicator indicator) {
+                    for (Project project : ProjectManager.getInstance().getOpenProjects()) {
+                        indicator.setText(IRenBundle.message("training.progress.indicator.text", project.getName()));
+                        ModelTrainer.trainProjectNGramModel(project, indicator, true);
+                    }
+                }
+            });
+        }
     }
 
     @Override
