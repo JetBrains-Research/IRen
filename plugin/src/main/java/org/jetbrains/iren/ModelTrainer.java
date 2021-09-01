@@ -16,8 +16,7 @@ public class ModelTrainer {
     public static void trainProjectNGramModel(@NotNull Project project, @Nullable ProgressIndicator progressIndicator, boolean save) {
         if (ModelStatsService.getInstance().isTraining()) return;
         @NotNull ModelStatsService loadingService = ModelStatsService.getInstance();
-        loadingService.setTrained(ProjectVariableNamesContributor.class, project, false);
-        loadingService.setLoaded(ProjectVariableNamesContributor.class, project, false);
+        loadingService.setUsable(ProjectVariableNamesContributor.class, project, false);
         loadingService.setTraining(true);
         NGramModelRunner modelRunner = new NGramModelRunner(NGramVariableNamesContributor.SUPPORTED_TYPES, true);
 
@@ -41,8 +40,8 @@ public class ModelTrainer {
             System.out.printf("%s project model size is %.3f Mb\n", project.getName(), size);
             System.out.printf("Vocab size is %d\n", vocabSize);
         }
-        loadingService.setTrained(ProjectVariableNamesContributor.class, project, true);
-        loadingService.setLoaded(ProjectVariableNamesContributor.class, project, true);
+        loadingService.setTrainedTime(ProjectVariableNamesContributor.class, project);
+        loadingService.setUsable(ProjectVariableNamesContributor.class, project, true);
         loadingService.setTraining(false);
     }
 
@@ -72,7 +71,7 @@ public class ModelTrainer {
             System.out.printf("Global model size is %.3f Mb\n", size);
             System.out.printf("Vocab size is %d\n", vocabSize);
         }
-        ModelStatsService.getInstance().setTrained(GlobalVariableNamesContributor.class, true);
+        ModelStatsService.getInstance().setTrainedTime(GlobalVariableNamesContributor.class);
     }
 
     public static void trainProjectNGramModelInBackground(Project project) {

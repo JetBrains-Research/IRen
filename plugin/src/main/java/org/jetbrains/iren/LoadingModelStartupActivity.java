@@ -37,7 +37,7 @@ public class LoadingModelStartupActivity implements StartupActivity.Background {
                     modelRunner.getVocabulary().close();
                     modelRunner.resolveCounter();
                     ModelManager.getInstance().putModelRunner(ProjectVariableNamesContributor.class, project, modelRunner);
-                    ModelStatsService.getInstance().setLoaded(ProjectVariableNamesContributor.class, project, true);
+                    ModelStatsService.getInstance().setUsable(ProjectVariableNamesContributor.class, project, true);
                     NotificationsUtil.notify(project, "Model is loaded", "");
                 } else if (!settings.firstOpen && settings.automaticTraining) {
                     indicator.setText(IRenBundle.message("training.progress.indicator.text", project.getName()));

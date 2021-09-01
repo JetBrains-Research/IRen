@@ -26,11 +26,11 @@ import static org.jetbrains.iren.utils.StringUtils.join;
         storages = {@Storage("ModelSaveTime.xml")})
 public class ModelStatsService implements PersistentStateComponent<ModelStatsService> {
     @Transient
-    private boolean isTraining = false;
+    private boolean myTraining = false;
     @XMap(propertyElementName = "saveTime", keyAttributeName = "model", valueAttributeName = "time")
     public final Map<String, String> mySavingTime = new HashMap<>();
     @Transient
-    private final Set<String> loaded = new HashSet<>();
+    private final Set<String> myUsable = new HashSet<>();
 
     @Override
     public @Nullable ModelStatsService getState() {
@@ -43,35 +43,27 @@ public class ModelStatsService implements PersistentStateComponent<ModelStatsSer
     }
 
     public void setTraining(boolean training) {
-        isTraining = training;
+        myTraining = training;
     }
 
     public boolean isTraining() {
-        return isTraining;
+        return myTraining;
     }
 
     public static @NotNull ModelStatsService getInstance() {
         return ServiceManager.getService(ModelStatsService.class);
     }
 
-    public void setTrained(@NotNull Class<? extends VariableNamesContributor> className, boolean b) {
-        if (b) {
+    public void setTrainedTime(@NotNull Class<? extends VariableNamesContributor> className) {
             mySavingTime.put(className.getSimpleName(), Instant.now().toString());
-        } else {
-            mySavingTime.remove(className.getSimpleName());
-        }
     }
 
-    public void setTrained(@NotNull Class<? extends VariableNamesContributor> className, @NotNull Project project, boolean b) {
-        if (b) {
+    public void setTrainedTime(@NotNull Class<? extends VariableNamesContributor> className, @NotNull Project project) {
             mySavingTime.put(join(className, project), Instant.now().toString());
-        } else {
-            mySavingTime.remove(join(className, project));
-        }
     }
 
     public boolean isSomethingLoaded() {
-        return !loaded.isEmpty();
+        return !myUsable.isEmpty();
     }
 
     public @Nullable Instant whenTrained(@NotNull Class<? extends VariableNamesContributor> className) {
@@ -91,27 +83,27 @@ public class ModelStatsService implements PersistentStateComponent<ModelStatsSer
         return (saveTime == null || !Duration.between(saveTime, Instant.now()).minus(modelsLifetime).isNegative());
     }
 
-    public void setLoaded(@NotNull Class<? extends VariableNamesContributor> className, boolean b) {
+    public void setUsable(@NotNull Class<? extends VariableNamesContributor> className, boolean b) {
         if (b) {
-            loaded.add(className.getSimpleName());
+            myUsable.add(className.getSimpleName());
         } else {
-            loaded.remove(className.getSimpleName());
+            myUsable.remove(className.getSimpleName());
         }
     }
 
-    public void setLoaded(@NotNull Class<? extends VariableNamesContributor> className, Project project, boolean b) {
+    public void setUsable(@NotNull Class<? extends VariableNamesContributor> className, Project project, boolean b) {
         if (b) {
-            loaded.add(join(className, project));
+            myUsable.add(join(className, project));
         } else {
-            loaded.remove(join(className, project));
+            myUsable.remove(join(className, project));
         }
     }
 
-    public boolean isLoaded(@NotNull Class<? extends VariableNamesContributor> className) {
-        return loaded.contains(className.getSimpleName());
+    public boolean isUsable(@NotNull Class<? extends VariableNamesContributor> className) {
+        return myUsable.contains(className.getSimpleName());
     }
 
-    public boolean isLoaded(Class<? extends VariableNamesContributor> className, Project project) {
-        return loaded.contains(join(className, project));
+    public boolean isUsable(Class<? extends VariableNamesContributor> className, Project project) {
+        return myUsable.contains(join(className, project));
     }
 }

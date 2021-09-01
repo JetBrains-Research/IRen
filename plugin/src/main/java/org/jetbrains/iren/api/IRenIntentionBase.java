@@ -28,7 +28,7 @@ public abstract class IRenIntentionBase<T extends PsiNameIdentifierOwner> extend
     public boolean isAvailable(@NotNull Project project, Editor editor, @NotNull PsiElement element) {
         final T identifierOwner = getIdentifierOwner(element);
         return identifierOwner != null && identifierOwner.isValid()
-                && ModelStatsService.getInstance().isLoaded(ProjectVariableNamesContributor.class, project);
+                && ModelStatsService.getInstance().isUsable(ProjectVariableNamesContributor.class, project);
     }
 
     @Override

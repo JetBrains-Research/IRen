@@ -20,7 +20,7 @@ class VariableNamesInspection : AbstractBaseJavaLocalInspectionTool() {
 
     class VariableVisitor(private val holder: ProblemsHolder) : JavaElementVisitor() {
         override fun visitVariable(variable: PsiVariable?) {
-            if (variable == null || !ModelStatsService.getInstance().isLoaded(ProjectVariableNamesContributor::class.java, variable.project)) return
+            if (variable == null || !ModelStatsService.getInstance().isUsable(ProjectVariableNamesContributor::class.java, variable.project)) return
             val predictions = thereIsBetterName(variable)
             if (predictions.size > 5) {
                 holder.registerProblem(

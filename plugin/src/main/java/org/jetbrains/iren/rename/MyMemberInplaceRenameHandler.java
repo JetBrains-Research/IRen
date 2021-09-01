@@ -38,7 +38,7 @@ public class MyMemberInplaceRenameHandler extends MemberInplaceRenameHandler {
         if (dataContext == null) return null;
         @Nullable Language language = LangDataKeys.LANGUAGE.getData(dataContext);
         if (language != null && language.is(JavaLanguage.INSTANCE) &&
-                ModelStatsService.getInstance().isLoaded(ProjectVariableNamesContributor.class, editor.getProject())) {
+                ModelStatsService.getInstance().isUsable(ProjectVariableNamesContributor.class, editor.getProject())) {
             Component contextComponent = ObjectUtils.notNull(PlatformDataKeys.CONTEXT_COMPONENT.getData(dataContext), editor.getComponent());
             String newName = PsiElementRenameHandler.DEFAULT_NAME.getData(dataContext);
             PsiElement newElementToRename = null;

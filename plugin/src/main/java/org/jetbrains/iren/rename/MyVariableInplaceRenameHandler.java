@@ -24,7 +24,7 @@ public class MyVariableInplaceRenameHandler extends VariableInplaceRenameHandler
         if (dataContext == null) return null;
         @Nullable Language language = dataContext.getData(LangDataKeys.LANGUAGE);
         if (language != null && language.is(JavaLanguage.INSTANCE) &&
-                ModelStatsService.getInstance().isLoaded(ProjectVariableNamesContributor.class, editor.getProject())) {
+                ModelStatsService.getInstance().isUsable(ProjectVariableNamesContributor.class, editor.getProject())) {
             @Nullable PsiVariable variable = (PsiVariable) elementToRename;
             MyMemberInplaceRenamer renamer = createMyRenamer(variable, editor);
             boolean startedRename = renamer != null && renamer.performInplaceRefactoring(
