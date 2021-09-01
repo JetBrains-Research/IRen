@@ -34,7 +34,7 @@ val pluginName: String by project
 val pluginVersion: String by project
 val pluginSinceBuild: String by project
 val pluginUntilBuild: String by project
-val buildPluginPath = "ide-plugin-$pluginVersion.zip"
+val buildPluginPath = "iren-$pluginVersion.zip"
 
 val platformType: String by project
 val platformVersion: String by project
@@ -142,7 +142,7 @@ tasks {
                     )
                     "plugin"{
                         "name"{ -"IRen" }
-                        "id"{ -"com.github.davidenkoim.idnamessuggestingplugin" }
+                        "id"{ -"com.github.davidenkoim.irenplugin" }
                         "version"{ -pluginVersion }
                         "idea-version"{ attribute("since-build", pluginSinceBuild) }
                         "vendor"{
@@ -152,10 +152,19 @@ tasks {
                         "download-url"{ -buildPluginPath }
                         "description"{
                             -"""<![CDATA[
-                        <p>Provides assistance in naming variables.</p>
+      <p>Provides assistance in variable refactoring.</p>
 
-                        <p>To use the <b>Id Names Suggesting</b> tool, press <b>Alt+Enter</b> on a variable and select <b>Suggest variable name</b>.</p>
-                        ]]>"""
+      <p>This tool replaces default IDE refactoring with the new one
+      that will recommend You better variable names with the help of Machine Learning methods.</p>
+
+      <p>To suggest consistent names IRen model has to train on a project in which you are currently working.
+      By the default IRen plugin automatically trains/loads model on a startup of the opened project but
+      if you want to manually control it you can switch off the corresponding option in the settings
+      <b>Tools | IRen settings</b> and do it by yourself launching <b>Refactor | Train IRen Model</b>.
+      Also in the settings you can tune some hyperparameters of the model.</p>
+
+      <p>IRen inspection helps with maintenance of the code and marks all variables which names are not good enough.</p>
+      ]]>"""
                         }
                     }
                 }
