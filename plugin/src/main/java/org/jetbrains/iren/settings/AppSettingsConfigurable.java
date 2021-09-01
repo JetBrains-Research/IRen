@@ -38,12 +38,16 @@ public class AppSettingsConfigurable implements Configurable {
     @Override
     public boolean isModified() {
         AppSettingsState settings = AppSettingsState.getInstance();
-        boolean modified = mySettingsComponent.getMaxTrainingTime() != settings.maxTrainingTime;
-        modified |= mySettingsComponent.getAutomaticTrainingStatus() != settings.automaticTraining;
-        modified |= mySettingsComponent.getVocabularyCutOff() != settings.vocabularyCutOff;
-        modified |= mySettingsComponent.getModelsLifetime() != settings.modelsLifetime;
-        modified |= mySettingsComponent.getModelsLifetimeUnit() != settings.modelsLifetimeUnit;
-        return modified;
+        try {
+            boolean modified = mySettingsComponent.getMaxTrainingTime() != settings.maxTrainingTime;
+            modified |= mySettingsComponent.getAutomaticTrainingStatus() != settings.automaticTraining;
+            modified |= mySettingsComponent.getVocabularyCutOff() != settings.vocabularyCutOff;
+            modified |= mySettingsComponent.getModelsLifetime() != settings.modelsLifetime;
+            modified |= mySettingsComponent.getModelsLifetimeUnit() != settings.modelsLifetimeUnit;
+            return modified;
+        } catch (NumberFormatException e) {
+            return false;
+        }
     }
 
     @Override

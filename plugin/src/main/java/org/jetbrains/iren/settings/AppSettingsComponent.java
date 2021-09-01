@@ -60,36 +60,24 @@ public class AppSettingsComponent {
         myAutomaticTrainingStatus.setSelected(newStatus);
     }
 
-    public Integer getMaxTrainingTime() {
-        try {
-            return Integer.parseInt(myMaxTrainingTimeText.getText());
-        } catch (NumberFormatException e) {
-            return null;
-        }
+    public Integer getMaxTrainingTime() throws NumberFormatException {
+        return Integer.parseInt(myMaxTrainingTimeText.getText());
     }
 
     public void setMaxTrainingTime(int newText) {
         myMaxTrainingTimeText.setText(String.valueOf(newText));
     }
 
-    public Integer getVocabularyCutOff() {
-        try {
-            return Integer.parseInt(myVocabularyCutOff.getText());
-        } catch (NumberFormatException e) {
-            return null;
-        }
+    public Integer getVocabularyCutOff() throws NumberFormatException {
+        return Integer.parseInt(myVocabularyCutOff.getText());
     }
 
     public void setVocabularyCutOff(int newText) {
         myVocabularyCutOff.setText(String.valueOf(newText));
     }
 
-    public Integer getModelsLifetime() {
-        try {
-            return Integer.parseInt(myModelsLifetime.getText());
-        } catch (NumberFormatException e) {
-            return null;
-        }
+    public Integer getModelsLifetime() throws NumberFormatException {
+        return Integer.parseInt(myModelsLifetime.getText());
     }
 
     public void setModelsLifetime(int newText) {
