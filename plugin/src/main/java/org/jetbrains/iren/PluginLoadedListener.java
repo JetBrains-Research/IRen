@@ -9,6 +9,9 @@ import com.intellij.notification.Notifications;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.Disposer;
+import com.intellij.refactoring.rename.RenameHandler;
+import com.intellij.refactoring.rename.inplace.MemberInplaceRenameHandler;
+import com.intellij.refactoring.rename.inplace.VariableInplaceRenameHandler;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.iren.inspections.variable.PredictionsStorage;
@@ -25,6 +28,8 @@ public class PluginLoadedListener implements DynamicPluginListener {
     @Override
     public void pluginLoaded(@NotNull IdeaPluginDescriptor pluginDescriptor) {
         DynamicPluginListener.super.pluginLoaded(pluginDescriptor);
+        RenameHandler.EP_NAME.getPoint().unregisterExtension(VariableInplaceRenameHandler.class);
+        RenameHandler.EP_NAME.getPoint().unregisterExtension(MemberInplaceRenameHandler.class);
         askPermissions();
     }
 
