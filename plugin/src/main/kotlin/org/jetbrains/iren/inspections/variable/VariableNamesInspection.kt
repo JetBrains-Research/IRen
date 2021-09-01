@@ -1,6 +1,7 @@
 package org.jetbrains.iren.inspections.variable
 
 import com.intellij.codeInspection.*
+import com.intellij.completion.ngram.slp.translating.Vocabulary
 import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.project.Project
 import com.intellij.psi.JavaElementVisitor
@@ -20,9 +21,11 @@ class VariableNamesInspection : AbstractBaseJavaLocalInspectionTool() {
 
     class VariableVisitor(private val holder: ProblemsHolder) : JavaElementVisitor() {
         override fun visitVariable(variable: PsiVariable?) {
-            if (variable == null || !ModelStatsService.getInstance().isUsable(ProjectVariableNamesContributor::class.java, variable.project)) return
-            val predictions = thereIsBetterName(variable)
-            if (predictions.size > 5) {
+            if (variable == null || !ModelStatsService.getInstance()
+                    .isUsable(ProjectVariableNamesContributor::class.java, variable.project)
+            ) return
+            val predictions = PredictionsStorage.getInstance().getPrediction(variable.createSmartPointer())
+            if (isGoodPredictionList(variable, predictions)) {
                 holder.registerProblem(
                     variable.nameIdentifier ?: variable,
                     "There are suggestions for variable name",
@@ -33,11 +36,11 @@ class VariableNamesInspection : AbstractBaseJavaLocalInspectionTool() {
             super.visitVariable(variable)
         }
 
-        private fun thereIsBetterName(variable: PsiVariable): LinkedHashMap<String, Double> {
-            val predictions =
-                PredictionsStorage.getInstance().getPrediction(variable.createSmartPointer()) ?: LinkedHashMap()
-            val threshold = predictions[variable.name] ?: return predictions
-            return predictions.filterValues { v -> v > threshold }.toMap(LinkedHashMap())
+        private fun isGoodPredictionList(variable: PsiVariable, predictions: LinkedHashMap<String, Double>): Boolean {
+            val varThreshold = predictions[variable.name]
+            val vocabThreshold = predictions[Vocabulary.unknownCharacter]
+            return (if (varThreshold != null) predictions.filterValues { v -> v > varThreshold } else predictions).size >= 5 &&
+                    (if (vocabThreshold != null) predictions.filterValues { v -> v > vocabThreshold } else predictions).isNotEmpty()
         }
     }
 

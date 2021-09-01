@@ -29,8 +29,8 @@ class PredictionsStorage : Disposable {
                 }
             })
 
-    fun getPrediction(pointer: SmartPsiElementPointer<PsiVariable>): LinkedHashMap<String, Double>?{
-        return storage.get(pointer)
+    fun getPrediction(pointer: SmartPsiElementPointer<PsiVariable>): LinkedHashMap<String, Double>{
+        return storage.get(pointer) ?: LinkedHashMap()
     }
 
     override fun dispose() {
