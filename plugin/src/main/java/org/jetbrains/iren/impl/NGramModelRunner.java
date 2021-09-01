@@ -198,7 +198,8 @@ public class NGramModelRunner {
         Instant start = Instant.now();
         int vocabularyCutOff = AppSettingsState.getInstance().vocabularyCutOff;
         int maxTrainingTime = AppSettingsState.getInstance().maxTrainingTime;
-        if (vocabularyCutOff > 0) {
+        boolean vocabTraining = vocabularyCutOff > 0;
+        if (vocabTraining) {
             System.out.printf("Training vocabulary on %s...\n", project.getName());
             StringCounter counter = new StringCounter();
             files.parallelStream().filter(x -> (progressIndicator == null || !progressIndicator.isCanceled()) &&
@@ -211,7 +212,7 @@ public class NGramModelRunner {
                                 System.out.printf("Status:\t%.0f%%\r", fraction * 100.);
                             }
                             if (progressIndicator != null) {
-                                progressIndicator.setFraction(fraction);
+                                progressIndicator.setFraction(fraction / 2);
                             }
                         }
                     });
@@ -234,7 +235,7 @@ public class NGramModelRunner {
                         }
                         if (progressIndicator != null) {
                             progressIndicator.setText2(file.getPath());
-                            progressIndicator.setFraction(fraction);
+                            progressIndicator.setFraction(vocabTraining ? 0.5 + fraction / 2 : fraction);
                         }
                     }
                 });
