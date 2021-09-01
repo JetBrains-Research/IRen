@@ -12,6 +12,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.iren.contributors.NGramVariableNamesContributor;
 import org.jetbrains.iren.contributors.ProjectVariableNamesContributor;
 import org.jetbrains.iren.impl.NGramModelRunner;
+import org.jetbrains.iren.settings.AppSettingsState;
 import org.jetbrains.iren.utils.NotificationsUtil;
 
 import static org.jetbrains.iren.PluginLoadedListener.askPermissions;
@@ -21,8 +22,9 @@ public class LoadingModelStartupActivity implements StartupActivity.Background {
     public void runActivity(@NotNull Project project) {
         RenameHandler.EP_NAME.getPoint().unregisterExtension(VariableInplaceRenameHandler.class);
         RenameHandler.EP_NAME.getPoint().unregisterExtension(MemberInplaceRenameHandler.class);
-        askPermissions();
-        if (ModelStatsService.getInstance().needRetraining(ProjectVariableNamesContributor.class, project)) {
+        AppSettingsState settings = AppSettingsState.getInstance();
+        if (!settings.firstOpen && settings.automaticTraining &&
+                ModelStatsService.getInstance().needRetraining(ProjectVariableNamesContributor.class, project)) {
             ModelTrainer.trainProjectNGramModelInBackground(project);
             return;
         }
@@ -37,11 +39,12 @@ public class LoadingModelStartupActivity implements StartupActivity.Background {
                     ModelManager.getInstance().putModelRunner(ProjectVariableNamesContributor.class, project, modelRunner);
                     ModelStatsService.getInstance().setLoaded(ProjectVariableNamesContributor.class, project, true);
                     NotificationsUtil.notify(project, "Model is loaded", "");
-                } else {
+                } else if (!settings.firstOpen && settings.automaticTraining) {
                     indicator.setText(IRenBundle.message("training.progress.indicator.text", project.getName()));
                     ModelTrainer.trainProjectNGramModel(project, indicator, true);
                 }
             }
         });
+        askPermissions();
     }
 }

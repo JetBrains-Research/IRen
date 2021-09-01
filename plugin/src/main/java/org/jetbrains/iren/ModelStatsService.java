@@ -88,8 +88,7 @@ public class ModelStatsService implements PersistentStateComponent<ModelStatsSer
         @Nullable Instant saveTime = ModelStatsService.getInstance().whenTrained(className, project);
         AppSettingsState settings = AppSettingsState.getInstance();
         Duration modelsLifetime = Duration.of(settings.modelsLifetime, settings.modelsLifetimeUnit);
-        return settings.automaticTraining && !isTraining &&
-                (saveTime == null || !Duration.between(saveTime, Instant.now()).minus(modelsLifetime).isNegative());
+        return (saveTime == null || !Duration.between(saveTime, Instant.now()).minus(modelsLifetime).isNegative());
     }
 
     public void setLoaded(@NotNull Class<? extends VariableNamesContributor> className, boolean b) {

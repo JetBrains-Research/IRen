@@ -39,6 +39,7 @@ public class PluginLoadedListener implements DynamicPluginListener {
                 @Override
                 public void actionPerformed(@NotNull AnActionEvent e, @NotNull Notification notification) {
                     settings.automaticTraining = true;
+                    settings.firstOpen = false;
                     notification.expire();
                     @Nullable Project project = e.getProject();
                     if (project == null) return;
@@ -49,12 +50,11 @@ public class PluginLoadedListener implements DynamicPluginListener {
                 @Override
                 public void actionPerformed(@NotNull AnActionEvent e, @NotNull Notification notification) {
                     settings.automaticTraining = false;
+                    settings.firstOpen = false;
                     notification.expire();
                 }
             });
             Notifications.Bus.notify(notification);
-
-            settings.firstOpen = false;
         }
     }
 }
