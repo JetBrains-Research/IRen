@@ -10,6 +10,7 @@ import org.jetbrains.iren.contributors.GlobalVariableNamesContributor;
 import org.jetbrains.iren.contributors.NGramVariableNamesContributor;
 import org.jetbrains.iren.contributors.ProjectVariableNamesContributor;
 import org.jetbrains.iren.impl.NGramModelRunner;
+import org.jetbrains.iren.inspections.variable.PredictionsStorage;
 import org.jetbrains.iren.utils.NotificationsUtil;
 
 public class ModelTrainer {
@@ -55,6 +56,7 @@ public class ModelTrainer {
             modelStats.setUsable(ProjectVariableNamesContributor.class, project, true);
         } finally {
             modelStats.setTraining(false);
+            PredictionsStorage.Companion.getInstance().dispose();
         }
     }
 

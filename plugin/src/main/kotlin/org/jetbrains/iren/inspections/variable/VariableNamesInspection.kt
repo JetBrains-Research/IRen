@@ -21,19 +21,22 @@ class VariableNamesInspection : AbstractBaseJavaLocalInspectionTool() {
 
     class VariableVisitor(private val holder: ProblemsHolder) : JavaElementVisitor() {
         override fun visitVariable(variable: PsiVariable?) {
-            if (variable == null || !ModelStatsService.getInstance()
-                    .isUsable(ProjectVariableNamesContributor::class.java, variable.project)
+            if (variable == null ||
+                !ModelStatsService.getInstance().isUsable(ProjectVariableNamesContributor::class.java, variable.project)
             ) return
-            val predictions = PredictionsStorage.getInstance().getPrediction(variable.createSmartPointer())
-            if (isGoodPredictionList(variable, predictions)) {
-                holder.registerProblem(
-                    variable.nameIdentifier ?: variable,
-                    "There are suggestions for variable name",
-                    ProblemHighlightType.WEAK_WARNING,
-                    RenameMethodQuickFix(variable.createSmartPointer(), predictions)
-                )
+            try {
+                val predictions = PredictionsStorage.getInstance().getPrediction(variable.createSmartPointer())
+                if (isGoodPredictionList(variable, predictions)) {
+                    holder.registerProblem(
+                        variable.nameIdentifier ?: variable,
+                        "There are suggestions for variable name",
+                        ProblemHighlightType.WEAK_WARNING,
+                        RenameMethodQuickFix(variable.createSmartPointer(), predictions)
+                    )
+                }
+            } finally {
+                super.visitVariable(variable)
             }
-            super.visitVariable(variable)
         }
 
         private fun isGoodPredictionList(variable: PsiVariable, predictions: LinkedHashMap<String, Double>): Boolean {
