@@ -71,7 +71,7 @@ abstract class VarNamer {
             val fraction = ++progress / total.toDouble()
             if (total < 100 || progress % (total / 100) == 0) {
                 val timeSpent = Duration.between(start, Instant.now())
-                val timeLeft = Duration.ofSeconds((timeSpent.toSeconds() * (1 / fraction - 1)).toLong())
+                val timeLeft = Duration.ofSeconds((timeSpent.seconds * (1 / fraction - 1)).toLong())
                 System.out.printf(
                     "Status: %.0f%%;\tTime spent: %s;\tTime left: %s\r",
                     fraction * 100.0,
