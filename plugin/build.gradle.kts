@@ -1,12 +1,13 @@
-import io.gitlab.arturbosch.detekt.Detekt
-import org.jetbrains.changelog.closure
+import org.jetbrains.changelog.markdownToHTML
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 import org.redundent.kotlin.xml.PrintOptions
 import org.redundent.kotlin.xml.xml
 
+fun properties(key: String) = project.findProperty(key).toString()
+
 buildscript {
     repositories {
-        jcenter()
+        mavenCentral()
     }
     dependencies {
         classpath("org.redundent:kotlin-xml-builder:1.6.0")
@@ -19,39 +20,24 @@ plugins {
     // Kotlin support
     id("org.jetbrains.kotlin.jvm")
     // gradle-intellij-plugin - read more: https://github.com/JetBrains/gradle-intellij-plugin
-    id("org.jetbrains.intellij") version "0.4.21"
+    id("org.jetbrains.intellij") version "1.1.6"
     // gradle-changelog-plugin - read more: https://github.com/JetBrains/gradle-changelog-plugin
-    id("org.jetbrains.changelog") version "0.4.0"
-    // detekt linter - read more: https://detekt.github.io/detekt/kotlindsl.html
-    id("io.gitlab.arturbosch.detekt") version "1.10.0"
-    // ktlint linter - read more: https://github.com/JLLeitschuh/ktlint-gradle
-    id("org.jlleitschuh.gradle.ktlint") version "9.2.1"
+    id("org.jetbrains.changelog") version "1.3.0"
+    // Gradle Qodana Plugin
+    id("org.jetbrains.qodana") version "0.1.12"
 }
 
-// Import variables from gradle.properties file
-val pluginGroup: String by project
-val pluginName: String by project
-val pluginVersion: String by project
-val pluginSinceBuild: String by project
-val pluginUntilBuild: String by project
-val buildPluginPath = "plugin-$pluginVersion.zip"
+val buildPluginPath = "plugin-${properties("pluginVersion")}.zip"
 
-val platformType: String by project
-val platformVersion: String by project
-val platformDownloadSources: String by project
-
-group = pluginGroup
-version = pluginVersion
+group = properties("pluginGroup")
+version = properties("pluginVersion")
 
 // Configure project's dependencies
 repositories {
     mavenCentral()
-    jcenter()
     maven("https://packages.jetbrains.team/maven/p/ij/intellij-dependencies")
 }
 dependencies {
-    implementation(kotlin("stdlib-jdk8"))
-    detektPlugins("io.gitlab.arturbosch.detekt:detekt-formatting:1.10.0")
     implementation("org.junit.jupiter:junit-jupiter-params:5.5.1")
     implementation("org.junit.jupiter:junit-jupiter-api:5.5.1")
     implementation("org.junit.jupiter:junit-jupiter-engine:5.5.1")
@@ -63,67 +49,96 @@ dependencies {
 }
 
 
-// Configure gradle-intellij-plugin plugin.
-// Read more: https://github.com/JetBrains/gradle-intellij-plugin
+// Configure Gradle IntelliJ Plugin - read more: https://github.com/JetBrains/gradle-intellij-plugin
 intellij {
-    pluginName = pluginName
-    version = platformVersion
-    type = platformType
-    downloadSources = platformDownloadSources.toBoolean()
-    updateSinceUntilBuild = true
+    pluginName.set(properties("pluginName"))
+    version.set(properties("platformVersion"))
+    type.set(properties("platformType"))
+    downloadSources.set(properties("platformDownloadSources").toBoolean())
+    updateSinceUntilBuild.set(true)
 
-//  Plugin Dependencies:
-//  https://www.jetbrains.org/intellij/sdk/docs/basics/plugin_structure/plugin_dependencies.html
-    setPlugins("java")
+    // Plugin Dependencies. Uses `platformPlugins` property from the gradle.properties file.
+    plugins.set(properties("platformPlugins").split(',').map(String::trim).filter(String::isNotEmpty))
 }
 
-// Configure detekt plugin.
-// Read more: https://detekt.github.io/detekt/kotlindsl.html
-detekt {
-    config = files("./detekt-config.yml")
-    buildUponDefaultConfig = true
+// Configure Gradle Changelog Plugin - read more: https://github.com/JetBrains/gradle-changelog-plugin
+changelog {
+    version.set(properties("pluginVersion"))
+    groups.set(emptyList())
+}
 
-    reports {
-        html.enabled = false
-        xml.enabled = false
-        txt.enabled = false
-    }
+// Configure Gradle Qodana Plugin - read more: https://github.com/JetBrains/gradle-qodana-plugin
+qodana {
+    cachePath.set(projectDir.resolve(".qodana").canonicalPath)
+    reportPath.set(projectDir.resolve("build/reports/inspections").canonicalPath)
+    saveReport.set(true)
+    showReport.set(System.getenv("QODANA_SHOW_REPORT").toBoolean())
 }
 
 tasks {
-    // Set the compatibility versions to 1.8
-    withType<JavaCompile> {
-        sourceCompatibility = "1.8"
-        targetCompatibility = "1.8"
-    }
-    listOf("compileKotlin", "compileTestKotlin").forEach {
-        getByName<KotlinCompile>(it) {
-            kotlinOptions.jvmTarget = "1.8"
+    // Set the JVM compatibility versions
+    properties("javaVersion").let {
+        withType<JavaCompile> {
+            sourceCompatibility = it
+            targetCompatibility = it
+        }
+        withType<KotlinCompile> {
+            kotlinOptions.jvmTarget = it
         }
     }
 
-    withType<Detekt> {
-        jvmTarget = "1.8"
-    }
-
-    buildPlugin
-
     patchPluginXml {
-        version(pluginVersion)
-        sinceBuild(pluginSinceBuild)
-        untilBuild(pluginUntilBuild)
+        version.set(properties("pluginVersion"))
+        sinceBuild.set(properties("pluginSinceBuild"))
+        untilBuild.set(properties("pluginUntilBuild"))
 
+        // Extract the <!-- Plugin description --> section from README.md and provide for the plugin's manifest
+        pluginDescription.set(
+            projectDir.resolve("README.md").readText().lines().run {
+                val start = "<!-- Plugin description -->"
+                val end = "<!-- Plugin description end -->"
+
+                if (!containsAll(listOf(start, end))) {
+                    throw GradleException("Plugin description section not found in README.md:\n$start ... $end")
+                }
+                subList(indexOf(start) + 1, indexOf(end))
+            }.joinToString("\n").run { markdownToHTML(this) }
+        )
 
         // Get the latest available change notes from the changelog file
-        changeNotes(closure {
-            changelog.getLatest().toHTML()
+        changeNotes.set(provider {
+            changelog.run {
+                getOrNull(properties("pluginVersion")) ?: getLatest()
+            }.toHTML()
         })
+    }
+
+    runPluginVerifier {
+        ideVersions.set(properties("pluginVerifierIdeVersions").split(',').map(String::trim).filter(String::isNotEmpty))
+    }
+
+    // Configure UI tests plugin
+    // Read more: https://github.com/JetBrains/intellij-ui-test-robot
+    runIdeForUiTests {
+        systemProperty("robot-server.port", "8082")
+        systemProperty("ide.mac.message.dialogs.as.sheets", "false")
+        systemProperty("jb.privacy.policy.text", "<!--999.999-->")
+        systemProperty("jb.consents.confirmation.enabled", "false")
+    }
+
+    signPlugin {
+        certificateChain.set(System.getenv("CERTIFICATE_CHAIN"))
+        privateKey.set(System.getenv("PRIVATE_KEY"))
+        password.set(System.getenv("PRIVATE_KEY_PASSWORD"))
     }
 
     publishPlugin {
         dependsOn("patchChangelog")
-        token(System.getenv("PUBLISH_TOKEN"))
-        channels(pluginVersion.split('-').getOrElse(1) { "default" }.split('.').first())
+        token.set(System.getenv("PUBLISH_TOKEN"))
+        // pluginVersion is based on the SemVer (https://semver.org) and supports pre-release labels, like 2.1.7-alpha.3
+        // Specify pre-release label to publish the plugin in a custom Release Channel automatically. Read more:
+        // https://plugins.jetbrains.com/docs/intellij/deployment.html#specifying-a-release-channel
+        channels.set(listOf(properties("pluginVersion").split('-').getOrElse(1) { "default" }.split('.').first()))
     }
 
     runIde {
@@ -140,30 +155,25 @@ tasks {
                                 "$buildPluginPath is generated by the generateUpdatePluginsXML gradle task"
                     )
                     "plugin"{
-                        "name"{ -"IRen" }
+                        "name"{ -properties("pluginName") }
                         "id"{ -"com.github.davidenkoim.irenplugin" }
-                        "version"{ -pluginVersion }
-                        "idea-version"{ attribute("since-build", pluginSinceBuild) }
+                        "version"{ -properties("pluginVersion") }
+                        "idea-version"{ attribute("since-build", properties("pluginSinceBuild")) }
                         "vendor"{
                             attribute("url", "https://www.jetbrains.com")
                             -"JetBrains"
                         }
-                        "download-url"{ -buildPluginPath }
+                        "download-url"{ -properties("buildPluginPath") }
                         "description"{
-                            -"""<![CDATA[
-      <p>Provides assistance in variable refactoring.</p>
+                            -projectDir.resolve("README.md").readText().lines().run {
+                                val start = "<!-- Plugin description -->"
+                                val end = "<!-- Plugin description end -->"
 
-      <p>This tool replaces default IDE refactoring with the new one
-      that will recommend You better variable names with the help of Machine Learning methods.</p>
-
-      <p>To suggest consistent names IRen model has to train on a project in which you are currently working.
-      By the default IRen plugin automatically trains/loads model on a startup of the opened project but
-      if you want to manually control it you can switch off the corresponding option in the settings
-      <b>Tools | IRen settings</b> and do it by yourself launching <b>Refactor | Train IRen Model</b>.
-      Also in the settings you can tune some hyperparameters of the model.</p>
-
-      <p>IRen inspection helps with maintenance of the code and marks all variables which names are not good enough.</p>
-      ]]>"""
+                                if (!containsAll(listOf(start, end))) {
+                                    throw GradleException("Plugin description section not found in README.md:\n$start ... $end")
+                                }
+                                subList(indexOf(start) + 1, indexOf(end))
+                            }.joinToString("\n").run { markdownToHTML(this) }
                         }
                     }
                 }
