@@ -42,7 +42,7 @@ dependencies {
     implementation("org.junit.jupiter:junit-jupiter-api:5.5.1")
     implementation("org.junit.jupiter:junit-jupiter-engine:5.5.1")
     implementation("org.jetbrains.intellij.deps.completion:ngram-slp:0.0.3")
-    implementation("org.tensorflow", "tensorflow", "1.13.1")
+//    implementation("org.tensorflow", "tensorflow", "1.13.1")
     implementation("com.github.javaparser:javaparser-core:3.0.0-alpha.4")
     implementation("net.razorvine", "pyrolite", "4.19")
     implementation("org.eclipse.mylyn.github", "org.eclipse.egit.github.core", "2.1.5")

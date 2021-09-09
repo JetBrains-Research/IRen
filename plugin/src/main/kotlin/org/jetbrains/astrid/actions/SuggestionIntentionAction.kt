@@ -28,14 +28,14 @@ class SuggestionIntentionAction : IntentionAction {
         ProgressManager.getInstance().run(object : Task.Backgroundable(project, "Method name suggestions", true) {
             override fun run(indicator: ProgressIndicator) {
                 var suggestionsList: Suggestion? = null
-                if (!Files.exists(Downloader.getModelPath())) {
-                    Downloader.getPluginPath().toFile().mkdir()
-                    Downloader.downloadArchive(URL(Downloader.modelLink), Downloader.getArchivePath(),
-                            ProgressManager.getInstance().progressIndicator)
-                    if (indicator.isCanceled) return
-                    ProgressManager.getInstance().progressIndicator.text = "Extracting archive"
-                    FileUtils.unzip(Downloader.getArchivePath().toString(), Downloader.getModelPath().toString())
-                }
+//                if (!Files.exists(Downloader.getModelPath())) {
+//                    Downloader.getPluginPath().toFile().mkdir()
+//                    Downloader.downloadArchive(URL(Downloader.modelLink), Downloader.getArchivePath(),
+//                            ProgressManager.getInstance().progressIndicator)
+//                    if (indicator.isCanceled) return
+//                    ProgressManager.getInstance().progressIndicator.text = "Extracting archive"
+//                    FileUtils.unzip(Downloader.getArchivePath().toString(), Downloader.getModelPath().toString())
+//                }
 
                 runReadAction {
                     indicator.text = "Generating method name suggestions"

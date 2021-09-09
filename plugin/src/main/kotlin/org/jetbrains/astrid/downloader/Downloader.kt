@@ -30,45 +30,45 @@ object Downloader {
     fun getModelPath(): Path = Paths.get(tmp, pluginName, dirName)
 
     fun checkArchive() {
-        val progressManager: ProgressManager = ProgressManager.getInstance();
-        progressManager.run(object : Task.Backgroundable(ProjectManager.getInstance().defaultProject,
-                "Generating suggestions", true) {
-            override fun run(indicator: ProgressIndicator) {
-                if (!Files.exists(getModelPath())) {
-                    getPluginPath().toFile().mkdir()
-                    downloadArchive(URL(modelLink), getArchivePath(),
-                            ProgressManager.getInstance().progressIndicator)
-                    if (indicator.isCanceled) return
-                    ProgressManager.getInstance().progressIndicator.text = "Extracting archive"
-                    FileUtils.unzip(getArchivePath().toString(), getModelPath().toString())
-                }
-            }
-        })
+//        val progressManager: ProgressManager = ProgressManager.getInstance();
+//        progressManager.run(object : Task.Backgroundable(ProjectManager.getInstance().defaultProject,
+//                "Generating suggestions", true) {
+//            override fun run(indicator: ProgressIndicator) {
+//                if (!Files.exists(getModelPath())) {
+//                    getPluginPath().toFile().mkdir()
+//                    downloadArchive(URL(modelLink), getArchivePath(),
+//                            ProgressManager.getInstance().progressIndicator)
+//                    if (indicator.isCanceled) return
+//                    ProgressManager.getInstance().progressIndicator.text = "Extracting archive"
+//                    FileUtils.unzip(getArchivePath().toString(), getModelPath().toString())
+//                }
+//            }
+//        })
     }
 
     fun downloadArchive(url: URL, path: Path, indicator: ProgressIndicator) {
-        indicator.text = "Downloading model for suggesting methods' name..."
-        path.toFile().parentFile.mkdirs()
-        val urlConnection = url.openConnection()
-        val contentLength = urlConnection.contentLength
-
-        BufferedInputStream(url.openStream()).use {
-            val out = FileOutputStream(path.toFile())
-            val data = ByteArray(1024)
-            var totalCount = 0
-            var count = it.read(data, 0, 1024)
-            while (count != -1 && !indicator.isCanceled) {
-                out.write(data, 0, count)
-                totalCount += count
-                if (contentLength == 0) {
-                    indicator.fraction = 0.0
-                } else {
-                    indicator.fraction = totalCount.toDouble() / contentLength
-                }
-                count = it.read(data, 0, 1024)
-            }
-        }
-        indicator.fraction = 1.0
+//        indicator.text = "Downloading model for suggesting methods' name..."
+//        path.toFile().parentFile.mkdirs()
+//        val urlConnection = url.openConnection()
+//        val contentLength = urlConnection.contentLength
+//
+//        BufferedInputStream(url.openStream()).use {
+//            val out = FileOutputStream(path.toFile())
+//            val data = ByteArray(1024)
+//            var totalCount = 0
+//            var count = it.read(data, 0, 1024)
+//            while (count != -1 && !indicator.isCanceled) {
+//                out.write(data, 0, count)
+//                totalCount += count
+//                if (contentLength == 0) {
+//                    indicator.fraction = 0.0
+//                } else {
+//                    indicator.fraction = totalCount.toDouble() / contentLength
+//                }
+//                count = it.read(data, 0, 1024)
+//            }
+//        }
+//        indicator.fraction = 1.0
     }
 
     private fun getOperatingSystemType(): OSType {
