@@ -1,5 +1,5 @@
 <idea-plugin require-restart="true">
-    <id>com.github.davidenkoim.irenplugin</id>
+    <id>com.github.davidenkoim.idnamessuggestingplugin</id>
     <name>IRen</name>
     <vendor>Igor Davidenko</vendor>
     <resource-bundle>messages.IRen</resource-bundle>

@@ -157,7 +157,7 @@ tasks {
                     )
                     "plugin"{
                         "name"{ -properties("pluginName") }
-                        "id"{ -"com.github.davidenkoim.irenplugin" }
+                        "id"{ -"com.github.davidenkoim.idnamessuggestingplugin" }
                         "version"{ -properties("pluginVersion") }
                         "idea-version"{ attribute("since-build", properties("pluginSinceBuild")) }
                         "vendor"{
