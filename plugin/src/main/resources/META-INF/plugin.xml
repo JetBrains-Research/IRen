@@ -39,7 +39,7 @@
         <intentionAction>
             <className>org.jetbrains.iren.impl.SuggestVariableNamesIntention</className>
         </intentionAction>
-        <applicationService serviceImplementation="org.jetbrains.iren.stats.RenameVariableStatistics"/>
+        <lookup.usageDetails implementation="org.jetbrains.iren.statistics.IRenLookupUsageDescriptor"/>
         <applicationService serviceImplementation="org.jetbrains.iren.ModelStatsService"/>
         <applicationService serviceImplementation="org.jetbrains.iren.ModelManager"/>
         <applicationService serviceImplementation="org.jetbrains.iren.IRenSuggestingService"/>
