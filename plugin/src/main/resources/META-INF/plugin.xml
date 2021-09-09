@@ -48,8 +48,8 @@
                 implementation="org.jetbrains.iren.LoadingModelStartupActivity"/>
         <inspectionToolProvider
                 implementation="org.jetbrains.iren.inspections.variable.VariableNamesProvider"/>
-        <renameHandler implementation="org.jetbrains.iren.rename.MyVariableInplaceRenameHandler"/>
-        <renameHandler implementation="org.jetbrains.iren.rename.MyMemberInplaceRenameHandler"/>
+        <renameHandler implementation="org.jetbrains.iren.rename.IRenVariableInplaceRenameHandler"/>
+        <renameHandler implementation="org.jetbrains.iren.rename.IRenMemberInplaceRenameHandler"/>
         <!-- Astrid part-->
         <intentionAction>
             <className>org.jetbrains.astrid.actions.SuggestionIntentionAction</className>

@@ -30,7 +30,7 @@ import org.jetbrains.iren.contributors.ProjectVariableNamesContributor;
 
 import java.awt.*;
 
-public class MyMemberInplaceRenameHandler extends MemberInplaceRenameHandler {
+public class IRenMemberInplaceRenameHandler extends MemberInplaceRenameHandler {
     @Override
     public @Nullable InplaceRefactoring doRename(@NotNull PsiElement elementToRename,
                                                  @NotNull Editor editor,

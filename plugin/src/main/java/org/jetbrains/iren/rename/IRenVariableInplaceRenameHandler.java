@@ -16,7 +16,7 @@ import org.jetbrains.iren.IRenSuggestingService;
 import org.jetbrains.iren.ModelStatsService;
 import org.jetbrains.iren.contributors.ProjectVariableNamesContributor;
 
-public class MyVariableInplaceRenameHandler extends VariableInplaceRenameHandler {
+public class IRenVariableInplaceRenameHandler extends VariableInplaceRenameHandler {
     @Override
     public @Nullable InplaceRefactoring doRename(@NotNull PsiElement elementToRename,
                                                  @NotNull Editor editor,
