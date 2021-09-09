@@ -24,9 +24,6 @@
         <appStarter implementation="tools.transformerEvaluator.TransformerPluginRunner"/>
         <appStarter implementation="tools.nGramTrainingTime.PluginRunner"/>
         <!-- End of headless running part-->
-        <intentionAction>
-            <className>org.jetbrains.iren.impl.SuggestVariableNamesIntention</className>
-        </intentionAction>
         <applicationService serviceImplementation="org.jetbrains.iren.ModelManager"/>
         <applicationService serviceImplementation="org.jetbrains.iren.ModelStatsService"/>
         <applicationService serviceImplementation="org.jetbrains.iren.IRenSuggestingService"/>

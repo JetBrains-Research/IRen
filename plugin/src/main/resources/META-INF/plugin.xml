@@ -36,9 +36,6 @@
                                  id="org.jetbrains.iren.settings.AppSettingsConfigurable"
                                  displayName="IRen Settings"/>
         <!--    End of settings part    -->
-        <intentionAction>
-            <className>org.jetbrains.iren.impl.SuggestVariableNamesIntention</className>
-        </intentionAction>
         <lookup.usageDetails implementation="org.jetbrains.iren.statistics.IRenLookupUsageDescriptor"/>
         <applicationService serviceImplementation="org.jetbrains.iren.ModelStatsService"/>
         <applicationService serviceImplementation="org.jetbrains.iren.ModelManager"/>
