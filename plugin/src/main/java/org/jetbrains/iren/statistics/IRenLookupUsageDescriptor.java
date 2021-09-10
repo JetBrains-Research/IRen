@@ -6,6 +6,7 @@ import com.intellij.internal.statistic.eventLog.FeatureUsageData;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.iren.rename.MyMemberInplaceRenamer;
 
+@SuppressWarnings("UnstableApiUsage")
 public class IRenLookupUsageDescriptor implements LookupUsageDescriptor {
     @Override
     public @NotNull String getExtensionKey() {
