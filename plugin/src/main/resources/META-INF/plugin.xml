@@ -1,7 +1,7 @@
 <idea-plugin require-restart="true">
     <id>com.github.davidenkoim.idnamessuggestingplugin</id>
     <name>IRen</name>
-    <vendor>Igor Davidenko</vendor>
+    <vendor url="https://www.jetbrains.com">JetBrains</vendor>
     <resource-bundle>messages.IRen</resource-bundle>
     <!-- Product and plugin compatibility requirements -->
     <!-- https://www.jetbrains.org/intellij/sdk/docs/basics/getting_started/plugin_compatibility.html -->
