@@ -3,6 +3,8 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 import org.redundent.kotlin.xml.PrintOptions
 import org.redundent.kotlin.xml.xml
 
+gradle.startParameter.showStacktrace = ShowStacktrace.ALWAYS
+
 fun properties(key: String) = project.findProperty(key).toString()
 
 buildscript {
