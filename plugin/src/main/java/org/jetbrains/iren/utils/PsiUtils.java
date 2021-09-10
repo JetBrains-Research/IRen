@@ -5,6 +5,7 @@ import com.intellij.openapi.progress.ProcessCanceledException;
 import com.intellij.openapi.progress.ProgressManager;
 import com.intellij.openapi.progress.util.AbstractProgressIndicatorBase;
 import com.intellij.openapi.util.Computable;
+import com.intellij.openapi.util.TextRange;
 import com.intellij.psi.*;
 import com.intellij.psi.search.GlobalSearchScope;
 import com.intellij.psi.search.searches.ReferencesSearch;
@@ -18,6 +19,7 @@ import org.jetbrains.annotations.Nullable;
 import org.jetbrains.iren.storages.Context;
 
 import java.util.*;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -204,5 +206,26 @@ public class PsiUtils {
         parents.forEach(common::retainAll);
         Optional<PsiElement> res = common.stream().findFirst();
         return res.orElse(file);
+    }
+
+    public static @NotNull List<String> lexPsiFile(@NotNull PsiFile file) {
+        return lexPsiFile(file, null);
+    }
+
+    public static @NotNull List<String> lexPsiFile(@NotNull PsiFile file, @Nullable Consumer<PsiElement> consumer) {
+        return SyntaxTraverser.psiTraverser()
+                .withRoot(file)
+                .onRange(new TextRange(0, 64 * 1024)) // first 128 KB of chars
+                .forceIgnore(node -> node instanceof PsiComment)
+                .filter(PsiUtils::shouldLex)
+                .toList()
+                .stream()
+                .peek(x -> {
+                    if (consumer != null) {
+                        consumer.accept(x);
+                    }
+                })
+                .map(PsiUtils::processToken)
+                .collect(Collectors.toList());
     }
 }

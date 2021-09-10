@@ -13,7 +13,6 @@ import com.intellij.ide.highlighter.JavaFileType;
 import com.intellij.openapi.application.ReadAction;
 import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.project.Project;
-import com.intellij.openapi.util.TextRange;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.psi.*;
 import com.intellij.psi.search.FileTypeIndex;
@@ -43,6 +42,7 @@ import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 import static java.lang.Math.*;
+import static org.jetbrains.iren.utils.PsiUtils.lexPsiFile;
 
 public class NGramModelRunner {
     /**
@@ -52,7 +52,6 @@ public class NGramModelRunner {
 
     private final NGramModel myModel;
     private final Vocabulary myVocabulary = new Vocabulary();
-    private boolean rememberPossibleNames = false;
 
     public HashMap<Class<? extends PsiNameIdentifierOwner>, HashSet<Integer>> getRememberedIdentifiers() {
         return myRememberedIdentifiers;
@@ -222,7 +221,6 @@ public class NGramModelRunner {
         }
         System.out.printf("Training NGram model on %s...\n", project.getName());
         progress[0] = 0;
-        rememberPossibleNames = true;
         Instant finalStart = Instant.now();
         files.parallelStream().filter(x -> (progressIndicator == null || !progressIndicator.isCanceled()) &&
                         (maxTrainingTime <= 0 || Duration.between(finalStart, Instant.now()).minusSeconds(maxTrainingTime).isNegative()))
@@ -247,11 +245,10 @@ public class NGramModelRunner {
                         delta.toMillis()));
         System.out.printf("Done in %s\n", delta);
         System.out.printf("Vocabulary size: %d\n", myVocabulary.size());
-        rememberPossibleNames = false;
     }
 
     public void learnPsiFile(@NotNull PsiFile file) {
-        learnLexed(lexPsiFile(file));
+        learnLexed(lexPsiFile(file, this::rememberIdName));
     }
 
     private synchronized void learnLexed(List<String> lexed) {
@@ -266,21 +263,8 @@ public class NGramModelRunner {
         myModel.forget(myVocabulary.toIndices(lexPsiFile(file)));
     }
 
-    private @NotNull List<String> lexPsiFile(@NotNull PsiFile file) {
-        return SyntaxTraverser.psiTraverser()
-                .withRoot(file)
-                .onRange(new TextRange(0, 64 * 1024)) // first 128 KB of chars
-                .forceIgnore(node -> node instanceof PsiComment)
-                .filter(PsiUtils::shouldLex)
-                .toList()
-                .stream()
-                .peek(this::rememberIdName)
-                .map(PsiUtils::processToken)
-                .collect(Collectors.toList());
-    }
-
     private void rememberIdName(PsiElement element) {
-        if (rememberPossibleNames && element instanceof PsiIdentifier && element.getParent() instanceof PsiNameIdentifierOwner) {
+        if (element instanceof PsiIdentifier && element.getParent() instanceof PsiNameIdentifierOwner) {
             PsiNameIdentifierOwner parent = (PsiNameIdentifierOwner) element.getParent();
             Class<? extends PsiNameIdentifierOwner> parentClass = getSupportedParentClass(parent.getClass());
             if (parentClass != null) {
