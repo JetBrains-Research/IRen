@@ -1,9 +1,6 @@
 package org.jetbrains.iren.rename;
 
-import com.intellij.codeInsight.completion.InsertionContext;
 import com.intellij.codeInsight.lookup.LookupElement;
-import com.intellij.codeInsight.lookup.LookupElementDecorator;
-import com.intellij.codeInsight.lookup.LookupElementPresentation;
 import com.intellij.codeInsight.template.ExpressionContext;
 import com.intellij.completion.ngram.slp.translating.Vocabulary;
 import com.intellij.openapi.editor.Editor;
@@ -14,7 +11,6 @@ import com.intellij.refactoring.rename.inplace.MemberInplaceRenamer;
 import com.intellij.refactoring.rename.inplace.MyLookupExpression;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.jetbrains.iren.ModelManager;
 
 import java.util.*;
 
@@ -69,45 +65,10 @@ public class MyMemberInplaceRenamer extends MemberInplaceRenamer {
                 @NotNull String name = lookupElement.getLookupString();
                 newLookupElements.add(
                         namesProbs.containsKey(name) ?
-                                new NGramLookupElement(lookupElement, namesProbs, namesIndex) :
-                                new DefaultLookupElement(lookupElement));
+                                new MyLookup.NGram(lookupElement, namesProbs, namesIndex) :
+                                new MyLookup.Default(lookupElement));
             }
             return newLookupElements.toArray(lookupElements);
-        }
-    }
-
-    public static class NGramLookupElement extends LookupElementDecorator<LookupElement> {
-        public final double probability;
-        public final int rank;
-
-        protected NGramLookupElement(@NotNull LookupElement delegate, Map<String, Double> namesProbs, Map<String, Integer> namesIndex) {
-            super(delegate);
-            probability = namesProbs.get(getLookupString());
-            rank = namesIndex.get(getLookupString());
-        }
-
-        @Override
-        public void renderElement(LookupElementPresentation presentation) {
-            super.renderElement(presentation);
-            presentation.setTypeText(String.format("%.3f", probability));
-        }
-
-        @Override
-        public void handleInsert(@NotNull InsertionContext context) {
-            super.handleInsert(context);
-            ModelManager.getInstance().invoke(context.getProject(), getLookupString());
-        }
-    }
-
-    public static class DefaultLookupElement extends LookupElementDecorator<LookupElement> {
-        protected DefaultLookupElement(@NotNull LookupElement delegate) {
-            super(delegate);
-        }
-
-        @Override
-        public void handleInsert(@NotNull InsertionContext context) {
-            super.handleInsert(context);
-            ModelManager.getInstance().invoke(context.getProject(), getLookupString());
         }
     }
 }
