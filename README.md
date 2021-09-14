@@ -1,14 +1,15 @@
 # IRen
 
+[![jetbrains plugins](https://img.shields.io/jetbrains/plugin/v/15432-iren.svg)](https://plugins.jetbrains.com/plugin/15432-iren)
+![TeamCity build status](https://buildserver.labs.intellij.net/app/rest/builds/buildType:id:ijplatform_IntelliJProjectDependencies_CodeCompletionProjects_SuggestingIdentifierNames_Publish/statusIcon.svg)
 ## Description
 
 This plugin makes variable name suggestions for you.
 
 ## Installation
 
-1. In Intellij IDEA add custom plugin
-   repository `https://buildserver.labs.intellij.net/guestAuth/repository/download/ijplatform_IntelliJProjectDependencies_CodeCompletionProjects_IdentifiersNamesSuggesting_Build/lastSuccessful/updatePlugins.xml`. [Instruction](https://www.jetbrains.com/help/idea/managing-plugins.html#repos)
-2. Install plugin `Id Names Suggesting` in Marketplace.
+1. [Download](https://plugins.jetbrains.com/plugin/15432-iren/versions) latest version
+2. Install it manually `Preferences` > `Plugins` > `Install plugin from disk...`
 
 ## Features
 
