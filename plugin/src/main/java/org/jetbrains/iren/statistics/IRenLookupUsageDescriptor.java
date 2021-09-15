@@ -5,6 +5,7 @@ import com.intellij.codeInsight.lookup.LookupElement;
 import com.intellij.codeInsight.lookup.impl.LookupImpl;
 import com.intellij.codeInsight.lookup.impl.LookupUsageDescriptor;
 import com.intellij.internal.statistic.eventLog.FeatureUsageData;
+import jnr.ffi.types.sa_family_t;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.iren.rename.MyLookup;
@@ -19,7 +20,9 @@ public class IRenLookupUsageDescriptor implements LookupUsageDescriptor {
     @Override
     public void fillUsageData(@NotNull Lookup lookup, @NotNull FeatureUsageData usageData) {
         if (lookup instanceof LookupImpl) {
-            LookupElement lookupElement = lookup.getItems().get(((LookupImpl) lookup).getSelectedIndex());
+            int idx = ((LookupImpl) lookup).getSelectedIndex();
+            if (idx >= lookup.getItems().size()) return;
+            LookupElement lookupElement = lookup.getItems().get(idx);
             @Nullable String model_type = lookupElement.getUserData(MyLookup.model_type);
             if (model_type == null) return;
             usageData.addData("iren_model_type", model_type);
