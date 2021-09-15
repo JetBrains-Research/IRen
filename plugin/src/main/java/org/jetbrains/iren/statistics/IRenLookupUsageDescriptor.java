@@ -22,12 +22,11 @@ public class IRenLookupUsageDescriptor implements LookupUsageDescriptor {
             LookupElement lookupElement = lookup.getItems().get(((LookupImpl) lookup).getSelectedIndex());
             @Nullable String model_type = lookupElement.getUserData(MyLookup.model_type);
             if (model_type == null) return;
-            usageData.addData("iren_model", model_type);
+            usageData.addData("iren_model_type", model_type);
             if (model_type.equals(MyLookup.NGram.MODEL_TYPE)) {
                 @Nullable Double probability = lookupElement.getUserData(MyLookup.NGram.probability);
                 if (probability == null) return;
                 usageData.addData("iren_probability", probability);
-
             }
         }
     }
