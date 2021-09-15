@@ -21,7 +21,7 @@ public class AppSettingsComponent {
     private final JPanel myMainPanel;
     private final JBCheckBox myAutomaticTrainingStatus = new JBCheckBox("Automatic training of models.");
     private final IntegerField myMaxTrainingTimeText = new IntegerField("30", 0, 10000);
-    private final IntegerField myVocabularyCutOff = new IntegerField("0", 0, 20);
+    private final IntegerField myVocabularyCutOff = new IntegerField("3", 0, 20);
     private final IntegerField myModelsLifetime = new IntegerField();
     private final List<ChronoUnit> chronoUnits = Arrays.asList(ChronoUnit.HOURS, ChronoUnit.DAYS, ChronoUnit.WEEKS, ChronoUnit.MONTHS);
     private final ComboBox<String> myModelsLifetimeUnit = new ComboBox<>(chronoUnits.stream().map(ChronoUnit::toString).toArray(String[]::new));
@@ -36,7 +36,7 @@ public class AppSettingsComponent {
                 .addVerticalGap(10)
                 .addLabeledComponent(new JBLabel("Maximal training time of models (s): "), myMaxTrainingTimeText, 1, false)
                 .addLabeledComponent(new JBLabel("Vocabulary cutoff: "), myVocabularyCutOff, 1, false)
-                .addTooltip("Remove words with small frequencies.")
+                .addTooltip("Remove words with the frequencies smaller than this.")
                 .addLabeledComponent(new JBLabel("Models lifetime: "), myModelsLifetime, 1, false)
                 .addComponentToRightColumn(this.myModelsLifetimeUnit)
                 .addTooltip("The time after which model will be retrained.")
