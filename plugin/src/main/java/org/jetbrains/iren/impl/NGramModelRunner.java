@@ -38,6 +38,7 @@ import java.nio.file.Path;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.*;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
@@ -193,7 +194,6 @@ public class NGramModelRunner {
         Collection<VirtualFile> files = ReadAction.compute(() -> FileTypeIndex.getFiles(JavaFileType.INSTANCE,
                 GlobalSearchScope.projectScope(project)));
         final int[] progress = {0};
-        final int total = files.size();
         Instant start = Instant.now();
         int vocabularyCutOff = AppSettingsState.getInstance().vocabularyCutOff;
         int maxTrainingTime = AppSettingsState.getInstance().maxTrainingTime;
@@ -201,10 +201,13 @@ public class NGramModelRunner {
         if (vocabTraining) {
             System.out.printf("Training vocabulary on %s...\n", project.getName());
             StringCounter counter = new StringCounter();
+            final int total = files.size();
+            Collection<VirtualFile> viewedFiles = new ConcurrentLinkedQueue<>();
             files.parallelStream().filter(x -> (progressIndicator == null || !progressIndicator.isCanceled()) &&
                             (maxTrainingTime <= 0 || Duration.between(start, Instant.now()).minusSeconds(maxTrainingTime).isNegative()))
                     .forEach(file -> {
                         counter.putAll(ReadAction.compute(() -> lexPsiFile(Objects.requireNonNull(PsiManager.getInstance(project).findFile(file)))));
+                        viewedFiles.add(file);
                         synchronized (progress) {
                             double fraction = ++progress[0] / (double) total;
                             if (total < 10 || progress[0] % (total / 10) == 0) {
@@ -215,6 +218,7 @@ public class NGramModelRunner {
                             }
                         }
                     });
+            files = viewedFiles;
             VocabularyManager.clear(myVocabulary);
             counter.toVocabulary(myVocabulary, vocabularyCutOff);
             System.out.printf("Done in %s\n", Duration.between(start, Instant.now()));
@@ -222,6 +226,7 @@ public class NGramModelRunner {
         System.out.printf("Training NGram model on %s...\n", project.getName());
         progress[0] = 0;
         Instant finalStart = Instant.now();
+        final int total = files.size();
         files.parallelStream().filter(x -> (progressIndicator == null || !progressIndicator.isCanceled()) &&
                         (maxTrainingTime <= 0 || Duration.between(finalStart, Instant.now()).minusSeconds(maxTrainingTime).isNegative()))
                 .forEach(file -> {
@@ -337,13 +342,9 @@ public class NGramModelRunner {
                     progressIndicator.setIndeterminate(true);
                     progressIndicator.setText2(IRenBundle.message("loading.file", counterFile.getName()));
                 }
-                FileInputStream fileInputStream = new FileInputStream(counterFile);
-                ObjectInputStream objectInputStream = new ObjectInputStream(fileInputStream);
-                try {
+                try (FileInputStream fileInputStream = new FileInputStream(counterFile);
+                     ObjectInputStream objectInputStream = new ObjectInputStream(fileInputStream)) {
                     myModel.getCounter().readExternal(objectInputStream);
-                } finally {
-                    objectInputStream.close();
-                    fileInputStream.close();
                 }
 
                 if (progressIndicator != null) {
