@@ -5,7 +5,6 @@ import com.intellij.codeInsight.lookup.LookupElement;
 import com.intellij.codeInsight.lookup.impl.LookupImpl;
 import com.intellij.codeInsight.lookup.impl.LookupUsageDescriptor;
 import com.intellij.internal.statistic.eventLog.FeatureUsageData;
-import jnr.ffi.types.sa_family_t;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.iren.rename.MyLookup;
