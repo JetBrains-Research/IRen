@@ -204,7 +204,7 @@ public class NGramModelRunner {
             final int total = files.size();
             Collection<VirtualFile> viewedFiles = new ConcurrentLinkedQueue<>();
             files.parallelStream().filter(x -> (progressIndicator == null || !progressIndicator.isCanceled()) &&
-                            (maxTrainingTime <= 0 || Duration.between(start, Instant.now()).minusSeconds(maxTrainingTime).isNegative()))
+                            (maxTrainingTime <= 0 || Duration.between(start, Instant.now()).minusSeconds(maxTrainingTime / 2).isNegative()))
                     .forEach(file -> {
                         counter.putAll(ReadAction.compute(() -> lexPsiFile(Objects.requireNonNull(PsiManager.getInstance(project).findFile(file)))));
                         viewedFiles.add(file);
@@ -228,7 +228,8 @@ public class NGramModelRunner {
         Instant finalStart = Instant.now();
         final int total = files.size();
         files.parallelStream().filter(x -> (progressIndicator == null || !progressIndicator.isCanceled()) &&
-                        (maxTrainingTime <= 0 || Duration.between(finalStart, Instant.now()).minusSeconds(maxTrainingTime).isNegative()))
+                        (maxTrainingTime <= 0 || Duration.between(finalStart, Instant.now()).minusSeconds(
+                                vocabTraining ? maxTrainingTime / 2 : maxTrainingTime).isNegative()))
                 .forEach(file -> {
                     ReadAction.run(() -> ObjectUtils.consumeIfNotNull(PsiManager.getInstance(project).findFile(file), this::learnPsiFile));
                     synchronized (progress) {

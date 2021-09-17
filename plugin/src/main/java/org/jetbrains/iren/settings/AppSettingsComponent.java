@@ -20,7 +20,7 @@ public class AppSettingsComponent {
 
     private final JPanel myMainPanel;
     private final JBCheckBox myAutomaticTrainingStatus = new JBCheckBox("Automatic training of models.");
-    private final IntegerField myMaxTrainingTimeText = new IntegerField("30", 0, 10000);
+    private final IntegerField myMaxTrainingTimeText = new IntegerField("30", 2, 10000);
     private final IntegerField myVocabularyCutOff = new IntegerField("3", 0, 20);
     private final IntegerField myModelsLifetime = new IntegerField();
     private final List<ChronoUnit> chronoUnits = Arrays.asList(ChronoUnit.HOURS, ChronoUnit.DAYS, ChronoUnit.WEEKS, ChronoUnit.MONTHS);
