@@ -20,7 +20,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
-import static org.jetbrains.iren.utils.StringUtils.join;
+import static org.jetbrains.iren.ModelManager.join;
 
 @State(name = "ModelStatsService",
         storages = {@Storage("ModelSaveTime.xml")})

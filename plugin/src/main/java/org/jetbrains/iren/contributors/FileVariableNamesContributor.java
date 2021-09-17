@@ -1,6 +1,6 @@
 package org.jetbrains.iren.contributors;
 
-import com.intellij.psi.PsiVariable;
+import com.intellij.psi.PsiNameIdentifierOwner;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.iren.impl.NGramModelRunner;
 
@@ -16,7 +16,7 @@ public class FileVariableNamesContributor extends NGramVariableNamesContributor 
     }
 
     @Override
-    public NGramModelRunner getModelRunnerToContribute(@NotNull PsiVariable variable) {
+    public NGramModelRunner getModelRunnerToContribute(@NotNull PsiNameIdentifierOwner variable) {
         NGramModelRunner modelRunner = new NGramModelRunner(SUPPORTED_TYPES, false);
         modelRunner.learnPsiFile(variable.getContainingFile());
         return modelRunner;

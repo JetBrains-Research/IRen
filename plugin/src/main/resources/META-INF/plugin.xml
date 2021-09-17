@@ -25,6 +25,8 @@
 
     <depends>com.intellij.modules.platform</depends>
     <depends>com.intellij.modules.java</depends>
+    <depends optional="true" config-file="java.xml">com.intellij.java</depends>
+    <depends optional="true" config-file="kotlin.xml">org.jetbrains.kotlin</depends>
     <extensions defaultExtensionNs="com.intellij">
         <!--    Settings part    -->
         <registryKey key="iren.developer.mode"
@@ -45,8 +47,6 @@
                 implementation="org.jetbrains.iren.LoadingModelStartupActivity"/>
         <inspectionToolProvider
                 implementation="org.jetbrains.iren.inspections.variable.VariableNamesProvider"/>
-        <renameHandler implementation="org.jetbrains.iren.rename.IRenVariableInplaceRenameHandler"/>
-        <renameHandler implementation="org.jetbrains.iren.rename.IRenMemberInplaceRenameHandler"/>
         <!-- Astrid part-->
         <intentionAction>
             <className>org.jetbrains.astrid.actions.SuggestionIntentionAction</className>
@@ -74,6 +74,9 @@
     <extensionPoints>
         <extensionPoint qualifiedName="org.jetbrains.iren.variableNamesContributor"
                         interface="org.jetbrains.iren.api.VariableNamesContributor" dynamic="true"/>
+        <extensionPoint
+                interface="org.jetbrains.iren.utils.PsiUtils"
+                dynamic="true" qualifiedName="org.jetbrains.iren.language.psiUtils"/>
     </extensionPoints>
     <applicationListeners>
         <listener class="org.jetbrains.iren.PluginLoadedListener"

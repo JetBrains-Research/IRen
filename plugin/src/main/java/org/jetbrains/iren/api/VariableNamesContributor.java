@@ -1,7 +1,7 @@
 package org.jetbrains.iren.api;
 
 import com.intellij.openapi.extensions.ExtensionPointName;
-import com.intellij.psi.PsiVariable;
+import com.intellij.psi.PsiNameIdentifierOwner;
 import kotlin.Pair;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.iren.storages.VarNamePrediction;
@@ -19,7 +19,7 @@ public interface VariableNamesContributor {
      * @param predictionList    container which contains all predictions.
      * @return                  priority of contribution
      */
-    int contribute(@NotNull PsiVariable variable, @NotNull List<VarNamePrediction> predictionList);
+    int contribute(@NotNull PsiNameIdentifierOwner variable, @NotNull List<VarNamePrediction> predictionList);
 
     /**
      * Get conditional probability of variable name.
@@ -27,5 +27,5 @@ public interface VariableNamesContributor {
      * @param variable some variable.
      * @return pair of probability and model priority.
      */
-    @NotNull Pair<Double, Integer> getProbability(@NotNull PsiVariable variable);
+    @NotNull Pair<Double, Integer> getProbability(@NotNull PsiNameIdentifierOwner variable);
 }

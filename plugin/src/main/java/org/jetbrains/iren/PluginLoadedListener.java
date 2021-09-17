@@ -15,6 +15,7 @@ import com.intellij.refactoring.rename.inplace.VariableInplaceRenameHandler;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.iren.inspections.variable.PredictionsStorage;
+import org.jetbrains.iren.rename.DefaultHandlersRemover;
 import org.jetbrains.iren.settings.AppSettingsState;
 
 public class PluginLoadedListener implements DynamicPluginListener {
@@ -28,8 +29,7 @@ public class PluginLoadedListener implements DynamicPluginListener {
     @Override
     public void pluginLoaded(@NotNull IdeaPluginDescriptor pluginDescriptor) {
         DynamicPluginListener.super.pluginLoaded(pluginDescriptor);
-        RenameHandler.EP_NAME.getPoint().unregisterExtension(VariableInplaceRenameHandler.class);
-        RenameHandler.EP_NAME.getPoint().unregisterExtension(MemberInplaceRenameHandler.class);
+        DefaultHandlersRemover.remove();
         askPermissions();
     }
 

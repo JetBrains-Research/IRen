@@ -15,8 +15,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Consumer;
 
-import static org.jetbrains.iren.utils.StringUtils.join;
-
 public class ModelManager implements Disposable {
     private final Map<String, NGramModelRunner> myModelRunners = new HashMap<>();
 
@@ -76,5 +74,9 @@ public class ModelManager implements Disposable {
                 e.printStackTrace();
             }
         }
+    }
+
+    public static @NotNull String join(@NotNull Class<? extends VariableNamesContributor> className, @NotNull Project project) {
+        return String.join("_", className.getSimpleName(), project.getLocationHash());
     }
 }

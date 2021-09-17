@@ -12,6 +12,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.iren.contributors.NGramVariableNamesContributor;
 import org.jetbrains.iren.contributors.ProjectVariableNamesContributor;
 import org.jetbrains.iren.impl.NGramModelRunner;
+import org.jetbrains.iren.rename.DefaultHandlersRemover;
 import org.jetbrains.iren.settings.AppSettingsState;
 import org.jetbrains.iren.utils.NotificationsUtil;
 
@@ -20,8 +21,7 @@ import static org.jetbrains.iren.PluginLoadedListener.askPermissions;
 public class LoadingModelStartupActivity implements StartupActivity.Background {
     @Override
     public void runActivity(@NotNull Project project) {
-        RenameHandler.EP_NAME.getPoint().unregisterExtension(VariableInplaceRenameHandler.class);
-        RenameHandler.EP_NAME.getPoint().unregisterExtension(MemberInplaceRenameHandler.class);
+        DefaultHandlersRemover.remove();
         AppSettingsState settings = AppSettingsState.getInstance();
         if (!settings.firstOpen && settings.automaticTraining &&
                 ModelStatsService.getInstance().needRetraining(ProjectVariableNamesContributor.class, project)) {

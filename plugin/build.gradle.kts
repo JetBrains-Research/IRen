@@ -1,5 +1,4 @@
 import org.jetbrains.changelog.markdownToHTML
-import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 import org.redundent.kotlin.xml.PrintOptions
 import org.redundent.kotlin.xml.xml
 
@@ -17,16 +16,8 @@ buildscript {
 }
 
 plugins {
-    // Java support
-    id("java")
-    // Kotlin support
-    id("org.jetbrains.kotlin.jvm")
-    // gradle-intellij-plugin - read more: https://github.com/JetBrains/gradle-intellij-plugin
-    id("org.jetbrains.intellij") version "1.1.6"
     // gradle-changelog-plugin - read more: https://github.com/JetBrains/gradle-changelog-plugin
     id("org.jetbrains.changelog") version "1.3.0"
-    // Gradle Qodana Plugin
-    id("org.jetbrains.qodana") version "0.1.12"
 }
 
 val buildPluginPath = "plugin-${properties("pluginVersion")}.zip"
@@ -34,33 +25,15 @@ val buildPluginPath = "plugin-${properties("pluginVersion")}.zip"
 group = properties("pluginGroup")
 version = properties("pluginVersion")
 
-// Configure project's dependencies
-repositories {
-    mavenCentral()
-    maven("https://packages.jetbrains.team/maven/p/ij/intellij-dependencies")
-}
 dependencies {
-    implementation("org.junit.jupiter:junit-jupiter-params:5.5.1")
-    implementation("org.junit.jupiter:junit-jupiter-api:5.5.1")
-    implementation("org.junit.jupiter:junit-jupiter-engine:5.5.1")
+    implementation(project(":languages:common"))
+    implementation(project(":languages:java"))
+    implementation(project(":languages:kotlin"))
     implementation("org.jetbrains.intellij.deps.completion:ngram-slp:0.0.3")
 //    implementation("org.tensorflow", "tensorflow", "1.13.1")
     implementation("com.github.javaparser:javaparser-core:3.0.0-alpha.4")
     implementation("net.razorvine", "pyrolite", "4.19")
     implementation("org.eclipse.mylyn.github", "org.eclipse.egit.github.core", "2.1.5")
-}
-
-
-// Configure Gradle IntelliJ Plugin - read more: https://github.com/JetBrains/gradle-intellij-plugin
-intellij {
-    pluginName.set(properties("pluginName"))
-    version.set(properties("platformVersion"))
-    type.set(properties("platformType"))
-    downloadSources.set(properties("platformDownloadSources").toBoolean())
-    updateSinceUntilBuild.set(true)
-
-    // Plugin Dependencies. Uses `platformPlugins` property from the gradle.properties file.
-    plugins.set(properties("platformPlugins").split(',').map(String::trim).filter(String::isNotEmpty))
 }
 
 // Configure Gradle Changelog Plugin - read more: https://github.com/JetBrains/gradle-changelog-plugin
@@ -69,26 +42,7 @@ changelog {
     groups.set(emptyList())
 }
 
-// Configure Gradle Qodana Plugin - read more: https://github.com/JetBrains/gradle-qodana-plugin
-qodana {
-    cachePath.set(projectDir.resolve(".qodana").canonicalPath)
-    reportPath.set(projectDir.resolve("build/reports/inspections").canonicalPath)
-    saveReport.set(true)
-    showReport.set(System.getenv("QODANA_SHOW_REPORT").toBoolean())
-}
-
 tasks {
-    // Set the JVM compatibility versions
-    properties("javaVersion").let {
-        withType<JavaCompile> {
-            sourceCompatibility = it
-            targetCompatibility = it
-        }
-        withType<KotlinCompile> {
-            kotlinOptions.jvmTarget = it
-        }
-    }
-
     patchPluginXml {
         version.set(properties("pluginVersion"))
         sinceBuild.set(properties("pluginSinceBuild"))

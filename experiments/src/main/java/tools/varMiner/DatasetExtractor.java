@@ -13,7 +13,7 @@ import com.intellij.psi.search.FileTypeIndex;
 import com.intellij.psi.search.GlobalSearchScope;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.jetbrains.iren.utils.PsiUtils;
+import org.jetbrains.iren.utils.DeprecatedPsiUtils;
 
 import java.io.File;
 import java.io.IOException;
@@ -28,8 +28,8 @@ import java.util.stream.Stream;
 import static java.lang.Integer.max;
 import static java.lang.Integer.min;
 import static java.lang.Math.abs;
-import static org.jetbrains.iren.utils.PsiUtils.findReferences;
-import static org.jetbrains.iren.utils.PsiUtils.processToken;
+import static org.jetbrains.iren.utils.DeprecatedPsiUtils.findReferences;
+import static org.jetbrains.iren.utils.DeprecatedPsiUtils.processToken;
 
 public class DatasetExtractor {
     public static final String TOKEN_DELIMITER = "\u2581";
@@ -106,7 +106,7 @@ public class DatasetExtractor {
         Stream<PsiReference> elementUsages = findReferences(variable, file);
         return new VariableFeatures(variable,
                 Stream.concat(Stream.of(variable), elementUsages)
-                        .map(PsiUtils::getIdentifier)
+                        .map(DeprecatedPsiUtils::getIdentifier)
                         .filter(Objects::nonNull)
                         .sorted(Comparator.comparing(PsiElement::getTextOffset))
                         .map(id -> getUsageFeatures(variable, id, file))
@@ -122,7 +122,7 @@ public class DatasetExtractor {
                 .withRoot(file)
                 .onRange(new TextRange(0, max(0, element.getTextOffset() - 1)))
                 .forceIgnore(node -> node instanceof PsiComment)
-                .filter(PsiUtils::shouldLex)) {
+                .filter(DeprecatedPsiUtils::shouldLex)) {
             tokens.add(processToken(token, variable));
             if (--order < 1) {
                 break;
@@ -136,7 +136,7 @@ public class DatasetExtractor {
                 .withRoot(file)
                 .onRange(new TextRange(min(element.getTextOffset(), file.getTextLength()), file.getTextLength()))
                 .forceIgnore(node -> node instanceof PsiComment)
-                .filter(PsiUtils::shouldLex)) {
+                .filter(DeprecatedPsiUtils::shouldLex)) {
             tokens.add(processToken(token, variable));
             if (--order < 1) {
                 break;

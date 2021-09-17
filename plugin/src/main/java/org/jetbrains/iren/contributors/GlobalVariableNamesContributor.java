@@ -1,6 +1,6 @@
 package org.jetbrains.iren.contributors;
 
-import com.intellij.psi.PsiVariable;
+import com.intellij.psi.PsiNameIdentifierOwner;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.iren.ModelManager;
 import org.jetbrains.iren.ModelStatsService;
@@ -18,7 +18,7 @@ public class GlobalVariableNamesContributor extends NGramVariableNamesContributo
     }
 
     @Override
-    public NGramModelRunner getModelRunnerToContribute(@NotNull PsiVariable variable) {
+    public NGramModelRunner getModelRunnerToContribute(@NotNull PsiNameIdentifierOwner variable) {
         if (ModelStatsService.getInstance().isUsable(this.getClass())) {
             return ModelManager.getInstance().getModelRunner(this.getClass());
         }

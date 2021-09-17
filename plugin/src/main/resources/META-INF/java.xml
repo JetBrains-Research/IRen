@@ -1,0 +1,10 @@
+<idea-plugin>
+    <depends>com.intellij.java</depends>
+    <extensions defaultExtensionNs="org.jetbrains.iren.language">
+        <psiUtils implementation="org.jetbrains.iren.language.JavaPsiUtils"/>
+    </extensions>
+    <extensions defaultExtensionNs="com.intellij">
+        <renameHandler implementation="org.jetbrains.iren.rename.IRenVariableInplaceRenameHandler"/>
+        <renameHandler implementation="org.jetbrains.iren.rename.IRenMemberInplaceRenameHandler"/>
+    </extensions>
+</idea-plugin>

@@ -6,6 +6,11 @@ import org.jetbrains.annotations.NotNull;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Context is a snippet of code separated on tokens that contains all references of some variable.
+ *
+ * @param <T> class of the tokens (String or Integer)
+ */
 public class Context<T> {
     final List<T> tokens;
     final List<Integer> varIdxs;

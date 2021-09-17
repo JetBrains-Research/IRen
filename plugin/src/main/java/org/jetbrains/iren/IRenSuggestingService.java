@@ -1,9 +1,9 @@
 package org.jetbrains.iren;
 
-import com.intellij.openapi.components.ServiceManager;
+import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.psi.PsiElement;
-import com.intellij.psi.PsiVariable;
+import com.intellij.psi.PsiNameIdentifierOwner;
 import kotlin.Pair;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.iren.api.VariableNamesContributor;
@@ -21,10 +21,10 @@ public class IRenSuggestingService {
     public static final int PREDICTION_CUTOFF = 10;
 
     public static IRenSuggestingService getInstance() {
-        return ServiceManager.getService(IRenSuggestingService.class);
+        return ApplicationManager.getApplication().getService(IRenSuggestingService.class);
     }
 
-    public LinkedHashMap<String, Double> suggestVariableName(@NotNull PsiVariable variable) {
+    public LinkedHashMap<String, Double> suggestVariableName(@NotNull PsiNameIdentifierOwner variable) {
         Instant timerStart = Instant.now();
         List<VarNamePrediction> nameSuggestions = new ArrayList<>();
         boolean isDeveloperMode = NotificationsUtil.isDeveloperMode();
@@ -62,7 +62,7 @@ public class IRenSuggestingService {
                 notifications.toString());
     }
 
-    public @NotNull Double getVariableNameProbability(@NotNull PsiVariable variable) {
+    public @NotNull Double getVariableNameProbability(@NotNull PsiNameIdentifierOwner variable) {
         double nameProbability = 0.0;
         int prioritiesSum = 0;
         for (final VariableNamesContributor modelContributor : VariableNamesContributor.EP_NAME.getExtensions()) {
@@ -96,7 +96,7 @@ public class IRenSuggestingService {
         return rankedSuggestions.entrySet()
                 .stream()
                 .sorted((e1, e2) -> -Double.compare(e1.getValue(), e2.getValue()))
-                .filter(e -> !PsiUtils.isColliding(variable, e.getKey()))
+                .filter(e -> !PsiUtils.getInstance(variable.getLanguage()).isColliding(variable, e.getKey()))
                 .limit(PREDICTION_CUTOFF)
                 .collect(Collectors.toMap(
                         Map.Entry::getKey,

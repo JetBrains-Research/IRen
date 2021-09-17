@@ -31,6 +31,7 @@ import org.jetbrains.iren.storages.StringCounter;
 import org.jetbrains.iren.storages.VarNamePrediction;
 import org.jetbrains.iren.utils.NotificationsUtil;
 import org.jetbrains.iren.utils.PsiUtils;
+import org.jetbrains.kotlin.idea.KotlinFileType;
 
 import java.io.*;
 import java.nio.charset.StandardCharsets;
@@ -43,7 +44,6 @@ import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 import static java.lang.Math.*;
-import static org.jetbrains.iren.utils.PsiUtils.lexPsiFile;
 
 public class NGramModelRunner {
     /**
@@ -81,8 +81,9 @@ public class NGramModelRunner {
         return myVocabulary.size();
     }
 
-    public @NotNull List<VarNamePrediction> suggestNames(@NotNull PsiVariable variable, boolean forgetContext) {
-        @NotNull Context<Integer> intContext = Context.fromStringToInt(PsiUtils.getContext(variable, false), myVocabulary);
+    public @NotNull List<VarNamePrediction> suggestNames(@NotNull PsiNameIdentifierOwner variable, boolean forgetContext) {
+        @NotNull Context<Integer> intContext = Context.fromStringToInt(PsiUtils.getInstance(variable.getLanguage())
+                .getContext(variable, false), myVocabulary);
         if (forgetContext) {
             ModelManager.getInstance().invokeLater(variable.getProject(),
                     (String name) -> learnContext(name != null ?
@@ -141,8 +142,9 @@ public class NGramModelRunner {
         return logProb;
     }
 
-    public @NotNull Pair<Double, Integer> getProbability(PsiVariable variable, boolean forgetContext) {
-        @NotNull Context<Integer> intContext = Context.fromStringToInt(PsiUtils.getContext(variable, false), myVocabulary);
+    public @NotNull Pair<Double, Integer> getProbability(PsiNameIdentifierOwner variable, boolean forgetContext) {
+        @NotNull Context<Integer> intContext = Context.fromStringToInt(PsiUtils.getInstance(variable.getLanguage())
+                .getContext(variable, false), myVocabulary);
         if (forgetContext) {
             forgetContext(intContext);
         }
@@ -193,6 +195,8 @@ public class NGramModelRunner {
         }
         Collection<VirtualFile> files = ReadAction.compute(() -> FileTypeIndex.getFiles(JavaFileType.INSTANCE,
                 GlobalSearchScope.projectScope(project)));
+        files.addAll(ReadAction.compute(() -> FileTypeIndex.getFiles(KotlinFileType.INSTANCE,
+                GlobalSearchScope.projectScope(project))));
         final int[] progress = {0};
         Instant start = Instant.now();
         int vocabularyCutOff = AppSettingsState.getInstance().vocabularyCutOff;
@@ -206,7 +210,9 @@ public class NGramModelRunner {
             files.parallelStream().filter(x -> (progressIndicator == null || !progressIndicator.isCanceled()) &&
                             (maxTrainingTime <= 0 || Duration.between(start, Instant.now()).minusSeconds(maxTrainingTime).isNegative()))
                     .forEach(file -> {
-                        counter.putAll(ReadAction.compute(() -> lexPsiFile(Objects.requireNonNull(PsiManager.getInstance(project).findFile(file)))));
+                        @Nullable PsiFile psiFile = ReadAction.compute(() -> PsiManager.getInstance(project).findFile(file));
+                        if (psiFile == null) return;
+                        counter.putAll(ReadAction.compute(() -> PsiUtils.getInstance(psiFile.getLanguage()).lexPsiFile(psiFile)));
                         viewedFiles.add(file);
                         synchronized (progress) {
                             double fraction = ++progress[0] / (double) total;
@@ -253,7 +259,7 @@ public class NGramModelRunner {
     }
 
     public void learnPsiFile(@NotNull PsiFile file) {
-        learnLexed(lexPsiFile(file, this::rememberIdName));
+        learnLexed(PsiUtils.getInstance(file.getLanguage()).lexPsiFile(file, this::rememberIdName));
     }
 
     private synchronized void learnLexed(List<String> lexed) {
@@ -265,7 +271,7 @@ public class NGramModelRunner {
     }
 
     public void forgetPsiFile(@NotNull PsiFile file) {
-        myModel.forget(myVocabulary.toIndices(lexPsiFile(file)));
+        myModel.forget(myVocabulary.toIndices(PsiUtils.getInstance(file.getLanguage()).lexPsiFile(file)));
     }
 
     private void rememberIdName(PsiElement element) {

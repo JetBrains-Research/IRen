@@ -10,6 +10,7 @@ import org.jetbrains.iren.ModelManager;
 import org.jetbrains.iren.api.VariableNamesContributor;
 import org.jetbrains.iren.impl.NGramModelRunner;
 import org.jetbrains.iren.storages.VarNamePrediction;
+import org.jetbrains.kotlin.psi.KtProperty;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -19,10 +20,11 @@ public abstract class NGramVariableNamesContributor implements VariableNamesCont
 
     static {
         SUPPORTED_TYPES.add(PsiVariable.class);
+        SUPPORTED_TYPES.add(KtProperty.class);
     }
 
     @Override
-    public int contribute(@NotNull PsiVariable variable, @NotNull List<VarNamePrediction> predictionList) {
+    public int contribute(@NotNull PsiNameIdentifierOwner variable, @NotNull List<VarNamePrediction> predictionList) {
         NGramModelRunner modelRunner = getModelRunnerToContribute(variable);
         if (modelRunner == null || !isSupported(variable)) {
             return 0;
@@ -39,7 +41,7 @@ public abstract class NGramVariableNamesContributor implements VariableNamesCont
     }
 
     @Override
-    public @NotNull Pair<Double, Integer> getProbability(@NotNull PsiVariable variable) {
+    public @NotNull Pair<Double, Integer> getProbability(@NotNull PsiNameIdentifierOwner variable) {
         NGramModelRunner modelRunner = getModelRunnerToContribute(variable);
         if (modelRunner == null || !isSupported(variable)) {
             return new Pair<>(0.0, 0);
@@ -62,7 +64,7 @@ public abstract class NGramVariableNamesContributor implements VariableNamesCont
 
     protected abstract boolean forgetContext();
 
-    public abstract @Nullable NGramModelRunner getModelRunnerToContribute(@NotNull PsiVariable variable);
+    public abstract @Nullable NGramModelRunner getModelRunnerToContribute(@NotNull PsiNameIdentifierOwner variable);
 
     private static boolean isSupported(@NotNull PsiNameIdentifierOwner identifierOwner) {
         return SUPPORTED_TYPES.stream().anyMatch(type -> type.isInstance(identifierOwner));
