@@ -1,5 +1,8 @@
 dependencies {
     implementation(project(":plugin"))
+    implementation(project(":languages:common"))
+    implementation(project(":languages:java"))
+    implementation(project(":languages:kotlin"))
 }
 
 tasks {
