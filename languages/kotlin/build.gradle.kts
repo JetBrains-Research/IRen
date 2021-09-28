@@ -1,8 +1,8 @@
 intellij {
-    this.plugins.set(listOf("java", "org.jetbrains.kotlin"))
+    this.plugins.set(listOf("java", "Kotlin"))
 }
 
 dependencies {
-    implementation(project(":plugin"))
+    implementation(project(":languages:common"))
     implementation(project(":languages:java"))
 }

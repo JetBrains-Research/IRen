@@ -3,5 +3,5 @@ intellij {
 }
 
 dependencies {
-    implementation(project(":plugin"))
+    implementation(project(":languages:common"))
 }

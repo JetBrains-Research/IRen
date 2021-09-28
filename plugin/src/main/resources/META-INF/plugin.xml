@@ -24,7 +24,6 @@
     </description>
 
     <depends>com.intellij.modules.platform</depends>
-    <depends>com.intellij.modules.java</depends>
     <depends optional="true" config-file="java.xml">com.intellij.java</depends>
     <depends optional="true" config-file="kotlin.xml">org.jetbrains.kotlin</depends>
     <extensions defaultExtensionNs="com.intellij">
@@ -45,8 +44,6 @@
         <applicationService serviceImplementation="org.jetbrains.iren.inspections.variable.PredictionsStorage"/>
         <backgroundPostStartupActivity
                 implementation="org.jetbrains.iren.LoadingModelStartupActivity"/>
-        <inspectionToolProvider
-                implementation="org.jetbrains.iren.inspections.variable.VariableNamesProvider"/>
         <!-- Astrid part-->
         <intentionAction>
             <className>org.jetbrains.astrid.actions.SuggestionIntentionAction</className>
@@ -75,8 +72,8 @@
         <extensionPoint qualifiedName="org.jetbrains.iren.variableNamesContributor"
                         interface="org.jetbrains.iren.api.VariableNamesContributor" dynamic="true"/>
         <extensionPoint
-                interface="org.jetbrains.iren.utils.PsiUtils"
-                dynamic="true" qualifiedName="org.jetbrains.iren.language.psiUtils"/>
+                interface="org.jetbrains.iren.utils.LanguageSupporter"
+                dynamic="true" qualifiedName="org.jetbrains.iren.language.supporter"/>
     </extensionPoints>
     <applicationListeners>
         <listener class="org.jetbrains.iren.PluginLoadedListener"
