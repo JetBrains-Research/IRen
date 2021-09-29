@@ -42,9 +42,9 @@ allprojects {
 
         when (properties("language")) {
             "java"   -> run {}
-            "kotlin" -> plugins.add("org.jetbrains.kotlin")
+            "kotlin" -> plugins.add(Plugins.kotlin)
             "all"    -> {
-                plugins.add("org.jetbrains.kotlin")
+                plugins.add(Plugins.kotlin)
             }
             else     -> throw InvalidUserDataException("Wrong language: `${properties("language")}`, pick one of supported (settings.gradle.kts.kts)")
         }
