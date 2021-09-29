@@ -5,7 +5,7 @@ import com.intellij.ide.impl.ProjectUtil
 import com.intellij.openapi.application.ApplicationStarter
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.project.ProjectManager
-import org.jetbrains.iren.contributors.NGramVariableNamesContributor
+import org.jetbrains.iren.ModelTrainer
 import org.jetbrains.iren.impl.NGramModelRunner
 import java.io.File
 import java.nio.file.Path
@@ -61,11 +61,7 @@ class PluginRunner : ApplicationStarter {
             val trainingTime = ArrayList<Long>()
             for (i in 1..5) {
                 val start = Instant.now()
-                NGramModelRunner(
-                    NGramVariableNamesContributor.SUPPORTED_TYPES,
-                    true
-                )
-                    .learnProject(project, null)
+                ModelTrainer.learnProject(NGramModelRunner(true), project, null)
                 trainingTime.add(Duration.between(start, Instant.now()).seconds)
             }
             projectTime.put(projectDir, trainingTime)
