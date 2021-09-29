@@ -2,47 +2,17 @@
 
 package org.jetbrains.iren.rename
 
-import com.intellij.lang.Language
 import com.intellij.openapi.editor.Editor
-import com.intellij.psi.*
-import com.intellij.refactoring.RefactoringActionHandler
+import com.intellij.psi.PsiDocumentManager
+import com.intellij.psi.PsiElement
+import com.intellij.psi.PsiFile
+import com.intellij.psi.PsiNameIdentifierOwner
 import com.intellij.refactoring.rename.inplace.MemberInplaceRenameHandler
 import com.intellij.refactoring.rename.inplace.MemberInplaceRenamer
-import com.intellij.refactoring.rename.inplace.VariableInplaceRenamer
-import org.jetbrains.kotlin.idea.core.unquote
 import org.jetbrains.kotlin.idea.refactoring.rename.KotlinVariableInplaceRenameHandler
-import org.jetbrains.kotlin.psi.KtObjectDeclaration
 import org.jetbrains.kotlin.psi.KtPrimaryConstructor
 
 class IRenKotlinMemberInplaceRenameHandler : MemberInplaceRenameHandler() {
-    private class RenamerImpl(
-        elementToRename: PsiNamedElement,
-        substitutedElement: PsiElement?,
-        editor: Editor,
-        currentName: String,
-        oldName: String
-    ) : IRenMemberInplaceRenamer(elementToRename, substitutedElement, editor, currentName, oldName) {
-        override fun isIdentifier(newName: String?, language: Language?): Boolean {
-            if (newName == "" && (variable as? KtObjectDeclaration)?.isCompanion() == true) return true
-            return super.isIdentifier(newName, language)
-        }
-
-        override fun acceptReference(reference: PsiReference): Boolean {
-            val refElement = reference.element
-            val textRange = reference.rangeInElement
-            val referenceText = refElement.text.substring(textRange.startOffset, textRange.endOffset).unquote()
-            return referenceText == myElementToRename.name
-        }
-
-        override fun startsOnTheSameElement(handler: RefactoringActionHandler?, element: PsiElement?): Boolean {
-            return variable == element && (handler is IRenMemberInplaceRenameHandler)
-        }
-
-        override fun createInplaceRenamerToRestart(variable: PsiNamedElement, editor: Editor, initialName: String): VariableInplaceRenamer {
-            return RenamerImpl(variable, substituted, editor, initialName, myOldName)
-        }
-    }
-
     private fun PsiElement.substitute(): PsiElement {
         if (this is KtPrimaryConstructor) return getContainingClassOrObject()
         return this
@@ -60,7 +30,7 @@ class IRenKotlinMemberInplaceRenameHandler : MemberInplaceRenameHandler() {
         }
 
         val currentName = nameIdentifier?.text ?: ""
-        return RenamerImpl(currentElementToRename, element, editor, currentName, currentName)
+        return IRenKotlinMemeberInplaceRenamer(currentElementToRename, element, editor, currentName, currentName)
     }
 
     override fun isAvailable(element: PsiElement?, editor: Editor, file: PsiFile): Boolean {
