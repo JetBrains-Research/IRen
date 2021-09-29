@@ -38,7 +38,7 @@ public class LoadingModelStartupActivity implements StartupActivity.Background {
                     NotificationsUtil.notify(project, "Model is loaded", "");
                 } else if (!settings.firstOpen && settings.automaticTraining) {
                     indicator.setText(IRenBundle.message("training.progress.indicator.text", project.getName()));
-                    DumbService.getInstance(project).runReadActionInSmartMode(() ->
+                    DumbService.getInstance(project).runWhenSmart(() ->
                             ModelTrainer.trainProjectNGramModel(project, indicator, true)
                     );
                 }

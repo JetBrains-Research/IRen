@@ -35,7 +35,7 @@ public class ModelTrainer {
             @Override
             public void run(@NotNull ProgressIndicator indicator) {
                 indicator.setText(IRenBundle.message("training.progress.indicator.text", project.getName()));
-                DumbService.getInstance(project).runReadActionInSmartMode(() ->
+                DumbService.getInstance(project).runWhenSmart(() ->
                         trainProjectNGramModel(project, indicator, true));
             }
         });
