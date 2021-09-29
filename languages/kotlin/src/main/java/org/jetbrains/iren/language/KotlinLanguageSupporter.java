@@ -4,7 +4,6 @@ import com.intellij.lang.Language;
 import com.intellij.openapi.fileTypes.FileType;
 import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiNameIdentifierOwner;
-import com.intellij.psi.PsiReference;
 import com.intellij.psi.tree.IElementType;
 import com.intellij.psi.tree.TokenSet;
 import com.intellij.refactoring.rename.RenameHandler;
@@ -16,6 +15,7 @@ import org.jetbrains.kotlin.idea.KotlinLanguage;
 import org.jetbrains.kotlin.idea.refactoring.rename.KotlinMemberInplaceRenameHandler;
 import org.jetbrains.kotlin.idea.refactoring.rename.KotlinRenameDispatcherHandler;
 import org.jetbrains.kotlin.idea.refactoring.rename.KotlinVariableInplaceRenameHandler;
+import org.jetbrains.kotlin.idea.references.ReferenceUtilsKt;
 import org.jetbrains.kotlin.lexer.KtTokens;
 import org.jetbrains.kotlin.psi.KtNameReferenceExpression;
 import org.jetbrains.kotlin.psi.KtParameter;
@@ -73,9 +73,7 @@ public class KotlinLanguageSupporter extends LanguageSupporterBase {
     protected PsiElement resolveReference(@NotNull PsiElement element) {
         KtNameReferenceExpression refExpr = element instanceof KtNameReferenceExpression ? (KtNameReferenceExpression) element : null;
         if (refExpr == null) return null;
-//            final UReferenceExpression reference = UastContextKt.toUElement(element, UReferenceExpression.class);
-        PsiReference[] refs = refExpr.getReferences();
-        return refs[0].resolve();
+        return ReferenceUtilsKt.getMainReference(refExpr).resolve();
     }
 
     @Override
