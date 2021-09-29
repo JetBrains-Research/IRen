@@ -1,10 +1,12 @@
 package org.jetbrains.iren.utils;
 
+import com.intellij.codeInspection.ProblemsHolder;
 import com.intellij.lang.Language;
 import com.intellij.openapi.extensions.ExtensionPointName;
 import com.intellij.openapi.fileTypes.FileType;
 import com.intellij.openapi.project.Project;
 import com.intellij.psi.PsiElement;
+import com.intellij.psi.PsiElementVisitor;
 import com.intellij.psi.PsiFile;
 import com.intellij.psi.PsiNameIdentifierOwner;
 import com.intellij.psi.search.FileTypeIndex;
@@ -77,4 +79,11 @@ public interface LanguageSupporter {
     }
 
     void printAvgTime();
+
+    static PsiElementVisitor getVariableVisitor(@NotNull Language language, @NotNull ProblemsHolder holder) {
+        LanguageSupporter supporter = getInstance(language);
+        return supporter == null ? PsiElementVisitor.EMPTY_VISITOR : supporter.createVariableVisitor(holder);
+    }
+
+    @NotNull PsiElementVisitor createVariableVisitor(@NotNull ProblemsHolder holder);
 }

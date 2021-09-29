@@ -19,7 +19,7 @@ import org.jetbrains.kotlin.idea.refactoring.rename.KotlinVariableInplaceRenameH
 import org.jetbrains.kotlin.lexer.KtTokens;
 import org.jetbrains.kotlin.psi.KtNameReferenceExpression;
 import org.jetbrains.kotlin.psi.KtParameter;
-import org.jetbrains.kotlin.psi.KtVariableDeclaration;
+import org.jetbrains.kotlin.psi.KtProperty;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -32,7 +32,7 @@ public class KotlinLanguageSupporter extends LanguageSupporterBase {
 
     static {
         variableClasses.add(KtParameter.class);
-        variableClasses.add(KtVariableDeclaration.class);
+        variableClasses.add(KtProperty.class);
         NGramVariableNamesContributor.SUPPORTED_TYPES.addAll(variableClasses);
     }
 
