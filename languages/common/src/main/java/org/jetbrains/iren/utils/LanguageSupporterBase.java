@@ -106,7 +106,7 @@ public abstract class LanguageSupporterBase implements LanguageSupporter {
         if (isIdentifier(token)) {
             PsiElement parent = token.getParent();
             if (parent == null) return null;
-            PsiElement declaration = resolveReference(parent);
+            PsiElement declaration = parent instanceof PsiNameIdentifierOwner ? parent : resolveReference(parent);
             if (declaration instanceof PsiNameIdentifierOwner) {
                 return (PsiNameIdentifierOwner) declaration;
             }
