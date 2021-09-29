@@ -6,8 +6,5 @@
     <extensions defaultExtensionNs="com.intellij">
         <renameHandler implementation="org.jetbrains.iren.rename.IRenVariableInplaceRenameHandler"/>
         <renameHandler implementation="org.jetbrains.iren.rename.IRenMemberInplaceRenameHandler"/>
-
-        <inspectionToolProvider
-                implementation="org.jetbrains.iren.inspections.variable.VariableNamesProvider"/>
     </extensions>
 </idea-plugin>

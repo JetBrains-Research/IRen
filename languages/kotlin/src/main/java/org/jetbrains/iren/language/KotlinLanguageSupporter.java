@@ -1,14 +1,17 @@
 package org.jetbrains.iren.language;
 
+import com.intellij.codeInspection.ProblemsHolder;
 import com.intellij.lang.Language;
 import com.intellij.openapi.fileTypes.FileType;
 import com.intellij.psi.PsiElement;
+import com.intellij.psi.PsiElementVisitor;
 import com.intellij.psi.PsiNameIdentifierOwner;
 import com.intellij.psi.tree.IElementType;
 import com.intellij.psi.tree.TokenSet;
 import com.intellij.refactoring.rename.RenameHandler;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.iren.contributors.NGramVariableNamesContributor;
+import org.jetbrains.iren.inspections.variable.KotlinVariableVisitor;
 import org.jetbrains.iren.utils.LanguageSupporterBase;
 import org.jetbrains.kotlin.idea.KotlinFileType;
 import org.jetbrains.kotlin.idea.KotlinLanguage;
@@ -79,5 +82,10 @@ public class KotlinLanguageSupporter extends LanguageSupporterBase {
     @Override
     public boolean isIdentifier(PsiElement token) {
         return token.getNode().getElementType() == KtTokens.IDENTIFIER;
+    }
+
+    @Override
+    public @NotNull PsiElementVisitor createVariableVisitor(@NotNull ProblemsHolder holder) {
+        return new KotlinVariableVisitor(holder);
     }
 }

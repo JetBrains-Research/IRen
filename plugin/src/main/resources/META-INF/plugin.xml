@@ -42,6 +42,13 @@
         <applicationService serviceImplementation="org.jetbrains.iren.ModelManager"/>
         <applicationService serviceImplementation="org.jetbrains.iren.IRenSuggestingService"/>
         <applicationService serviceImplementation="org.jetbrains.iren.inspections.variable.PredictionsStorage"/>
+        <localInspection displayName="Inconsistent variable names"
+                         groupBundle="messages.IRen"
+                         groupKey="inspection.group.key"
+                         shortName="VariableNamesInspection"
+                         enabledByDefault="true"
+                         level="WARNING"
+                         implementationClass="org.jetbrains.iren.inspections.variable.VariableNamesInspection"/>
         <backgroundPostStartupActivity
                 implementation="org.jetbrains.iren.LoadingModelStartupActivity"/>
         <!-- Astrid part-->

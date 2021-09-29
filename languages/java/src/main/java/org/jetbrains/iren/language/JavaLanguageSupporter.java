@@ -1,5 +1,6 @@
 package org.jetbrains.iren.language;
 
+import com.intellij.codeInspection.ProblemsHolder;
 import com.intellij.ide.highlighter.JavaFileType;
 import com.intellij.lang.Language;
 import com.intellij.lang.java.JavaLanguage;
@@ -10,6 +11,7 @@ import com.intellij.refactoring.rename.inplace.MemberInplaceRenameHandler;
 import com.intellij.refactoring.rename.inplace.VariableInplaceRenameHandler;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.iren.contributors.NGramVariableNamesContributor;
+import org.jetbrains.iren.inspections.variable.JavaVariableVisitor;
 import org.jetbrains.iren.utils.LanguageSupporterBase;
 
 import java.util.Collection;
@@ -69,5 +71,10 @@ public class JavaLanguageSupporter extends LanguageSupporterBase {
     @Override
     public boolean isIdentifier(PsiElement token) {
         return token instanceof PsiIdentifier;
+    }
+
+    @Override
+    public @NotNull PsiElementVisitor createVariableVisitor(@NotNull ProblemsHolder holder) {
+        return new JavaVariableVisitor(holder);
     }
 }
