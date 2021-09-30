@@ -26,6 +26,7 @@
     <depends>com.intellij.modules.platform</depends>
     <depends optional="true" config-file="java.xml">com.intellij.java</depends>
     <depends optional="true" config-file="kotlin.xml">org.jetbrains.kotlin</depends>
+    <depends optional="true" config-file="python.xml">com.intellij.modules.python</depends>
     <extensions defaultExtensionNs="com.intellij">
         <!--    Settings part    -->
         <registryKey key="iren.developer.mode"
@@ -49,6 +50,8 @@
                          enabledByDefault="true"
                          level="WARNING"
                          implementationClass="org.jetbrains.iren.inspections.variable.VariableNamesInspection"/>
+        <renameHandler implementation="org.jetbrains.iren.rename.IRenVariableInplaceRenameHandler"/>
+        <renameHandler implementation="org.jetbrains.iren.rename.IRenMemberInplaceRenameHandler"/>
         <backgroundPostStartupActivity
                 implementation="org.jetbrains.iren.LoadingModelStartupActivity"/>
         <!-- Astrid part-->

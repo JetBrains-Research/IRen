@@ -29,6 +29,7 @@ dependencies {
     implementation(project(":languages:common"))
     implementation(project(":languages:java"))
     implementation(project(":languages:kotlin"))
+    implementation(project(":languages:python"))
     implementation("org.jetbrains.intellij.deps.completion:ngram-slp:0.0.3")
 //    implementation("org.tensorflow", "tensorflow", "1.13.1")
     implementation("com.github.javaparser:javaparser-core:3.0.0-alpha.4")

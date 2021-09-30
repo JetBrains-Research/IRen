@@ -4,12 +4,13 @@ import com.intellij.codeInsight.lookup.LookupElement;
 import com.intellij.codeInsight.template.ExpressionContext;
 import com.intellij.completion.ngram.slp.translating.Vocabulary;
 import com.intellij.openapi.editor.Editor;
+import com.intellij.openapi.project.Project;
 import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiNameIdentifierOwner;
 import com.intellij.psi.PsiNamedElement;
 import com.intellij.refactoring.rename.NameSuggestionProvider;
-import com.intellij.refactoring.rename.inplace.MemberInplaceRenamer;
 import com.intellij.refactoring.rename.inplace.MyLookupExpression;
+import com.intellij.refactoring.rename.inplace.VariableInplaceRenamer;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.iren.IRenSuggestingService;
@@ -19,30 +20,27 @@ import org.jetbrains.iren.utils.LanguageSupporter;
 
 import java.util.*;
 
-public class IRenMemberInplaceRenamer extends MemberInplaceRenamer {
+public class IRenVariableInplaceRenamer extends VariableInplaceRenamer {
     private final LinkedHashMap<String, Double> myNameProbs = new LinkedHashMap<>();
 
-    public IRenMemberInplaceRenamer(@NotNull PsiNamedElement elementToRename, @Nullable PsiElement substituted, @NotNull Editor editor) {
-        super(elementToRename, substituted, editor);
+    public IRenVariableInplaceRenamer(@NotNull PsiNamedElement elementToRename, @NotNull Editor editor) {
+        super(elementToRename, editor);
     }
 
-    public IRenMemberInplaceRenamer(@NotNull PsiNamedElement elementToRename, @NotNull Editor editor) {
-        this(elementToRename, null, editor);
+    public IRenVariableInplaceRenamer(@Nullable PsiNamedElement elementToRename, @NotNull Editor editor, @NotNull Project project) {
+        super(elementToRename, editor, project);
     }
 
-    public IRenMemberInplaceRenamer(@NotNull PsiNamedElement elementToRename,
-                                    @Nullable PsiElement substituted,
-                                    @NotNull Editor editor,
-                                    @Nullable String initialName,
-                                    @Nullable String oldName) {
-        super(elementToRename, substituted, editor, initialName, oldName);
+    public IRenVariableInplaceRenamer(@Nullable PsiNamedElement elementToRename, @NotNull Editor editor, @NotNull Project project, @Nullable String initialName, @Nullable String oldName) {
+        super(elementToRename, editor, project, initialName, oldName);
     }
 
     @Override
     public boolean performInplaceRefactoring(@Nullable LinkedHashSet<String> nameSuggestions) {
         if (nameSuggestions == null) nameSuggestions = new LinkedHashSet<>();
+        LanguageSupporter supporter = LanguageSupporter.getInstance(myElementToRename.getLanguage());
         if (ModelStatsService.getInstance().isUsable(ProjectVariableNamesContributor.class, myProject) &&
-                LanguageSupporter.getInstance(myElementToRename.getLanguage()).isVariable(myElementToRename)) {
+                supporter != null && supporter.isVariable(myElementToRename)) {
             LinkedHashMap<String, Double> nameProbs = IRenSuggestingService.getInstance().suggestVariableName((PsiNameIdentifierOwner) myElementToRename);
             double unknownNameProb = nameProbs.getOrDefault(Vocabulary.unknownCharacter, 0.);
             double varNameProb = nameProbs.getOrDefault(myElementToRename.getText(), 0.) - 1e-4;

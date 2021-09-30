@@ -22,7 +22,7 @@ class IRenKotlinMemeberInplaceRenamer : IRenMemberInplaceRenamer {
     constructor(
         elementToRename: PsiNamedElement,
         editor: Editor
-    ) : super(elementToRename, null, editor)
+    ) : super(elementToRename, editor)
 
     override fun isIdentifier(newName: String?, language: Language?): Boolean {
         if (newName == "" && (variable as? KtObjectDeclaration)?.isCompanion() == true) return true
