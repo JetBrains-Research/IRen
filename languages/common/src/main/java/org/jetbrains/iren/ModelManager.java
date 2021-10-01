@@ -1,8 +1,9 @@
 package org.jetbrains.iren;
 
+import com.intellij.lang.Language;
 import com.intellij.openapi.Disposable;
+import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.application.PathManager;
-import com.intellij.openapi.components.ServiceManager;
 import com.intellij.openapi.project.Project;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -19,38 +20,29 @@ public class ModelManager implements Disposable {
     private final Map<String, NGramModelRunner> myModelRunners = new HashMap<>();
 
     public static final Path MODELS_DIRECTORY = Paths.get(PathManager.getSystemPath(), "models");
-    private static final Path GLOBAL_MODEL_DIRECTORY = MODELS_DIRECTORY.resolve("global");
 
     public static @NotNull ModelManager getInstance() {
-        return ServiceManager.getService(ModelManager.class);
+        return ApplicationManager.getApplication().getService(ModelManager.class);
     }
 
-    public static @NotNull Path getGlobalPath() {
-        return GLOBAL_MODEL_DIRECTORY;
+    public static @NotNull Path getPath(@NotNull String name) {
+        return MODELS_DIRECTORY.resolve(name);
     }
 
-    public static @NotNull Path getPath(@NotNull Project project) {
-        return MODELS_DIRECTORY.resolve(project.getLocationHash());
+    public static String getName(@Nullable Class<? extends VariableNamesContributor> clazz,
+                                 @Nullable Project project,
+                                 @Nullable Language language) {
+        return (clazz != null ? clazz.getSimpleName() + "_" : "") +
+                (project != null ? project.getName() + "_" + project.getLocationHash() + "_" : "") +
+                (language != null ? language.getID() : "");
     }
 
-    public @Nullable NGramModelRunner getModelRunner(@NotNull Class<? extends VariableNamesContributor> name) {
-        return myModelRunners.get(name.getSimpleName());
+    public @Nullable NGramModelRunner getModelRunner(@NotNull String name) {
+        return myModelRunners.get(name);
     }
 
-    public void putModelRunner(@NotNull Class<? extends VariableNamesContributor> name, @NotNull NGramModelRunner modelRunner) {
-        myModelRunners.put(name.getSimpleName(), modelRunner);
-    }
-
-    public @Nullable NGramModelRunner getModelRunner(@NotNull Class<? extends VariableNamesContributor> className, @NotNull Project project) {
-        NGramModelRunner modelRunner = myModelRunners.get(join(className, project));
-        if (modelRunner != null) {
-            return modelRunner;
-        }
-        return getModelRunner(className);
-    }
-
-    public void putModelRunner(@NotNull Class<? extends VariableNamesContributor> className, @NotNull Project project, @NotNull NGramModelRunner modelRunner) {
-        myModelRunners.put(join(className, project), modelRunner);
+    public void putModelRunner(@NotNull String name, @NotNull NGramModelRunner modelRunner) {
+        myModelRunners.put(name, modelRunner);
     }
 
     @Override
@@ -74,9 +66,5 @@ public class ModelManager implements Disposable {
                 e.printStackTrace();
             }
         }
-    }
-
-    public static @NotNull String join(@NotNull Class<? extends VariableNamesContributor> className, @NotNull Project project) {
-        return String.join("_", className.getSimpleName(), project.getLocationHash());
     }
 }

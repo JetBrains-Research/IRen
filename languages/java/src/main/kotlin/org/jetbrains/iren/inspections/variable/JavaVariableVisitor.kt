@@ -11,6 +11,7 @@ import com.intellij.psi.PsiVariable
 import com.intellij.psi.SmartPsiElementPointer
 import com.intellij.psi.util.createSmartPointer
 import org.jetbrains.iren.IRenBundle
+import org.jetbrains.iren.ModelManager
 import org.jetbrains.iren.ModelStatsService
 import org.jetbrains.iren.contributors.ProjectVariableNamesContributor
 import org.jetbrains.iren.rename.IRenMemberInplaceRenamer
@@ -18,11 +19,16 @@ import org.jetbrains.iren.rename.IRenMemberInplaceRenamer
 class JavaVariableVisitor(private val holder: ProblemsHolder) : JavaElementVisitor() {
     override fun visitVariable(variable: PsiVariable?) {
         if (variable == null ||
-            !ModelStatsService.getInstance().isUsable(ProjectVariableNamesContributor::class.java, variable.project)
+            !ModelStatsService.getInstance().isUsable(
+                ModelManager.getName(
+                    ProjectVariableNamesContributor::class.java,
+                    variable.project,
+                    variable.language
+                )
+            )
         ) return
         try {
-            val predictions = PredictionsStorage.getInstance().getPrediction(variable.createSmartPointer())
-            if (isGoodPredictionList(variable, predictions)) {
+            if (ConsistencyChecker.getInstance().isInconsistent(variable.createSmartPointer())) {
                 holder.registerProblem(
                     variable.nameIdentifier ?: variable,
                     IRenBundle.message("inspection.description.template"),

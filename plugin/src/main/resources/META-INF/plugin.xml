@@ -42,7 +42,7 @@
         <applicationService serviceImplementation="org.jetbrains.iren.ModelStatsService"/>
         <applicationService serviceImplementation="org.jetbrains.iren.ModelManager"/>
         <applicationService serviceImplementation="org.jetbrains.iren.IRenSuggestingService"/>
-        <applicationService serviceImplementation="org.jetbrains.iren.inspections.variable.PredictionsStorage"/>
+        <applicationService serviceImplementation="org.jetbrains.iren.inspections.variable.ConsistencyChecker"/>
         <localInspection displayName="Inconsistent variable names"
                          groupBundle="messages.IRen"
                          groupKey="inspection.group.key"

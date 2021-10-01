@@ -3,6 +3,7 @@ package tools.modelsEvaluatorApi
 import com.fasterxml.jackson.core.JsonProcessingException
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.intellij.ide.highlighter.JavaFileType
+import com.intellij.lang.java.JavaLanguage
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.fileEditor.OpenFileDescriptor
@@ -14,7 +15,6 @@ import com.intellij.psi.search.GlobalSearchScope
 import com.jetbrains.rd.util.string.printToString
 import org.jetbrains.iren.ModelManager
 import org.jetbrains.iren.api.VariableNamesContributor
-import org.jetbrains.iren.contributors.GlobalVariableNamesContributor
 import org.jetbrains.iren.contributors.NGramVariableNamesContributor
 import org.jetbrains.iren.contributors.ProjectVariableNamesContributor
 import org.jetbrains.iren.storages.VarNamePrediction
@@ -30,7 +30,7 @@ abstract class VarNamer {
 
     fun predict(project: Project, dir: Path, ngramContributorType: String) {
         ngramContributorClass = when (ngramContributorType) {
-            "global" -> GlobalVariableNamesContributor::class.java
+//            "global" -> GlobalVariableNamesContributor::class.java
             "project" -> ProjectVariableNamesContributor::class.java
             else -> throw NotImplementedError("ngramContributorType has to be \"global\" or \"project\"!")
         }
@@ -99,7 +99,7 @@ abstract class VarNamer {
             )!!
             if (ngramContributorClass == ProjectVariableNamesContributor::class.java) {
                 ModelManager.getInstance()
-                    .getModelRunner(ProjectVariableNamesContributor::class.java, file.project)
+                    .getModelRunner(ModelManager.getName(ProjectVariableNamesContributor::class.java, file.project, JavaLanguage.INSTANCE))
                     ?.forgetPsiFile(file)
             }
             val predictionsList = SyntaxTraverser.psiTraverser()
@@ -119,7 +119,7 @@ abstract class VarNamer {
         } finally {
             if (ngramContributorClass == ProjectVariableNamesContributor::class.java) {
                 ModelManager.getInstance()
-                    .getModelRunner(ProjectVariableNamesContributor::class.java, file.project)
+                    .getModelRunner(ModelManager.getName(ProjectVariableNamesContributor::class.java, file.project, JavaLanguage.INSTANCE))
                     ?.learnPsiFile(file)
             }
             fileEditorManager.closeFile(file.virtualFile)

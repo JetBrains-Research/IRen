@@ -4,7 +4,7 @@ import com.intellij.ide.impl.ProjectUtil
 import com.intellij.openapi.application.ApplicationStarter
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.project.ProjectManager
-import org.jetbrains.iren.ModelTrainer
+import org.jetbrains.iren.ModelBuilder
 import java.io.File
 import java.nio.file.Path
 import java.nio.file.Paths
@@ -26,7 +26,7 @@ abstract class PluginRunner : ApplicationStarter {
             val dataset = File(args[1])
             val saveDir = args[2]
             val ngramContributorType = args[3]
-            if (ngramContributorType == "global") trainGlobalNGramModelOn(dataset, javaSmallTrain)
+//            if (ngramContributorType == "global") trainGlobalNGramModelOn(dataset, javaSmallTrain)
             evaluateOn(dataset, javaSmallTest, Paths.get(saveDir), ngramContributorType)
         } catch (e: IllegalArgumentException) {
             e.printStackTrace()
@@ -40,22 +40,22 @@ abstract class PluginRunner : ApplicationStarter {
         }
     }
 
-    private fun trainGlobalNGramModelOn(dataset: File, projectList: List<String>) {
-        println("Training global NGram model...")
-        var projectToClose: Project? = null
-        for (projectDir in projectList) {
-            val projectPath = dataset.resolve(projectDir)
-            println("Opening project $projectDir...")
-            val project = ProjectUtil.openOrImport(projectPath.path, projectToClose, true) ?: continue
-
-            ModelTrainer.trainGlobalNGramModel(project, null, false)
-
-            projectToClose = project
-        }
-        if (projectToClose != null) {
-            ProjectManager.getInstance().closeAndDispose(projectToClose)
-        }
-    }
+//    private fun trainGlobalNGramModelOn(dataset: File, projectList: List<String>) {
+//        println("Training global NGram model...")
+//        var projectToClose: Project? = null
+//        for (projectDir in projectList) {
+//            val projectPath = dataset.resolve(projectDir)
+//            println("Opening project $projectDir...")
+//            val project = ProjectUtil.openOrImport(projectPath.path, projectToClose, true) ?: continue
+//
+//            ModelBuilder.trainGlobalNGramModel(project, null, false)
+//
+//            projectToClose = project
+//        }
+//        if (projectToClose != null) {
+//            ProjectManager.getInstance().closeAndDispose(projectToClose)
+//        }
+//    }
 
     private fun evaluateOn(
         dataset: File,
@@ -71,7 +71,7 @@ abstract class PluginRunner : ApplicationStarter {
             val project = ProjectUtil.openOrImport(projectPath.path, projectToClose, true) ?: continue
 
             if (ngramContributorType == "project") {
-                ModelTrainer.trainProjectNGramModel(project, null, false)
+                ModelBuilder.trainProjectNGramModel(project, null, false)
             }
             predict(project, dir, ngramContributorType)
 

@@ -99,7 +99,7 @@ tasks {
     }
 
     runIde {
-        jvmArgs = listOf("-Xmx12G", "-XX:+UnlockDiagnosticVMOptions",
+        jvmArgs = listOf("-Xmx16G", "-XX:+UnlockDiagnosticVMOptions",
             "-Dfus.internal.test.mode=true")
     }
 

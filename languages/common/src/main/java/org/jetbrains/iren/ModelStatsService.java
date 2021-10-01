@@ -1,7 +1,7 @@
 package org.jetbrains.iren;
 
+import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.components.PersistentStateComponent;
-import com.intellij.openapi.components.ServiceManager;
 import com.intellij.openapi.components.State;
 import com.intellij.openapi.components.Storage;
 import com.intellij.openapi.project.Project;
@@ -19,8 +19,6 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
-
-import static org.jetbrains.iren.ModelManager.join;
 
 @State(name = "ModelStatsService",
         storages = {@Storage("ModelSaveTime.xml")})
@@ -51,14 +49,10 @@ public class ModelStatsService implements PersistentStateComponent<ModelStatsSer
     }
 
     public static @NotNull ModelStatsService getInstance() {
-        return ServiceManager.getService(ModelStatsService.class);
+        return ApplicationManager.getApplication().getService(ModelStatsService.class);
     }
 
-    public void setTrainedTime(@NotNull Class<? extends VariableNamesContributor> className) {
-            mySavingTime.put(className.getSimpleName(), Instant.now().toString());
-    }
-
-    public void setTrainedTime(@NotNull Class<? extends VariableNamesContributor> className, @NotNull Project project) {
+    public void setTrainedTime(@NotNull Class<? extends VariableNamesContributor> className, @Nullable Project project) {
             mySavingTime.put(join(className, project), Instant.now().toString());
     }
 
@@ -66,12 +60,7 @@ public class ModelStatsService implements PersistentStateComponent<ModelStatsSer
         return !myUsable.isEmpty();
     }
 
-    public @Nullable Instant whenTrained(@NotNull Class<? extends VariableNamesContributor> className) {
-        String str = mySavingTime.get(className.getSimpleName());
-        return str == null ? null : Instant.parse(str);
-    }
-
-    public @Nullable Instant whenTrained(@NotNull Class<? extends VariableNamesContributor> className, Project project) {
+    public @Nullable Instant whenTrained(@NotNull Class<? extends VariableNamesContributor> className, @Nullable Project project) {
         String str = mySavingTime.get(join(className, project));
         return str == null ? null : Instant.parse(str);
     }
@@ -83,27 +72,20 @@ public class ModelStatsService implements PersistentStateComponent<ModelStatsSer
         return (saveTime == null || !Duration.between(saveTime, Instant.now()).minus(modelsLifetime).isNegative());
     }
 
-    public void setUsable(@NotNull Class<? extends VariableNamesContributor> className, boolean b) {
+    public void setUsable(@NotNull String name, boolean b) {
         if (b) {
-            myUsable.add(className.getSimpleName());
+            myUsable.add(name);
         } else {
-            myUsable.remove(className.getSimpleName());
+            myUsable.remove(name);
         }
     }
 
-    public void setUsable(@NotNull Class<? extends VariableNamesContributor> className, Project project, boolean b) {
-        if (b) {
-            myUsable.add(join(className, project));
-        } else {
-            myUsable.remove(join(className, project));
-        }
+    public boolean isUsable(@NotNull String name) {
+        return myUsable.contains(name);
     }
 
-    public boolean isUsable(@NotNull Class<? extends VariableNamesContributor> className) {
-        return myUsable.contains(className.getSimpleName());
-    }
-
-    public boolean isUsable(Class<? extends VariableNamesContributor> className, Project project) {
-        return myUsable.contains(join(className, project));
+    public static @NotNull String join(@NotNull Class<? extends VariableNamesContributor> className, @Nullable Project project) {
+        return project == null ? className.getSimpleName() :
+                String.join("_", className.getSimpleName(), project.getLocationHash());
     }
 }

@@ -1,6 +1,5 @@
 package org.jetbrains.iren.contributors;
 
-import com.intellij.openapi.project.Project;
 import com.intellij.psi.PsiNameIdentifierOwner;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -21,9 +20,9 @@ public class ProjectVariableNamesContributor extends NGramVariableNamesContribut
 
     @Override
     public @Nullable NGramModelRunner getModelRunnerToContribute(@NotNull PsiNameIdentifierOwner variable) {
-        Project project = variable.getProject();
-        if (ModelStatsService.getInstance().isUsable(this.getClass(), project)) {
-            return ModelManager.getInstance().getModelRunner(this.getClass(), project);
+        String name = ModelManager.getName(this.getClass(), variable.getProject(), variable.getLanguage());
+        if (ModelStatsService.getInstance().isUsable(name)) {
+            return ModelManager.getInstance().getModelRunner(name);
         }
         return null;
     }

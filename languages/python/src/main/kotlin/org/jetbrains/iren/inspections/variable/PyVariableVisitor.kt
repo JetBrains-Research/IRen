@@ -8,20 +8,27 @@ import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.project.Project
 import com.intellij.psi.PsiNameIdentifierOwner
 import com.intellij.psi.SmartPsiElementPointer
-import com.intellij.psi.util.createSmartPointer
+import com.intellij.refactoring.suggested.createSmartPointer
 import com.jetbrains.python.psi.PyElementVisitor
 import com.jetbrains.python.psi.PyTargetExpression
 import org.jetbrains.iren.IRenBundle
+import org.jetbrains.iren.ModelManager
 import org.jetbrains.iren.ModelStatsService
 import org.jetbrains.iren.contributors.ProjectVariableNamesContributor
 import org.jetbrains.iren.rename.IRenVariableInplaceRenamer
 
 class PyVariableVisitor(private val holder: ProblemsHolder) : PyElementVisitor() {
     override fun visitPyTargetExpression(node: PyTargetExpression) {
-        if (!ModelStatsService.getInstance().isUsable(ProjectVariableNamesContributor::class.java, node.project)) return
+        if (!ModelStatsService.getInstance().isUsable(
+                ModelManager.getName(
+                    ProjectVariableNamesContributor::class.java,
+                    node.project,
+                    node.language
+                )
+            )
+        ) return
         try {
-            val predictions = PredictionsStorage.getInstance().getPrediction(node.createSmartPointer())
-            if (isGoodPredictionList(node, predictions)) {
+            if (ConsistencyChecker.getInstance().isInconsistent(node.createSmartPointer())) {
                 holder.registerProblem(
                     node.nameIdentifier ?: node,
                     IRenBundle.message("inspection.description.template"),
