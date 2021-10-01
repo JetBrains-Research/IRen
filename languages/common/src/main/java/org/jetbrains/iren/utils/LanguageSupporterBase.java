@@ -24,7 +24,6 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static org.jetbrains.iren.utils.StringUtils.STRING_TOKEN;
-import static org.jetbrains.iren.utils.StringUtils.VARIABLE_TOKEN;
 
 public abstract class LanguageSupporterBase implements LanguageSupporter {
     protected long time = 0;
@@ -37,37 +36,19 @@ public abstract class LanguageSupporterBase implements LanguageSupporter {
         return !info.isEmpty();
     }
 
-    public @NotNull Stream<PsiReference> findReferences(@NotNull PsiNameIdentifierOwner identifierOwner, @NotNull PsiFile file) {
+    public @NotNull Collection<PsiReference> findReferences(@NotNull PsiNameIdentifierOwner identifierOwner, @NotNull PsiFile file) {
 //        Unknown problems when using GlobalSearchScope.projectScope. Most likely there are too many fields and searching breaks.
         return RenamePsiElementProcessor.forElement(identifierOwner)
-                .findReferences(identifierOwner, GlobalSearchScope.fileScope(file), false)
-                .stream();
-    }
-
-    public @Nullable PsiElement getIdentifier(Object element) {
-        @Nullable PsiElement result = null;
-        if (element instanceof PsiNameIdentifierOwner) {
-            result = ((PsiNameIdentifierOwner) element).getNameIdentifier();
-        } else if (element instanceof PsiReference) {
-            result = ((PsiReference) element).getElement();
-        }
-        return result;
+                .findReferences(identifierOwner, GlobalSearchScope.fileScope(file), false);
     }
 
     public @NotNull String processToken(@NotNull PsiElement token) {
-        return processToken(token, null);
-    }
-
-    public @NotNull String processToken(@NotNull PsiElement token, @Nullable PsiNameIdentifierOwner variable) {
         String text = token.getText();
         if (text.contains("\n")) {
             return STRING_TOKEN;
         }
         String literal = processLiteral(token, text);
         if (literal != null) return literal;
-        if (variable != null && isVariableOrReference(variable, token)) {
-            return VARIABLE_TOKEN;
-        }
         return text;
     }
 
@@ -170,19 +151,11 @@ public abstract class LanguageSupporterBase implements LanguageSupporter {
         return element.getFirstChild() == null;
     }
 
-    public @NotNull Set<PsiElement> getParents(@NotNull PsiElement element) {
-        Set<PsiElement> parents = new LinkedHashSet<>();
-        PsiElement parent = element.getParent();
-        while (!(parent instanceof PsiFile)) {
-            parents.add(parent);
-            parent = parent.getParent();
-        }
-        return parents;
-    }
-
     @Override
     public @NotNull Context<String> getContext(@NotNull PsiNameIdentifierOwner variable, boolean changeToUnknown) {
-        PsiElement root = findRoot(variable);
+        PsiFile file = variable.getContainingFile();
+        Collection<PsiElement> usages = findUsages(variable, file);
+        PsiElement root = findRoot(file, usages);
         List<Integer> varIdxs = new ArrayList<>();
         List<PsiElement> elements = SyntaxTraverser.psiTraverser()
                 .withRoot(root)
@@ -192,7 +165,7 @@ public abstract class LanguageSupporterBase implements LanguageSupporter {
         List<String> tokens = new ArrayList<>();
         for (int i = 0; i < elements.size(); i++) {
             PsiElement element = elements.get(i);
-            if (isVariableOrReference(variable, element)) {
+            if (usages.contains(element)) {
                 varIdxs.add(i);
                 tokens.add(changeToUnknown ? Vocabulary.unknownCharacter : element.getText());
             } else {
@@ -202,18 +175,41 @@ public abstract class LanguageSupporterBase implements LanguageSupporter {
         return new Context<>(tokens, varIdxs);
     }
 
-    public @NotNull PsiElement findRoot(@NotNull PsiNameIdentifierOwner variable) {
-        PsiFile file = variable.getContainingFile();
-        Stream<PsiReference> elementUsages = findReferences(variable, file);
-        List<Set<PsiElement>> parents = Stream.concat(Stream.of(variable), elementUsages)
+    public Collection<PsiElement> findUsages(PsiNameIdentifierOwner variable, PsiFile file) {
+        return Stream.concat(Stream.of(variable), findReferences(variable, file).stream())
                 .map(this::getIdentifier)
                 .filter(Objects::nonNull)
+                .collect(Collectors.toSet());
+    }
+
+    private @NotNull PsiElement findRoot(@NotNull PsiFile file, @NotNull Collection<PsiElement> usages) {
+        List<Set<PsiElement>> parents = usages.stream()
                 .map(this::getParents)
                 .collect(Collectors.toList());
         Set<PsiElement> common = parents.remove(0);
         parents.forEach(common::retainAll);
         Optional<PsiElement> res = common.stream().findFirst();
         return res.orElse(file);
+    }
+
+    private @Nullable PsiElement getIdentifier(Object element) {
+        @Nullable PsiElement result = null;
+        if (element instanceof PsiNameIdentifierOwner) {
+            result = ((PsiNameIdentifierOwner) element).getNameIdentifier();
+        } else if (element instanceof PsiReference) {
+            result = ((PsiReference) element).getElement();
+        }
+        return result;
+    }
+
+    private @NotNull Set<PsiElement> getParents(@NotNull PsiElement element) {
+        Set<PsiElement> parents = new LinkedHashSet<>();
+        PsiElement parent = element.getParent();
+        while (!(parent instanceof PsiFile)) {
+            parents.add(parent);
+            parent = parent.getParent();
+        }
+        return parents;
     }
 
     public @NotNull List<String> lexPsiFile(@NotNull PsiFile file) {
@@ -248,7 +244,7 @@ public abstract class LanguageSupporterBase implements LanguageSupporter {
      * Wrapper for a function execution time of which you want to measure.
      *
      * @param supplier function
-     * @param <T> return type
+     * @param <T>      return type
      * @return the result of the function call
      */
     protected <T> T measureTime(Supplier<T> supplier) {
