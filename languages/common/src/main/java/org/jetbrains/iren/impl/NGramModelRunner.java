@@ -3,8 +3,11 @@ package org.jetbrains.iren.impl;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.stream.JsonReader;
+import com.intellij.completion.ngram.slp.counting.Counter;
 import com.intellij.completion.ngram.slp.counting.giga.GigaCounter;
 import com.intellij.completion.ngram.slp.counting.trie.ArrayTrieCounter;
+import com.intellij.completion.ngram.slp.modeling.Model;
+import com.intellij.completion.ngram.slp.modeling.mix.BiDirectionalModel;
 import com.intellij.completion.ngram.slp.modeling.ngram.JMModel;
 import com.intellij.completion.ngram.slp.modeling.ngram.NGramModel;
 import com.intellij.completion.ngram.slp.translating.Vocabulary;
@@ -39,10 +42,12 @@ public class NGramModelRunner {
      */
     private final Set<Integer> myRememberedIdentifiers = new HashSet<>();
 
-    private final NGramModel myModel;
+    private final Model myModel;
     private final Vocabulary myVocabulary = new Vocabulary();
 
     private boolean myTraining = false;
+    private final boolean biDirectional;
+    private final int order;
 
     public void train() {
         myTraining = true;
@@ -56,7 +61,7 @@ public class NGramModelRunner {
         return myRememberedIdentifiers;
     }
 
-    public NGramModel getModel() {
+    public Model getModel() {
         return myModel;
     }
 
@@ -64,8 +69,23 @@ public class NGramModelRunner {
         return myVocabulary;
     }
 
+    public NGramModelRunner() {
+        this(true, true, 6);
+    }
+
     public NGramModelRunner(boolean isLargeCorpora) {
-        myModel = new JMModel(6, 0.5, isLargeCorpora ? new GigaCounter() : new ArrayTrieCounter());
+        this(isLargeCorpora, false, 6);
+    }
+
+    public NGramModelRunner(boolean isLargeCorpora, boolean biDirectional, int order) {
+        this.biDirectional = biDirectional;
+        this.order = order;
+        if (biDirectional) {
+            myModel = new BiDirectionalModel(new JMModel(order, 0.5, isLargeCorpora ? new GigaCounter() : new ArrayTrieCounter()),
+                    new JMModel(order, 0.5, isLargeCorpora ? new GigaCounter() : new ArrayTrieCounter()));
+        } else {
+            myModel = new JMModel(order, 0.5, isLargeCorpora ? new GigaCounter() : new ArrayTrieCounter());
+        }
     }
 
     public int getModelPriority() {
@@ -123,11 +143,13 @@ public class NGramModelRunner {
         double logProb = 0.;
         int leftIdx;
         int rightIdx = 0;
+        List<Integer> tokens = intContext.getTokens();
+        final int maxIdx = tokens.size();
         for (int idx : intContext.getVarIdxs()) {
-            leftIdx = max(idx, rightIdx);
-            rightIdx = min(idx + getOrder(), intContext.getTokens().size());
+            leftIdx = max(biDirectional ? idx - getOrder() + 1 : idx, rightIdx);
+            rightIdx = min(idx + getOrder(), maxIdx);
             for (int i = leftIdx; i < rightIdx; i++) {
-                logProb += log(toProb(myModel.modelAtIndex(intContext.getTokens(), i)));
+                logProb += log(toProb(myModel.modelToken(tokens, i)));
             }
         }
         return logProb;
@@ -144,8 +166,7 @@ public class NGramModelRunner {
             forgetContext(intContext);
         }
 
-        Pair<Double, Integer> result = new Pair<>(getLogProb(intContext), getModelPriority());
-        return result;
+        return new Pair<>(getLogProb(intContext), getModelPriority());
     }
 
     private @NotNull Set<Integer> getCandidates(@NotNull List<Integer> tokenIdxs, int idx) {
@@ -199,41 +220,51 @@ public class NGramModelRunner {
     }
 
     public int getOrder() {
-        return myModel.getOrder();
+        return order;
     }
 
+    private final static String COUNTER_FILE = "counter.ser";
+    private final static String FORWARD_COUNTER_FILE = "forwardCounter.ser";
+    private final static String REVERSE_COUNTER_FILE = "reverseCounter.ser";
+    private final static String REMEMBER_IDENTIFIERS_FILE = "rememberedIdentifiers.json";
+    private final static String VOCABULARY_FILE = "vocabulary.txt";
+
     public double save(@NotNull Path model_directory, @Nullable ProgressIndicator progressIndicator) {
-        File counterFile = model_directory.resolve("counter.ser").toFile();
-        File rememberedVariablesFile = model_directory.resolve("rememberedIdentifiers.json").toFile();
-        File vocabularyFile = model_directory.resolve("vocabulary.txt").toFile();
+        model_directory = model_directory.resolve(myModel.toString() + "_" + order);
+        File rememberedVariablesFile = model_directory.resolve(REMEMBER_IDENTIFIERS_FILE).toFile();
+        File vocabularyFile = model_directory.resolve(VOCABULARY_FILE).toFile();
+        vocabularyFile.getParentFile().mkdirs();
+        long counterSize = 0;
+        if (biDirectional) {
+            File forwardCounterFile = model_directory.resolve(FORWARD_COUNTER_FILE).toFile();
+            counterSize += saveCounter(forwardCounterFile,
+                    ((NGramModel) ((BiDirectionalModel) myModel).getForward()).getCounter(),
+                    progressIndicator);
+
+            File reverseCounterFile = model_directory.resolve(REVERSE_COUNTER_FILE).toFile();
+            counterSize += saveCounter(reverseCounterFile,
+                    ((NGramModel) ((BiDirectionalModel) myModel).getReverse()).getCounter(),
+                    progressIndicator);
+        } else {
+            File counterFile = model_directory.resolve(COUNTER_FILE).toFile();
+            counterSize += saveCounter(counterFile,
+                    ((NGramModel) myModel).getCounter(),
+                    progressIndicator);
+        }
         try {
             if (progressIndicator != null) {
-                progressIndicator.setIndeterminate(true);
-                progressIndicator.setText2(IRenBundle.message("saving.file", counterFile.getName()));
-            }
-            counterFile.getParentFile().mkdirs();
-            counterFile.createNewFile();
-            FileOutputStream fileOutputStream = new FileOutputStream(counterFile);
-            ObjectOutputStream objectOutputStream = new ObjectOutputStream(fileOutputStream);
-            myModel.getCounter().writeExternal(objectOutputStream);
-            objectOutputStream.close();
-            fileOutputStream.close();
-
-            if (progressIndicator != null) {
+                if (progressIndicator.isCanceled()) return 0;
                 progressIndicator.setText2(IRenBundle.message("saving.file", rememberedVariablesFile.getName()));
             }
             rememberedVariablesFile.createNewFile();
             Gson gson = new GsonBuilder().create();
-            fileOutputStream = new FileOutputStream(rememberedVariablesFile);
-            OutputStreamWriter writer = new OutputStreamWriter(fileOutputStream, StandardCharsets.UTF_8);
-            try {
+            try (FileOutputStream fileOutputStream = new FileOutputStream(rememberedVariablesFile);
+                 OutputStreamWriter writer = new OutputStreamWriter(fileOutputStream, StandardCharsets.UTF_8)) {
                 writer.write(gson.toJson(myRememberedIdentifiers));
-            } finally {
-                writer.close();
-                fileOutputStream.close();
             }
 
             if (progressIndicator != null) {
+                if (progressIndicator.isCanceled()) return 0;
                 progressIndicator.setText2(IRenBundle.message("saving.file", vocabularyFile.getName()));
             }
             vocabularyFile.createNewFile();
@@ -241,46 +272,92 @@ public class NGramModelRunner {
         } catch (IOException e) {
             e.printStackTrace();
         }
-        return (counterFile.length() + vocabularyFile.length() + rememberedVariablesFile.length()) / (1024. * 1024);
+        return (counterSize + vocabularyFile.length() + rememberedVariablesFile.length()) / (1024. * 1024);
+    }
+
+    private long saveCounter(@NotNull File file, @NotNull Counter counter, @Nullable ProgressIndicator progressIndicator) {
+        if (progressIndicator != null) {
+            if (progressIndicator.isCanceled()) return 0;
+            progressIndicator.setIndeterminate(true);
+            progressIndicator.setText2(IRenBundle.message("saving.file", file.getName()));
+        }
+        long counterSize = 0;
+        try {
+            file.createNewFile();
+            try (FileOutputStream fileOutputStream = new FileOutputStream(file);
+                 ObjectOutputStream objectOutputStream = new ObjectOutputStream(fileOutputStream)) {
+                counter.writeExternal(objectOutputStream);
+                counterSize = file.length();
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return counterSize;
     }
 
     public boolean load(@NotNull Path model_directory, @Nullable ProgressIndicator progressIndicator) {
-        File counterFile = model_directory.resolve("counter.ser").toFile();
-        File rememberedVariablesFile = model_directory.resolve("rememberedIdentifiers.json").toFile();
-        File vocabularyFile = model_directory.resolve("vocabulary.txt").toFile();
-        if (counterFile.exists() && rememberedVariablesFile.exists() && vocabularyFile.exists()) {
-            try {
-                if (progressIndicator != null) {
-                    progressIndicator.setIndeterminate(true);
-                    progressIndicator.setText2(IRenBundle.message("loading.file", counterFile.getName()));
-                }
-                try (FileInputStream fileInputStream = new FileInputStream(counterFile);
-                     ObjectInputStream objectInputStream = new ObjectInputStream(fileInputStream)) {
-                    myModel.getCounter().readExternal(objectInputStream);
-                }
-
-                if (progressIndicator != null) {
-                    progressIndicator.setText2(IRenBundle.message("loading.file", rememberedVariablesFile.getName()));
-                }
-                Gson gson = new Gson();
-                JsonReader reader = new JsonReader(new FileReader(rememberedVariablesFile));
-                mapToRemember(gson.fromJson(reader, HashSet.class));
-
-                if (progressIndicator != null) {
-                    progressIndicator.setText2(IRenBundle.message("loading.file", vocabularyFile.getName()));
-                }
-                VocabularyManager.clear(myVocabulary);
-                VocabularyManager.read(vocabularyFile, myVocabulary);
-                return true;
-            } catch (Exception e) {
-                e.printStackTrace();
-                return false;
-            }
+        model_directory = model_directory.resolve(myModel.toString() + "_" + order);
+        File rememberedVariablesFile = model_directory.resolve(REMEMBER_IDENTIFIERS_FILE).toFile();
+        File vocabularyFile = model_directory.resolve(VOCABULARY_FILE).toFile();
+        boolean exists = rememberedVariablesFile.exists() && vocabularyFile.exists();
+        if (biDirectional) {
+            File forwardCounterFile = model_directory.resolve(FORWARD_COUNTER_FILE).toFile();
+            File reverseCounterFile = model_directory.resolve(REVERSE_COUNTER_FILE).toFile();
+            exists &= forwardCounterFile.exists() && reverseCounterFile.exists();
+            if (!exists) return false;
+            if (!loadCounter(forwardCounterFile,
+                    ((NGramModel) ((BiDirectionalModel) myModel).getForward()).getCounter(),
+                    progressIndicator)) return false;
+            if (!loadCounter(reverseCounterFile,
+                    ((NGramModel) ((BiDirectionalModel) myModel).getReverse()).getCounter(),
+                    progressIndicator)) return false;
+        } else {
+            File counterFile = model_directory.resolve(COUNTER_FILE).toFile();
+            exists &= counterFile.exists();
+            if (!exists) return false;
+            if (!loadCounter(counterFile,
+                    ((NGramModel) myModel).getCounter(),
+                    progressIndicator)) return false;
         }
-        return false;
+        try {
+            if (progressIndicator != null) {
+                if (progressIndicator.isCanceled()) return false;
+                progressIndicator.setText2(IRenBundle.message("loading.file", rememberedVariablesFile.getName()));
+            }
+            Gson gson = new Gson();
+            JsonReader reader = new JsonReader(new FileReader(rememberedVariablesFile));
+            indicesToRemember(gson.fromJson(reader, HashSet.class));
+
+            if (progressIndicator != null) {
+                if (progressIndicator.isCanceled()) return false;
+                progressIndicator.setText2(IRenBundle.message("loading.file", vocabularyFile.getName()));
+            }
+            VocabularyManager.clear(myVocabulary);
+            VocabularyManager.read(vocabularyFile, myVocabulary);
+            return true;
+        } catch (IOException e) {
+            e.printStackTrace();
+            return false;
+        }
     }
 
-    private void mapToRemember(@NotNull Collection<Double> fromJson) {
+    private boolean loadCounter(File counterFile, Counter counter, ProgressIndicator progressIndicator) {
+        if (progressIndicator != null) {
+            if (progressIndicator.isCanceled()) return false;
+            progressIndicator.setIndeterminate(true);
+            progressIndicator.setText2(IRenBundle.message("loading.file", counterFile.getName()));
+        }
+        try (FileInputStream fileInputStream = new FileInputStream(counterFile);
+             ObjectInputStream objectInputStream = new ObjectInputStream(fileInputStream)) {
+            counter.readExternal(objectInputStream);
+        } catch (IOException | ClassNotFoundException e) {
+            e.printStackTrace();
+            return false;
+        }
+        return true;
+    }
+
+    private void indicesToRemember(@NotNull Collection<Double> fromJson) {
         for (Double id : fromJson) {
             myRememberedIdentifiers.add(id.intValue());
         }
@@ -290,6 +367,12 @@ public class NGramModelRunner {
      * Invokes resolve from {@link com.intellij.completion.ngram.slp.counting.giga.GigaCounter}
      */
     public void resolveCounter() {
-        myModel.getCounter().getCount();
+        if (biDirectional) {
+            final BiDirectionalModel model = (BiDirectionalModel) this.myModel;
+            ((NGramModel) model.getForward()).getCounter().getCount();
+            ((NGramModel) model.getReverse()).getCounter().getCount();
+        } else {
+            ((NGramModel) myModel).getCounter().getCount();
+        }
     }
 }
