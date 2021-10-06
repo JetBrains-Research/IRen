@@ -14,17 +14,12 @@ import com.jetbrains.python.psi.PyTargetExpression
 import org.jetbrains.iren.IRenBundle
 import org.jetbrains.iren.ModelManager
 import org.jetbrains.iren.ModelStatsService
-import org.jetbrains.iren.contributors.ProjectVariableNamesContributor
 import org.jetbrains.iren.rename.IRenVariableInplaceRenamer
 
 class PyVariableVisitor(private val holder: ProblemsHolder) : PyElementVisitor() {
     override fun visitPyTargetExpression(node: PyTargetExpression) {
         if (!ModelStatsService.getInstance().isUsable(
-                ModelManager.getName(
-                    ProjectVariableNamesContributor::class.java,
-                    node.project,
-                    node.language
-                )
+                ModelManager.getName(node.project, node.language)
             )
         ) return
         try {

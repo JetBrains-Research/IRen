@@ -47,7 +47,7 @@ public class ModelBuilder {
         try {
             for (LanguageSupporter supporter : LanguageSupporter.INSTANCE.getExtensionList()) {
 
-                String name = ModelManager.getName(ProjectVariableNamesContributor.class, project, supporter.getLanguage());
+                String name = ModelManager.getName(project, supporter.getLanguage());
                 NGramModelRunner modelRunner = new NGramModelRunner();
                 modelStats.setUsable(name, false);
                 if (progressIndicator != null)
@@ -166,7 +166,7 @@ public class ModelBuilder {
         boolean isSmthngLoaded = false;
         for (LanguageSupporter supporter : LanguageSupporter.INSTANCE.getExtensionList()) {
             indicator.setText(supporter.getLanguage().toString());
-            String name = ModelManager.getName(ProjectVariableNamesContributor.class, project, supporter.getLanguage());
+            String name = ModelManager.getName(project, supporter.getLanguage());
             NGramModelRunner modelRunner = new NGramModelRunner();
             boolean isLoaded = modelRunner.load(ModelManager.getPath(name), indicator);
             isSmthngLoaded |= isLoaded;

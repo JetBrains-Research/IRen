@@ -16,7 +16,6 @@ import org.jetbrains.annotations.Nullable;
 import org.jetbrains.iren.IRenSuggestingService;
 import org.jetbrains.iren.ModelManager;
 import org.jetbrains.iren.ModelStatsService;
-import org.jetbrains.iren.contributors.ProjectVariableNamesContributor;
 import org.jetbrains.iren.utils.LanguageSupporter;
 
 import java.util.*;
@@ -41,7 +40,7 @@ public class IRenVariableInplaceRenamer extends VariableInplaceRenamer {
         if (nameSuggestions == null) nameSuggestions = new LinkedHashSet<>();
         LanguageSupporter supporter = LanguageSupporter.getInstance(myElementToRename.getLanguage());
         if (ModelStatsService.getInstance().isUsable(
-                ModelManager.getName(ProjectVariableNamesContributor.class, myProject, myElementToRename.getLanguage())) &&
+                ModelManager.getName(myProject, myElementToRename.getLanguage())) &&
                 supporter != null && supporter.isVariable(myElementToRename)) {
             LinkedHashMap<String, Double> nameProbs = IRenSuggestingService.getInstance().suggestVariableName((PsiNameIdentifierOwner) myElementToRename);
             double unknownNameProb = nameProbs.getOrDefault(Vocabulary.unknownCharacter, 0.);

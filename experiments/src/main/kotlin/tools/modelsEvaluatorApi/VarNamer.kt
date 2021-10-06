@@ -99,7 +99,7 @@ abstract class VarNamer {
             )!!
             if (ngramContributorClass == ProjectVariableNamesContributor::class.java) {
                 ModelManager.getInstance()
-                    .getModelRunner(ModelManager.getName(ProjectVariableNamesContributor::class.java, file.project, JavaLanguage.INSTANCE))
+                    .getModelRunner(ModelManager.getName(file.project, JavaLanguage.INSTANCE))
                     ?.forgetPsiFile(file)
             }
             val predictionsList = SyntaxTraverser.psiTraverser()
@@ -119,7 +119,7 @@ abstract class VarNamer {
         } finally {
             if (ngramContributorClass == ProjectVariableNamesContributor::class.java) {
                 ModelManager.getInstance()
-                    .getModelRunner(ModelManager.getName(ProjectVariableNamesContributor::class.java, file.project, JavaLanguage.INSTANCE))
+                    .getModelRunner(ModelManager.getName(file.project, JavaLanguage.INSTANCE))
                     ?.learnPsiFile(file)
             }
             fileEditorManager.closeFile(file.virtualFile)

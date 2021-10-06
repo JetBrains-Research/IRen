@@ -7,33 +7,30 @@ import com.intellij.codeInspection.ProblemsHolder
 import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.project.Project
 import com.intellij.psi.JavaElementVisitor
+import com.intellij.psi.PsiNameIdentifierOwner
 import com.intellij.psi.PsiVariable
 import com.intellij.psi.SmartPsiElementPointer
 import com.intellij.psi.util.createSmartPointer
 import org.jetbrains.iren.IRenBundle
 import org.jetbrains.iren.ModelManager
 import org.jetbrains.iren.ModelStatsService
-import org.jetbrains.iren.contributors.ProjectVariableNamesContributor
 import org.jetbrains.iren.rename.IRenMemberInplaceRenamer
 
 class JavaVariableVisitor(private val holder: ProblemsHolder) : JavaElementVisitor() {
     override fun visitVariable(variable: PsiVariable?) {
         if (variable == null ||
             !ModelStatsService.getInstance().isUsable(
-                ModelManager.getName(
-                    ProjectVariableNamesContributor::class.java,
-                    variable.project,
-                    variable.language
-                )
+                ModelManager.getName(variable.project, variable.language)
             )
         ) return
         try {
-            if (ConsistencyChecker.getInstance().isInconsistent(variable.createSmartPointer())) {
+            val pointer: SmartPsiElementPointer<PsiNameIdentifierOwner> = variable.createSmartPointer()
+            if (ConsistencyChecker.getInstance().isInconsistent(pointer)) {
                 holder.registerProblem(
                     variable.nameIdentifier ?: variable,
                     IRenBundle.message("inspection.description.template"),
                     ProblemHighlightType.WEAK_WARNING,
-                    RenameMethodQuickFix(variable.createSmartPointer())
+                    RenameMethodQuickFix(pointer)
                 )
             }
         } finally {
@@ -43,7 +40,7 @@ class JavaVariableVisitor(private val holder: ProblemsHolder) : JavaElementVisit
 }
 
 class RenameMethodQuickFix(
-    private var variable: SmartPsiElementPointer<PsiVariable>
+    private var variable: SmartPsiElementPointer<PsiNameIdentifierOwner>
 ) : LocalQuickFix {
     override fun applyFix(project: Project, descriptor: ProblemDescriptor) {
         val editor = FileEditorManager.getInstance(project).selectedTextEditor!!

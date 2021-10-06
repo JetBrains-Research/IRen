@@ -27,7 +27,7 @@ class ConsistencyChecker : Disposable {
                 object : CacheLoader<SmartPsiElementPointer<PsiNameIdentifierOwner>?, Boolean?>() {
                     override fun load(key: SmartPsiElementPointer<PsiNameIdentifierOwner>?): Boolean? { // no checked exception
                         val variable = key?.element ?: return null
-                        return isGoodPredictionList(
+                        return !isGoodPredictionList(
                             variable,
                             IRenSuggestingService.getInstance().suggestVariableName(variable)
                         )
@@ -41,11 +41,15 @@ class ConsistencyChecker : Disposable {
     override fun dispose() {
         storage.invalidateAll()
     }
+}
 
-    fun isGoodPredictionList(variable: PsiNameIdentifierOwner, predictions: LinkedHashMap<String, Double>): Boolean {
-        val varThreshold = predictions[variable.name]
-        val vocabThreshold = predictions[Vocabulary.unknownCharacter]
-        return (if (varThreshold != null) predictions.filterValues { v -> v > varThreshold } else predictions).size >= 5 &&
-                (if (vocabThreshold != null) predictions.filterValues { v -> v > vocabThreshold } else predictions).isNotEmpty()
-    }
+fun isGoodPredictionList(variable: PsiNameIdentifierOwner, predictions: LinkedHashMap<String, Double>): Boolean {
+    if (predictions.isEmpty()) return false
+    var varIdx = 100
+    var unkIdx = 100
+    predictions.keys.forEachIndexed { index, name -> when (name) {
+        variable.name -> varIdx = index
+        Vocabulary.unknownCharacter -> unkIdx = index
+    }}
+    return unkIdx == 0 || varIdx < 5
 }

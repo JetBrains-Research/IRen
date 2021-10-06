@@ -7,7 +7,6 @@ import com.intellij.openapi.application.PathManager;
 import com.intellij.openapi.project.Project;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.jetbrains.iren.api.VariableNamesContributor;
 import org.jetbrains.iren.impl.NGramModelRunner;
 
 import java.nio.file.Path;
@@ -29,11 +28,9 @@ public class ModelManager implements Disposable {
         return MODELS_DIRECTORY.resolve(name);
     }
 
-    public static String getName(@Nullable Class<? extends VariableNamesContributor> clazz,
-                                 @Nullable Project project,
-                                 @Nullable Language language) {
-        return (clazz != null ? clazz.getSimpleName() + "_" : "") +
-                (project != null ? project.getName() + "_" + project.getLocationHash() + "_" : "") +
+    public static @NotNull String getName(@Nullable Project project,
+                                          @Nullable Language language) {
+        return (project != null ? project.getName() + "_" + project.getLocationHash() + "_" : "") +
                 (language != null ? language.getID() : "");
     }
 
@@ -52,9 +49,11 @@ public class ModelManager implements Disposable {
 
     private final Map<String, Consumer<String>> consumerMap = new HashMap<>();
 
-    public void invokeLater(@NotNull Project project, Consumer<String> consumer) {
+    public synchronized void invokeLater(@NotNull Project project, Consumer<String> consumer) {
         invoke(project, null);
-        consumerMap.put(project.getLocationHash(), consumer);
+        @NotNull String projectHash = project.getLocationHash();
+        if (consumerMap.containsKey(projectHash)) System.out.println("invokeLater bug");
+        consumerMap.put(projectHash, consumer);
     }
 
     public void invoke(@NotNull Project project, String name) {
