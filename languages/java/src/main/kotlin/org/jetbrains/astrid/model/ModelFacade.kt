@@ -1,19 +1,17 @@
 package org.jetbrains.astrid.model
 
+//import org.jetbrains.astrid.helpers.TensorConverter.parsePredictions
+//import org.jetbrains.astrid.helpers.TensorConverter.parseScores
+//import org.tensorflow.SavedModelBundle
+//import org.tensorflow.Session
+//import org.tensorflow.Tensor
 import com.intellij.openapi.diagnostic.Logger
 import com.intellij.psi.PsiMethod
 import net.razorvine.pickle.Unpickler
 import org.jetbrains.astrid.downloader.Downloader.dictSubDir
 import org.jetbrains.astrid.downloader.Downloader.getModelPath
-import org.jetbrains.astrid.downloader.Downloader.modelSubDir
-//import org.jetbrains.astrid.helpers.TensorConverter.parsePredictions
-//import org.jetbrains.astrid.helpers.TensorConverter.parseScores
 import org.jetbrains.astrid.inspections.Suggestion
-import org.jetbrains.astrid.utils.PathUtils.getCombinedPaths
 import org.jetbrains.astrid.utils.PsiUtils
-//import org.tensorflow.SavedModelBundle
-//import org.tensorflow.Session
-//import org.tensorflow.Tensor
 import java.io.FileInputStream
 
 class ModelFacade {

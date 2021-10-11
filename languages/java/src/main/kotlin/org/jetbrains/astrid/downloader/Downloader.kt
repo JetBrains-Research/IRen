@@ -1,15 +1,8 @@
 package org.jetbrains.astrid.downloader
 
 import com.intellij.openapi.progress.ProgressIndicator
-import com.intellij.openapi.progress.ProgressManager
-import com.intellij.openapi.progress.Task
-import com.intellij.openapi.project.ProjectManager
 import org.jetbrains.astrid.enums.OSType
-import org.jetbrains.astrid.utils.FileUtils
-import java.io.BufferedInputStream
-import java.io.FileOutputStream
 import java.net.URL
-import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
 import java.util.*

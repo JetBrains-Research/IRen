@@ -11,13 +11,9 @@ import com.intellij.openapi.ui.popup.JBPopupFactory
 import com.intellij.psi.PsiFile
 import com.intellij.psi.PsiMethod
 import com.intellij.psi.util.PsiTreeUtil
-import org.jetbrains.astrid.downloader.Downloader
 import org.jetbrains.astrid.inspections.Suggestion
 import org.jetbrains.astrid.model.ModelFacade
-import org.jetbrains.astrid.utils.FileUtils
 import org.jetbrains.astrid.utils.PsiUtils.executeWriteAction
-import java.net.URL
-import java.nio.file.Files
 
 class SuggestionIntentionAction : IntentionAction {
 
@@ -44,7 +40,12 @@ class SuggestionIntentionAction : IntentionAction {
                 if (suggestionsList == null) return
                 executeWriteAction(project, file) {
                     val listPopup = JBPopupFactory.getInstance().createListPopup(
-                            SuggestionListPopupStep("Suggestions", suggestionsList!!, editor, file)
+                        org.jetbrains.astrid.actions.SuggestionListPopupStep(
+                            "Suggestions",
+                            suggestionsList!!,
+                            editor,
+                            file
+                        )
                     )
                     listPopup.showInBestPositionFor(editor)
                 }

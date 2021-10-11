@@ -2,10 +2,6 @@ package org.jetbrains.astrid.helpers;
 
 //import org.tensorflow.Tensor;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-
 public class TensorConverter {
 
 //    public static List<List> parsePredictions(Tensor tensor) {
