@@ -2,8 +2,6 @@
 
 # IRen Changelog
 
-## [Released]
-
 ## [0.0.3]
 ### Added
 - Python support
