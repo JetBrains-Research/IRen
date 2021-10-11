@@ -1,7 +1,7 @@
 <idea-plugin>
-    <id>com.github.davidenkoim.irenplugin</id>
+    <id>com.github.davidenkoim.idnamessuggestingplugin</id>
     <name>IRen</name>
-    <vendor>davidenkoim</vendor>
+    <vendor url="https://www.jetbrains.com">JetBrains</vendor>
     <resource-bundle>messages.IRen</resource-bundle>
     <!-- Product and plugin compatibility requirements -->
     <!-- https://www.jetbrains.org/intellij/sdk/docs/basics/getting_started/plugin_compatibility.html -->
@@ -15,14 +15,18 @@
     </description>
 
     <depends>com.intellij.modules.platform</depends>
-    <depends>com.intellij.modules.java</depends>
+    <depends optional="true" config-file="java.xml">com.intellij.java</depends>
+    <depends optional="true" config-file="kotlin.xml">org.jetbrains.kotlin</depends>
+    <depends optional="true" config-file="python.xml">com.intellij.modules.python</depends>
     <extensions defaultExtensionNs="com.intellij">
-        <registryKey key="developer.mode" description="Registry for showing id names suggesting plugin notifications"
-                     defaultValue="True" restartRequired="false"/>
+        <registryKey key="iren.developer.mode" description="Registry for showing id names suggesting plugin notifications"
+                     defaultValue="false" restartRequired="false"/>
+        <applicationService serviceImplementation="org.jetbrains.iren.settings.AppSettingsState"/>
         <!-- Headless running part-->
         <appStarter implementation="tools.gnnEvaluator.GNNPluginRunner"/>
         <appStarter implementation="tools.transformerEvaluator.TransformerPluginRunner"/>
         <appStarter implementation="tools.nGramTrainingTime.PluginRunner"/>
+        <appStarter implementation="tools.modelsEvaluatorApi.PluginRunner"/>
         <!-- End of headless running part-->
         <applicationService serviceImplementation="org.jetbrains.iren.ModelManager"/>
         <applicationService serviceImplementation="org.jetbrains.iren.ModelStatsService"/>
@@ -30,14 +34,13 @@
     </extensions>
     <extensions defaultExtensionNs="org.jetbrains.iren">
         <variableNamesContributor
-                implementation="org.jetbrains.iren.contributors.FileVariableNamesContributor"/>
-        <variableNamesContributor
                 implementation="org.jetbrains.iren.contributors.ProjectVariableNamesContributor"/>
-        <variableNamesContributor
-                implementation="org.jetbrains.iren.contributors.GlobalVariableNamesContributor"/>
     </extensions>
     <extensionPoints>
         <extensionPoint qualifiedName="org.jetbrains.iren.variableNamesContributor"
                         interface="org.jetbrains.iren.api.VariableNamesContributor" dynamic="true"/>
+        <extensionPoint
+                interface="org.jetbrains.iren.utils.LanguageSupporter"
+                dynamic="true" qualifiedName="org.jetbrains.iren.language.supporter"/>
     </extensionPoints>
 </idea-plugin>

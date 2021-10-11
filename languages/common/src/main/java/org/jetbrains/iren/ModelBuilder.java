@@ -40,44 +40,16 @@ public class ModelBuilder {
         });
     }
 
-    public static void trainProjectNGramModel(@NotNull Project project, @Nullable ProgressIndicator progressIndicator, boolean save) {
-        if (ModelStatsService.getInstance().isTraining()) return;
+    public static void trainProjectNGramModel(@NotNull Project project,
+                                              @Nullable ProgressIndicator progressIndicator,
+                                              boolean save) {
         @NotNull ModelStatsService modelStats = ModelStatsService.getInstance();
+        if (modelStats.isTraining()) return;
         modelStats.setTraining(true);
         try {
             for (LanguageSupporter supporter : LanguageSupporter.INSTANCE.getExtensionList()) {
-
-                String name = ModelManager.getName(project, supporter.getLanguage());
-                NGramModelRunner modelRunner = new NGramModelRunner();
-                modelStats.setUsable(name, false);
-                if (progressIndicator != null)
-                    progressIndicator.setText(IRenBundle.message("training.progress.indicator.text",
-                            String.format("%s; %s", project.getName(), supporter.getLanguage())));
-
-                modelRunner.train();
-                if (!learnProject(modelRunner, project, supporter, progressIndicator)) continue;
-                modelRunner.eval();
-
-                if (progressIndicator != null) {
-                    if (progressIndicator.isCanceled()) break;
-                    progressIndicator.setIndeterminate(true);
-                    progressIndicator.setText2("Resolving counter...");
-                }
-                modelRunner.resolveCounter();
-                ModelManager.getInstance().putModelRunner(name, modelRunner);
-                if (save) {
-                    if (progressIndicator != null) progressIndicator.setText(IRenBundle.message("saving.project.model",
-                            String.format("%s; %s", project.getName(), supporter.getLanguage())));
-
-                    double size = modelRunner.save(ModelManager.getPath(name), progressIndicator);
-                    int vocabSize = modelRunner.getVocabulary().size();
-                    NotificationsUtil.notify(project,
-                            String.format("Project: %s; %s", project.getName(), supporter.getLanguage()),
-                            String.format("Model size: %.3f Mb; Vocab size: %d",
-                                    size, vocabSize));
-                    System.out.printf("Project: %s;\t%s;\tModel size: %.3f Mb;\tVocab size: %d\n", project.getName(), supporter.getLanguage(), size, vocabSize);
-                }
-                modelStats.setUsable(name, true);
+                trainProjectNGramModelWithSupporter(project, supporter, progressIndicator, save);
+                if (progressIndicator != null && progressIndicator.isCanceled()) break;
             }
             modelStats.setTrainedTime(ProjectVariableNamesContributor.class, project);
         } finally {
@@ -86,7 +58,47 @@ public class ModelBuilder {
         }
     }
 
-    public static boolean learnProject(NGramModelRunner modelRunner, @NotNull Project project, LanguageSupporter supporter, @Nullable ProgressIndicator progressIndicator) {
+    public static void trainProjectNGramModelWithSupporter(@NotNull Project project,
+                                                           @NotNull LanguageSupporter supporter,
+                                                           @Nullable ProgressIndicator progressIndicator,
+                                                           boolean save) {
+        String name = ModelManager.getName(project, supporter.getLanguage());
+        NGramModelRunner modelRunner = new NGramModelRunner();
+        ModelStatsService.getInstance().setUsable(name, false);
+        if (progressIndicator != null)
+            progressIndicator.setText(IRenBundle.message("training.progress.indicator.text",
+                    String.format("%s; %s", project.getName(), supporter.getLanguage())));
+
+        modelRunner.train();
+        if (!learnProject(modelRunner, project, supporter, progressIndicator)) return;
+        modelRunner.eval();
+
+        if (progressIndicator != null) {
+            if (progressIndicator.isCanceled()) return;
+            progressIndicator.setIndeterminate(true);
+            progressIndicator.setText2("Resolving counter...");
+        }
+        modelRunner.resolveCounter();
+        ModelManager.getInstance().putModelRunner(name, modelRunner);
+        if (save) {
+            if (progressIndicator != null) progressIndicator.setText(IRenBundle.message("saving.project.model",
+                    String.format("%s; %s", project.getName(), supporter.getLanguage())));
+
+            double size = modelRunner.save(ModelManager.getPath(name), progressIndicator);
+            int vocabSize = modelRunner.getVocabulary().size();
+            NotificationsUtil.notify(project,
+                    String.format("Project: %s; %s", project.getName(), supporter.getLanguage()),
+                    String.format("Model size: %.3f Mb; Vocab size: %d",
+                            size, vocabSize));
+            System.out.printf("Project: %s;\t%s;\tModel size: %.3f Mb;\tVocab size: %d\n", project.getName(), supporter.getLanguage(), size, vocabSize);
+        }
+        ModelStatsService.getInstance().setUsable(name, true);
+    }
+
+    public static boolean learnProject(NGramModelRunner modelRunner,
+                                       @NotNull Project project,
+                                       LanguageSupporter supporter,
+                                       @Nullable ProgressIndicator progressIndicator) {
         if (progressIndicator != null) {
             progressIndicator.setIndeterminate(false);
         }
@@ -139,7 +151,12 @@ public class ModelBuilder {
                         (maxTrainingTime <= 0 || Duration.between(start, Instant.now())
                                 .minusSeconds(maxTrainingTime).isNegative()))
                 .forEach(file -> {
-                    ReadAction.run(() -> ObjectUtils.consumeIfNotNull(PsiManager.getInstance(project).findFile(file), modelRunner::learnPsiFile));
+                    try {
+                        ReadAction.run(() -> ObjectUtils.consumeIfNotNull(PsiManager.getInstance(project).findFile(file), modelRunner::learnPsiFile));
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                        System.out.println(file);
+                    }
                     synchronized (progress) {
                         double fraction = ++progress[0] / (double) total;
                         if (total < 10 || progress[0] % (total / 10) == 0) {

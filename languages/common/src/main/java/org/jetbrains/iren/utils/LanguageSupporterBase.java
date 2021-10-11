@@ -3,6 +3,7 @@ package org.jetbrains.iren.utils;
 import com.intellij.completion.ngram.slp.translating.Vocabulary;
 import com.intellij.openapi.progress.ProcessCanceledException;
 import com.intellij.openapi.progress.ProgressManager;
+import com.intellij.openapi.progress.StandardProgressIndicator;
 import com.intellij.openapi.progress.util.AbstractProgressIndicatorBase;
 import com.intellij.openapi.util.Computable;
 import com.intellij.openapi.util.TextRange;
@@ -36,10 +37,10 @@ public abstract class LanguageSupporterBase implements LanguageSupporter {
         return !info.isEmpty();
     }
 
-    public @NotNull Collection<PsiReference> findReferences(@NotNull PsiNameIdentifierOwner identifierOwner, @NotNull PsiFile file) {
+    public @Nullable Collection<PsiReference> findReferences(@NotNull PsiNameIdentifierOwner identifierOwner, @NotNull PsiFile file) {
 //        Unknown problems when using GlobalSearchScope.projectScope. Most likely there are too many fields and searching breaks.
-        return RenamePsiElementProcessor.forElement(identifierOwner)
-                .findReferences(identifierOwner, GlobalSearchScope.fileScope(file), false);
+        return runForSomeTime(() -> RenamePsiElementProcessor.forElement(identifierOwner)
+                .findReferences(identifierOwner, GlobalSearchScope.fileScope(file), false), 100);
     }
 
     public @NotNull String processToken(@NotNull PsiElement token) {
@@ -97,32 +98,12 @@ public abstract class LanguageSupporterBase implements LanguageSupporter {
 
     protected abstract @Nullable PsiElement resolveReference(@NotNull PsiElement reference);
 
-    public <T> @Nullable T runForSomeTime(@NotNull Computable<T> process, long runningTime) {
+    public <T> @Nullable T runForSomeTime(@NotNull Computable<T> process, long runningTimeMs) {
         ProgressManager progressManager = ProgressManager.getInstance();
         try {
-            return progressManager.runProcess(process,
-                    new AbstractProgressIndicatorBase() {
-                        final long startTime = System.currentTimeMillis();
-
-                        @Override
-                        public void checkCanceled() {
-                            super.checkCanceled();
-                        }
-
-                        @Override
-                        public boolean isCanceled() {
-                            if (super.isCanceled()) {
-                                return true;
-                            }
-                            if ((System.currentTimeMillis() - startTime) > runningTime) {
-                                cancel();
-                                return true;
-                            }
-                            return false;
-                        }
-                    });
+            return progressManager.runProcess(process, new LimitedRunningTimeIndicator(runningTimeMs));
         } catch (ProcessCanceledException e) {
-            System.out.println("Canceled");
+//            System.out.println("Canceled");
             return null;
         } catch (Exception e) {
             e.printStackTrace();
@@ -176,13 +157,15 @@ public abstract class LanguageSupporterBase implements LanguageSupporter {
     }
 
     public Collection<PsiElement> findUsages(PsiNameIdentifierOwner variable, PsiFile file) {
-        return Stream.concat(Stream.of(variable), findReferences(variable, file).stream())
+        @Nullable Collection<PsiReference> references = findReferences(variable, file);
+        return Stream.concat(Stream.of(variable), references != null ? references.stream() : Stream.empty())
                 .map(this::getIdentifier)
                 .filter(Objects::nonNull)
                 .collect(Collectors.toSet());
     }
 
     private @NotNull PsiElement findRoot(@NotNull PsiFile file, @NotNull Collection<PsiElement> usages) {
+        if (usages.size() < 2) return file;
         List<Set<PsiElement>> parents = usages.stream()
                 .map(this::getParents)
                 .collect(Collectors.toList());
@@ -258,5 +241,31 @@ public abstract class LanguageSupporterBase implements LanguageSupporter {
                 total += 1;
             }
         }
+    }
+}
+
+class LimitedRunningTimeIndicator extends AbstractProgressIndicatorBase implements StandardProgressIndicator {
+    final long startTime = System.currentTimeMillis();
+    private final long runningTimeMs;
+
+    public LimitedRunningTimeIndicator(long runningTimeMs) {
+        this.runningTimeMs = runningTimeMs;
+    }
+
+    @Override
+    public void checkCanceled() {
+        super.checkCanceled();
+    }
+
+    @Override
+    public boolean isCanceled() {
+        if (super.isCanceled()) {
+            return true;
+        }
+        if ((System.currentTimeMillis() - startTime) > runningTimeMs) {
+            cancel();
+            return true;
+        }
+        return false;
     }
 }

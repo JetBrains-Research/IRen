@@ -40,14 +40,16 @@ public class NGramModelRunner {
     /**
      * {@link Set} of identifier names.
      */
-    private final Set<Integer> myRememberedIdentifiers = new HashSet<>();
+    private final Set<Integer> myRememberedIdentifiers;
 
     private final Model myModel;
-    private final Vocabulary myVocabulary = new Vocabulary();
+    private final Vocabulary myVocabulary;
 
     private boolean myTraining = false;
     private final boolean biDirectional;
     private final int order;
+
+    public static boolean DEFAULT_BIDIRECTIONAL = true;
 
     public void train() {
         myTraining = true;
@@ -70,7 +72,7 @@ public class NGramModelRunner {
     }
 
     public NGramModelRunner() {
-        this(true, true, 6);
+        this(true, DEFAULT_BIDIRECTIONAL, 6);
     }
 
     public NGramModelRunner(boolean isLargeCorpora) {
@@ -80,6 +82,8 @@ public class NGramModelRunner {
     public NGramModelRunner(boolean isLargeCorpora, boolean biDirectional, int order) {
         this.biDirectional = biDirectional;
         this.order = order;
+        myVocabulary = new Vocabulary();
+        myRememberedIdentifiers = new HashSet<>();
         if (biDirectional) {
             myModel = new BiDirectionalModel(new JMModel(order, 0.5, isLargeCorpora ? new GigaCounter() : new ArrayTrieCounter()),
                     new JMModel(order, 0.5, isLargeCorpora ? new GigaCounter() : new ArrayTrieCounter()));
@@ -88,8 +92,20 @@ public class NGramModelRunner {
         }
     }
 
+    public NGramModelRunner(Model model, Vocabulary vocabulary, Set<Integer> rememberedIdentifiers, boolean biDirectional, int order){
+        myModel = model;
+        myVocabulary = vocabulary;
+        myRememberedIdentifiers = rememberedIdentifiers;
+        this.biDirectional = biDirectional;
+        this.order = order;
+    }
+
     public int getModelPriority() {
         return myVocabulary.size();
+    }
+
+    public @NotNull List<VarNamePrediction> suggestNames(@NotNull PsiNameIdentifierOwner variable) {
+        return suggestNames(variable, false);
     }
 
     public @NotNull List<VarNamePrediction> suggestNames(@NotNull PsiNameIdentifierOwner variable, boolean forgetContext) {
@@ -187,6 +203,7 @@ public class NGramModelRunner {
 
     public void learnPsiFile(@NotNull PsiFile file) {
         LanguageSupporter supporter = LanguageSupporter.getInstance(file.getLanguage());
+        if (supporter == null) return;
         @NotNull List<String> lexed = supporter.lexPsiFile(file, myTraining ? rememberIdName(supporter) : null);
         learnLexed(lexed);
     }

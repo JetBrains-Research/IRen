@@ -2,8 +2,8 @@ package tools.modelsEvaluatorApi
 
 import com.fasterxml.jackson.core.JsonProcessingException
 import com.fasterxml.jackson.databind.ObjectMapper
-import com.intellij.ide.highlighter.JavaFileType
-import com.intellij.lang.java.JavaLanguage
+import com.intellij.completion.ngram.slp.modeling.mix.BiDirectionalModel
+import com.intellij.lang.LanguageRefactoringSupport
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.fileEditor.OpenFileDescriptor
@@ -12,12 +12,10 @@ import com.intellij.openapi.util.TextRange
 import com.intellij.psi.*
 import com.intellij.psi.search.FileTypeIndex
 import com.intellij.psi.search.GlobalSearchScope
-import com.jetbrains.rd.util.string.printToString
 import org.jetbrains.iren.ModelManager
-import org.jetbrains.iren.api.VariableNamesContributor
-import org.jetbrains.iren.contributors.NGramVariableNamesContributor
-import org.jetbrains.iren.contributors.ProjectVariableNamesContributor
+import org.jetbrains.iren.impl.NGramModelRunner
 import org.jetbrains.iren.storages.VarNamePrediction
+import org.jetbrains.iren.utils.LanguageSupporter
 import java.io.File
 import java.io.FileOutputStream
 import java.nio.file.Path
@@ -25,17 +23,18 @@ import java.time.Duration
 import java.time.Instant
 import kotlin.streams.asSequence
 
-abstract class VarNamer {
-    private var ngramContributorClass: Class<out NGramVariableNamesContributor>? = null
+open class VarNamer(
+    private val saveDir: Path,
+    private val supporter: LanguageSupporter,
+    private val ngramType: String
+) {
+    private lateinit var modelRunner: NGramModelRunner
 
-    fun predict(project: Project, dir: Path, ngramContributorType: String) {
-        ngramContributorClass = when (ngramContributorType) {
-//            "global" -> GlobalVariableNamesContributor::class.java
-            "project" -> ProjectVariableNamesContributor::class.java
-            else -> throw NotImplementedError("ngramContributorType has to be \"global\" or \"project\"!")
-        }
+    fun predict(project: Project) : Boolean {
+        modelRunner = ModelManager.getInstance()
+            .getModelRunner(ModelManager.getName(project, supporter.language)) ?: return false
         val mapper = ObjectMapper()
-        val predictionsFile: File = dir.resolve("${project.name}_${ngramContributorType}_predictions.txt").toFile()
+        val predictionsFile: File = saveDir.resolve("${project.name}_${ngramType}_predictions.jsonl").toFile()
         predictionsFile.parentFile.mkdirs()
         predictionsFile.createNewFile()
         val predictedFilePaths = predictionsFile.bufferedReader().lines().asSequence()
@@ -48,9 +47,10 @@ abstract class VarNamer {
             }.filterNotNull()
             .toHashSet()
         val files = FileTypeIndex.getFiles(
-            JavaFileType.INSTANCE,
+            supporter.fileType,
             GlobalSearchScope.projectScope(project)
         ).filter { file -> file.path !in predictedFilePaths }
+        if (files.isEmpty()) return false
         var progress = 0
         val total = files.size
         val start = Instant.now()
@@ -61,9 +61,11 @@ abstract class VarNamer {
             if (psiFile === null) continue
             val filePath = file.path
             val filePredictions = HashMap<String, List<VarNamePredictions>>()
-            val preds = predictPsiFile(psiFile)
-            if (preds === null) continue
-            filePredictions[filePath] = preds
+
+            val predictions = predictPsiFile(psiFile)
+
+            if (predictions === null) continue
+            filePredictions[filePath] = predictions
             FileOutputStream(predictionsFile, true).bufferedWriter().use {
                 it.write(mapper.writeValueAsString(filePredictions))
                 it.newLine()
@@ -75,8 +77,8 @@ abstract class VarNamer {
                 System.out.printf(
                     "Status: %.0f%%;\tTime spent: %s;\tTime left: %s\r",
                     fraction * 100.0,
-                    timeSpent.printToString(),
-                    timeLeft.printToString()
+                    timeSpent,
+                    timeLeft
                 )
             }
         }
@@ -84,8 +86,9 @@ abstract class VarNamer {
         val timeSpent = Duration.between(start, end)
         System.out.printf(
             "Done in %s\n",
-            timeSpent.printToString()
+            timeSpent
         )
+        return true
     }
 
     protected open fun predictPsiFile(file: PsiFile): List<VarNamePredictions>? {
@@ -97,36 +100,30 @@ abstract class VarNamer {
                     file.virtualFile
                 ), true
             )!!
-            if (ngramContributorClass == ProjectVariableNamesContributor::class.java) {
-                ModelManager.getInstance()
-                    .getModelRunner(ModelManager.getName(file.project, JavaLanguage.INSTANCE))
-                    ?.forgetPsiFile(file)
-            }
-            val predictionsList = SyntaxTraverser.psiTraverser()
+            val variables = SyntaxTraverser.psiTraverser()
                 .withRoot(file)
                 .onRange(TextRange(0, 64 * 1024)) // first 128 KB of chars
-                .filter { element: PsiElement? -> element is PsiVariable }
+                .filter { element: PsiElement? ->
+                    element is PsiNameIdentifierOwner &&
+                            supporter.isVariableDeclaration(element)
+                }
                 .toList()
+            modelRunner.forgetPsiFile(file)
+            return variables
                 .asSequence()
                 .filterNotNull()
-                .map { e -> e as PsiVariable }
-                .map { v -> predictVarName(v, editor) }
+                .map { v -> predictVarName(v as PsiNameIdentifierOwner, editor) }
                 .filterNotNull()
                 .toList()
-            return predictionsList
         } catch (e: Exception) {
             return null
         } finally {
-            if (ngramContributorClass == ProjectVariableNamesContributor::class.java) {
-                ModelManager.getInstance()
-                    .getModelRunner(ModelManager.getName(file.project, JavaLanguage.INSTANCE))
-                    ?.learnPsiFile(file)
-            }
+            modelRunner.learnPsiFile(file)
             fileEditorManager.closeFile(file.virtualFile)
         }
     }
 
-    private fun predictVarName(variable: PsiVariable, editor: Editor): VarNamePredictions? {
+    private fun predictVarName(variable: PsiNameIdentifierOwner, editor: Editor): VarNamePredictions? {
         val nameIdentifier = variable.nameIdentifier
         if (nameIdentifier === null || nameIdentifier.text == "") return null
 
@@ -136,7 +133,7 @@ abstract class VarNamer {
 
         startTime = System.nanoTime()
         val nnPredictions = predictWithNN(variable)
-        val nnEvaluationTime = (System.nanoTime() - startTime) / 1e9
+        val nnEvaluationTime = (System.nanoTime() - startTime) / 1.0e9
 
         return VarNamePredictions(
             nameIdentifier.text,
@@ -145,17 +142,14 @@ abstract class VarNamer {
             nnPredictions,
             nnEvaluationTime,
             getLinePosition(nameIdentifier, editor),
-            variable.javaClass.interfaces[0].simpleName
+            variable.javaClass.interfaces[0].simpleName,
+            LanguageRefactoringSupport.INSTANCE.forContext(variable)
+                ?.isInplaceRenameAvailable(variable, null) ?: false
         )
     }
 
-    private fun predictWithNGram(variable: PsiVariable): List<ModelPrediction> {
-        val nameSuggestions: List<VarNamePrediction> = ArrayList()
-        val contributor = VariableNamesContributor.EP_NAME.findExtension(ngramContributorClass!!)
-        contributor!!.contribute(
-            variable,
-            nameSuggestions
-        )
+    private fun predictWithNGram(variable: PsiNameIdentifierOwner): List<ModelPrediction> {
+        val nameSuggestions: List<VarNamePrediction> = modelRunner.suggestNames(variable)
         return nameSuggestions.map { x: VarNamePrediction -> ModelPrediction(x.name, x.probability) }
     }
 
@@ -163,7 +157,19 @@ abstract class VarNamer {
         return editor.offsetToLogicalPosition(identifier.textOffset).line
     }
 
-    abstract fun predictWithNN(variable: PsiVariable): Any
+    open fun predictWithNN(variable: PsiNameIdentifierOwner): Any {
+//        Predict with the forward model of the BiDirectional model
+        assert(ngramType == "BiDirectional")
+        val forwardModel = NGramModelRunner(
+            (modelRunner.model as BiDirectionalModel).forward,
+            modelRunner.vocabulary,
+            modelRunner.rememberedIdentifiers,
+            false,
+            modelRunner.order
+        )
+        val nameSuggestions: List<VarNamePrediction> = forwardModel.suggestNames(variable)
+        return nameSuggestions.map { x: VarNamePrediction -> ModelPrediction(x.name, x.probability) }
+    }
 }
 
 class VarNamePredictions(
@@ -173,7 +179,8 @@ class VarNamePredictions(
     val nnPrediction: Any,
     val nnResponseTime: Double,
     val linePosition: Int,
-    val psiInterface: String
+    val psiInterface: String,
+    val inplaceRenameAvailable: Boolean
 )
 
 class ModelPrediction(val name: Any, val p: Double)

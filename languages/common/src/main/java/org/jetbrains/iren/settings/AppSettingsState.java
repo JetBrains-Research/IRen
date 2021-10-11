@@ -24,7 +24,7 @@ public class AppSettingsState implements PersistentStateComponent<AppSettingsSta
     public boolean firstOpen = true;
     public boolean automaticTraining = true;
     public int maxTrainingTime = 30;
-    public int vocabularyCutOff = 0;
+    public int vocabularyCutOff = 3;
     public int modelsLifetime = 1;
     public ChronoUnit modelsLifetimeUnit = ChronoUnit.DAYS;
 

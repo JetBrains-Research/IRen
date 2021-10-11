@@ -1,8 +1,7 @@
 package tools.transformerEvaluator
 
-import com.intellij.openapi.project.Project
 import tools.modelsEvaluatorApi.PluginRunner
-import java.nio.file.Path
+import tools.modelsEvaluatorApi.VarNamer
 
 class TransformerPluginRunner : PluginRunner() {
     override val javaSmallTrain = listOf(
@@ -15,7 +14,7 @@ class TransformerPluginRunner : PluginRunner() {
 
     override fun getCommandName(): String = "TransformerEvaluator"
 
-    override fun predict(project: Project, dir: Path, ngramContributorType: String) {
-        TransformerVarNamer().predict(project, dir, ngramContributorType)
+    override fun createVarNamer(): VarNamer {
+        return TransformerVarNamer(saveDir, supporter, ngramType)
     }
 }

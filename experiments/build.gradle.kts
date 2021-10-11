@@ -11,9 +11,10 @@ tasks {
         val evaluatorToUse: String? by project
         val dataset: String? by project
         val saveDir: String? by project
-        val ngramContributorType: String? by project
-        args = listOfNotNull(evaluatorToUse, dataset, saveDir, ngramContributorType)
+        val languageFile: String? by project
+        val ngramType: String? by project
+        args = listOfNotNull(evaluatorToUse, dataset, saveDir, languageFile, ngramType)
         jvmArgs = listOf("-Djava.awt.headless=true")
-        maxHeapSize = "8g"
+        maxHeapSize = "12g"
     }
 }
