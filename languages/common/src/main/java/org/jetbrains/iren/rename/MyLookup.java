@@ -17,7 +17,7 @@ public class MyLookup {
         public static Key<Double> probability = new Key<>("probability");
         public static String MODEL_TYPE = "ngram";
 
-        protected NGram(@NotNull LookupElement delegate, Map<String, Double> namesProbs, Map<String, Integer> namesIndex) {
+        protected NGram(@NotNull LookupElement delegate, Map<String, Double> namesProbs) {
             super(delegate);
             putUserData(model_type, MODEL_TYPE);
             putUserData(probability, namesProbs.get(getLookupString()));

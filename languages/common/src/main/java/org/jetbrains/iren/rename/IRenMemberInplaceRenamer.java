@@ -67,15 +67,10 @@ public class IRenMemberInplaceRenamer extends MemberInplaceRenamer {
 
     static class NewLookupExpression extends MyLookupExpression {
         private final LinkedHashMap<String, Double> namesProbs;
-        private final HashMap<String, Integer> namesIndex = new HashMap<>();
 
         public NewLookupExpression(String name, @Nullable LinkedHashSet<String> names, @Nullable PsiNamedElement elementToRename, @Nullable PsiElement nameSuggestionContext, boolean shouldSelectAll, String advertisement, @NotNull LinkedHashMap<String, Double> namesProbs) {
             super(name, names, elementToRename, nameSuggestionContext, shouldSelectAll, advertisement);
             this.namesProbs = namesProbs;
-            int i = 0;
-            for (String key : namesProbs.keySet()) {
-                namesIndex.put(key, i++);
-            }
         }
 
         @Override
@@ -86,7 +81,7 @@ public class IRenMemberInplaceRenamer extends MemberInplaceRenamer {
                 @NotNull String name = lookupElement.getLookupString();
                 newLookupElements.add(
                         namesProbs.containsKey(name) ?
-                                new MyLookup.NGram(lookupElement, namesProbs, namesIndex) :
+                                new MyLookup.NGram(lookupElement, namesProbs) :
                                 new MyLookup.Default(lookupElement));
             }
             return newLookupElements.toArray(lookupElements);
