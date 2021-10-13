@@ -28,9 +28,9 @@
         <appStarter implementation="tools.nGramTrainingTime.PluginRunner"/>
         <appStarter implementation="tools.modelsEvaluatorApi.PluginRunner"/>
         <!-- End of headless running part-->
-        <applicationService serviceImplementation="org.jetbrains.iren.ModelManager"/>
-        <applicationService serviceImplementation="org.jetbrains.iren.ModelStatsService"/>
-        <applicationService serviceImplementation="org.jetbrains.iren.IRenSuggestingService"/>
+        <applicationService serviceImplementation="org.jetbrains.iren.services.ModelManager"/>
+        <applicationService serviceImplementation="org.jetbrains.iren.services.ModelStatsService"/>
+        <applicationService serviceImplementation="org.jetbrains.iren.services.IRenSuggestingService"/>
     </extensions>
     <extensions defaultExtensionNs="org.jetbrains.iren">
         <variableNamesContributor

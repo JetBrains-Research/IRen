@@ -39,10 +39,10 @@
                                  displayName="IRen Settings"/>
         <!--    End of settings part    -->
         <lookup.usageDetails implementation="org.jetbrains.iren.statistics.IRenLookupUsageDescriptor"/>
-        <applicationService serviceImplementation="org.jetbrains.iren.ModelStatsService"/>
-        <applicationService serviceImplementation="org.jetbrains.iren.ModelManager"/>
-        <applicationService serviceImplementation="org.jetbrains.iren.IRenSuggestingService"/>
-        <applicationService serviceImplementation="org.jetbrains.iren.inspections.variable.ConsistencyChecker"/>
+        <applicationService serviceImplementation="org.jetbrains.iren.services.ModelStatsService"/>
+        <applicationService serviceImplementation="org.jetbrains.iren.services.ModelManager"/>
+        <applicationService serviceImplementation="org.jetbrains.iren.services.IRenSuggestingService"/>
+        <applicationService serviceImplementation="org.jetbrains.iren.services.ConsistencyChecker"/>
         <localInspection displayName="Inconsistent variable names"
                          groupBundle="messages.IRen"
                          groupKey="inspection.group.key"

@@ -12,8 +12,8 @@ import com.intellij.openapi.util.TextRange
 import com.intellij.psi.*
 import com.intellij.psi.search.FileTypeIndex
 import com.intellij.psi.search.GlobalSearchScope
-import org.jetbrains.iren.ModelManager
 import org.jetbrains.iren.impl.NGramModelRunner
+import org.jetbrains.iren.services.ModelManager
 import org.jetbrains.iren.storages.VarNamePrediction
 import org.jetbrains.iren.utils.LanguageSupporter
 import java.io.File

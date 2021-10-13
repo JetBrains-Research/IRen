@@ -11,7 +11,8 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.Disposer;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.jetbrains.iren.inspections.variable.ConsistencyChecker;
+import org.jetbrains.iren.services.ConsistencyChecker;
+import org.jetbrains.iren.services.ModelManager;
 import org.jetbrains.iren.settings.AppSettingsState;
 import org.jetbrains.iren.utils.LanguageSupporter;
 
@@ -20,7 +21,7 @@ public class PluginLoadedListener implements DynamicPluginListener {
     public void beforePluginUnload(@NotNull IdeaPluginDescriptor pluginDescriptor, boolean isUpdate) {
         DynamicPluginListener.super.beforePluginUnload(pluginDescriptor, isUpdate);
         Disposer.dispose(ModelManager.getInstance());
-        Disposer.dispose(ConsistencyChecker.Companion.getInstance());
+        Disposer.dispose(ConsistencyChecker.getInstance());
     }
 
     @Override

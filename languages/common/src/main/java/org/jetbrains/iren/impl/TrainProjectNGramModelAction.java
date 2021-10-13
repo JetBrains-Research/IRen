@@ -4,8 +4,8 @@ import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.project.Project;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.iren.ModelBuilder;
-import org.jetbrains.iren.ModelStatsService;
 import org.jetbrains.iren.api.AbstractTrainModelAction;
+import org.jetbrains.iren.services.ModelStatsService;
 import org.jetbrains.iren.utils.LanguageSupporter;
 
 public class TrainProjectNGramModelAction extends AbstractTrainModelAction {

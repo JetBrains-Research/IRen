@@ -6,9 +6,9 @@ import com.intellij.refactoring.suggested.createSmartPointer
 import com.jetbrains.python.psi.PyElementVisitor
 import com.jetbrains.python.psi.PyTargetExpression
 import org.jetbrains.iren.IRenBundle
-import org.jetbrains.iren.ModelManager
-import org.jetbrains.iren.ModelStatsService
-import org.jetbrains.iren.rename.IRenVariableInplaceRenamer
+import org.jetbrains.iren.services.ConsistencyChecker
+import org.jetbrains.iren.services.ModelManager
+import org.jetbrains.iren.services.ModelStatsService
 
 class PyVariableVisitor(private val holder: ProblemsHolder) : PyElementVisitor() {
     override fun visitPyTargetExpression(node: PyTargetExpression) {
@@ -17,7 +17,7 @@ class PyVariableVisitor(private val holder: ProblemsHolder) : PyElementVisitor()
             )
         ) return
         try {
-            if (ConsistencyChecker.getInstance().isInconsistent(node.createSmartPointer())) {
+            if (ConsistencyChecker.getInstance().isInconsistent(node)) {
                 holder.registerProblem(
                     node.nameIdentifier ?: node,
                     IRenBundle.message("inspection.description.template"),

@@ -5,9 +5,9 @@ import com.intellij.codeInspection.ProblemsHolder
 import com.intellij.psi.PsiNameIdentifierOwner
 import com.intellij.psi.util.createSmartPointer
 import org.jetbrains.iren.IRenBundle
-import org.jetbrains.iren.ModelManager
-import org.jetbrains.iren.ModelStatsService
-import org.jetbrains.iren.rename.IRenKotlinMemeberInplaceRenamer
+import org.jetbrains.iren.services.ConsistencyChecker
+import org.jetbrains.iren.services.ModelManager
+import org.jetbrains.iren.services.ModelStatsService
 import org.jetbrains.kotlin.psi.KtProperty
 import org.jetbrains.kotlin.psi.KtVisitorVoid
 
@@ -17,9 +17,9 @@ class KotlinVariableVisitor(private val holder: ProblemsHolder) : KtVisitorVoid(
         if (!ModelStatsService.getInstance().isUsable(name)
         ) return
         try {
-            if (ConsistencyChecker.getInstance().isInconsistent(property.createSmartPointer())) {
+            if (ConsistencyChecker.getInstance().isInconsistent(property)) {
                 holder.registerProblem(
-                    property.nameIdentifier ?: property,
+                    (property as PsiNameIdentifierOwner).nameIdentifier ?: property,
                     IRenBundle.message("inspection.description.template"),
                     ProblemHighlightType.WEAK_WARNING,
                     RenameVariableQuickFix(property.createSmartPointer())

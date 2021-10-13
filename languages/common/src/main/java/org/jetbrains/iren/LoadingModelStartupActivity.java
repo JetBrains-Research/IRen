@@ -7,6 +7,7 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.startup.StartupActivity;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.iren.contributors.ProjectVariableNamesContributor;
+import org.jetbrains.iren.services.ModelStatsService;
 import org.jetbrains.iren.settings.AppSettingsState;
 import org.jetbrains.iren.utils.LanguageSupporter;
 

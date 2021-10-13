@@ -12,9 +12,9 @@ import com.intellij.refactoring.rename.inplace.MemberInplaceRenamer;
 import com.intellij.refactoring.rename.inplace.MyLookupExpression;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.jetbrains.iren.IRenSuggestingService;
-import org.jetbrains.iren.ModelManager;
-import org.jetbrains.iren.ModelStatsService;
+import org.jetbrains.iren.services.IRenSuggestingService;
+import org.jetbrains.iren.services.ModelManager;
+import org.jetbrains.iren.services.ModelStatsService;
 import org.jetbrains.iren.utils.LanguageSupporter;
 
 import java.util.*;

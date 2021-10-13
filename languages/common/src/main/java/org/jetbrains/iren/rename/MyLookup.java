@@ -6,7 +6,6 @@ import com.intellij.codeInsight.lookup.LookupElementDecorator;
 import com.intellij.codeInsight.lookup.LookupElementPresentation;
 import com.intellij.openapi.util.Key;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.iren.ModelManager;
 
 import java.util.Map;
 
@@ -34,7 +33,7 @@ public class MyLookup {
         @Override
         public void handleInsert(@NotNull InsertionContext context) {
             super.handleInsert(context);
-            ModelManager.getInstance().invoke(context.getProject(), getLookupString());
+//            TODO: add ConsistencyChecker.rememberRenamedVariable
         }
     }
 
@@ -49,7 +48,6 @@ public class MyLookup {
         @Override
         public void handleInsert(@NotNull InsertionContext context) {
             super.handleInsert(context);
-            ModelManager.getInstance().invoke(context.getProject(), getLookupString());
         }
     }
 }

@@ -16,7 +16,9 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.iren.contributors.ProjectVariableNamesContributor;
 import org.jetbrains.iren.impl.NGramModelRunner;
-import org.jetbrains.iren.inspections.variable.ConsistencyChecker;
+import org.jetbrains.iren.services.ConsistencyChecker;
+import org.jetbrains.iren.services.ModelManager;
+import org.jetbrains.iren.services.ModelStatsService;
 import org.jetbrains.iren.settings.AppSettingsState;
 import org.jetbrains.iren.storages.StringCounter;
 import org.jetbrains.iren.utils.LanguageSupporter;
@@ -57,7 +59,7 @@ public class ModelBuilder {
             modelStats.setTrainedTime(ProjectVariableNamesContributor.class, project);
         } finally {
             modelStats.setTraining(false);
-            ConsistencyChecker.Companion.getInstance().dispose();
+            ConsistencyChecker.getInstance().dispose();
         }
     }
 

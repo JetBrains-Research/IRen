@@ -1,4 +1,4 @@
-package org.jetbrains.iren;
+package org.jetbrains.iren.services;
 
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.project.Project;
@@ -23,7 +23,7 @@ public class IRenSuggestingService {
         return ApplicationManager.getApplication().getService(IRenSuggestingService.class);
     }
 
-    public LinkedHashMap<String, Double> suggestVariableName(@NotNull PsiNameIdentifierOwner variable) {
+    public @NotNull LinkedHashMap<String, Double> suggestVariableName(@NotNull PsiNameIdentifierOwner variable) {
         Instant timerStart = Instant.now();
         List<VarNamePrediction> nameSuggestions = new ArrayList<>();
         boolean isDeveloperMode = NotificationsUtil.isDeveloperMode();
@@ -74,7 +74,7 @@ public class IRenSuggestingService {
         } else return 0.0;
     }
 
-    private LinkedHashMap<String, Double> rankSuggestions(PsiElement variable, List<VarNamePrediction> nameSuggestions, int prioritiesSum) {
+    private @NotNull LinkedHashMap<String, Double> rankSuggestions(@NotNull PsiElement variable, @NotNull List<VarNamePrediction> nameSuggestions, int prioritiesSum) {
         if (prioritiesSum == 0) {
             return new LinkedHashMap<>();
         }

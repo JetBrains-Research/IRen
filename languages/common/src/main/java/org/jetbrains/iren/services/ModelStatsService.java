@@ -1,4 +1,4 @@
-package org.jetbrains.iren;
+package org.jetbrains.iren.services;
 
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.components.PersistentStateComponent;

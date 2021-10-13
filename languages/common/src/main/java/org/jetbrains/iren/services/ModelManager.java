@@ -1,4 +1,4 @@
-package org.jetbrains.iren;
+package org.jetbrains.iren.services;
 
 import com.intellij.lang.Language;
 import com.intellij.openapi.Disposable;
@@ -65,7 +65,7 @@ public class ModelManager implements Disposable {
         consumerMap.put(projectHash, consumer);
     }
 
-    public void invoke(@NotNull Project project, String name) {
+    private void invoke(@NotNull Project project, String name) {
         Consumer<String> consumer = consumerMap.remove(project.getLocationHash());
         if (consumer != null) {
             try {
