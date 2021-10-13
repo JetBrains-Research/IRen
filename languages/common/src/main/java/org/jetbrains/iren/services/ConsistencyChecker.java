@@ -7,11 +7,15 @@ import com.intellij.completion.ngram.slp.translating.Vocabulary;
 import com.intellij.openapi.Disposable;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.psi.PsiNameIdentifierOwner;
+import com.intellij.psi.SmartPointerManager;
+import com.intellij.psi.SmartPsiElementPointer;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.Objects;
+import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
@@ -21,22 +25,32 @@ public class ConsistencyChecker implements Disposable {
         return ApplicationManager.getApplication().getService(ConsistencyChecker.class);
     }
 
-    private final LoadingCache<PsiNameIdentifierOwner, Boolean> storage =
+    private final LoadingCache<PsiNameIdentifierOwner, Boolean> inconsistentVariablesMap =
             CacheBuilder.newBuilder()
                     .maximumSize(1000)
                     .expireAfterWrite(10, TimeUnit.MINUTES)
                     .build(new CacheLoader<>() {
                                @Override
                                public Boolean load(@NotNull PsiNameIdentifierOwner variable) {
-                                   return !hasGoodPredictionList(variable);
+                                   return !isRenamedVariable(SmartPointerManager.createPointer(variable)) &&
+                                           !hasGoodPredictionList(variable);
                                }
                            }
                     );
+    private final Set<SmartPsiElementPointer<PsiNameIdentifierOwner>> renamedVariables = new HashSet<>();
+
+    public boolean isRenamedVariable(SmartPsiElementPointer<PsiNameIdentifierOwner> pointer) {
+        return renamedVariables.contains(pointer);
+    }
+
+    public void rememberRenamedVariable(SmartPsiElementPointer<PsiNameIdentifierOwner> pointer) {
+        renamedVariables.add(pointer);
+    }
 
     public @NotNull Boolean isInconsistent(@NotNull PsiNameIdentifierOwner variable) {
         Boolean res = null;
         try {
-            res = storage.get(variable);
+            res = inconsistentVariablesMap.get(variable);
         } catch (ExecutionException e) {
             e.printStackTrace();
         }
@@ -64,6 +78,6 @@ public class ConsistencyChecker implements Disposable {
 
     @Override
     public void dispose() {
-        storage.invalidateAll();
+        inconsistentVariablesMap.invalidateAll();
     }
 }

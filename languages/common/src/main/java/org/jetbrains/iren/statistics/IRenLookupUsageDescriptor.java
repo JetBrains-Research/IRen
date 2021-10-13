@@ -7,7 +7,7 @@ import com.intellij.codeInsight.lookup.impl.LookupUsageDescriptor;
 import com.intellij.internal.statistic.eventLog.FeatureUsageData;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.jetbrains.iren.rename.MyLookup;
+import org.jetbrains.iren.rename.IRenLookups;
 
 @SuppressWarnings("UnstableApiUsage")
 public class IRenLookupUsageDescriptor implements LookupUsageDescriptor {
@@ -22,11 +22,11 @@ public class IRenLookupUsageDescriptor implements LookupUsageDescriptor {
             int idx = ((LookupImpl) lookup).getSelectedIndex();
             if (idx >= lookup.getItems().size()) return;
             LookupElement lookupElement = lookup.getItems().get(idx);
-            @Nullable String model_type = lookupElement.getUserData(MyLookup.model_type);
+            @Nullable String model_type = lookupElement.getUserData(IRenLookups.model_type);
             if (model_type == null) return;
             usageData.addData("iren_model_type", model_type);
-            if (model_type.equals(MyLookup.NGram.MODEL_TYPE)) {
-                @Nullable Double probability = lookupElement.getUserData(MyLookup.NGram.probability);
+            if (model_type.equals(IRenLookups.NGram.MODEL_TYPE)) {
+                @Nullable Double probability = lookupElement.getUserData(IRenLookups.NGram.probability);
                 if (probability == null) return;
                 usageData.addData("iren_probability", probability);
             }

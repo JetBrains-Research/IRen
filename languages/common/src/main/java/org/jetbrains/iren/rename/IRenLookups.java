@@ -1,6 +1,5 @@
 package org.jetbrains.iren.rename;
 
-import com.intellij.codeInsight.completion.InsertionContext;
 import com.intellij.codeInsight.lookup.LookupElement;
 import com.intellij.codeInsight.lookup.LookupElementDecorator;
 import com.intellij.codeInsight.lookup.LookupElementPresentation;
@@ -9,7 +8,7 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.Map;
 
-public class MyLookup {
+public class IRenLookups {
     public static Key<String> model_type = new Key<>("model_type");
 
     public static class NGram extends LookupElementDecorator<LookupElement> {
@@ -29,12 +28,6 @@ public class MyLookup {
             if (probability == null) return;
             presentation.setTypeText(String.format("%.3f", probability));
         }
-
-        @Override
-        public void handleInsert(@NotNull InsertionContext context) {
-            super.handleInsert(context);
-//            TODO: add ConsistencyChecker.rememberRenamedVariable
-        }
     }
 
     public static class Default extends LookupElementDecorator<LookupElement> {
@@ -43,11 +36,6 @@ public class MyLookup {
         protected Default(@NotNull LookupElement delegate) {
             super(delegate);
             putUserData(model_type, MODEL_TYPE);
-        }
-
-        @Override
-        public void handleInsert(@NotNull InsertionContext context) {
-            super.handleInsert(context);
         }
     }
 }
