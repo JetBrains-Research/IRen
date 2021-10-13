@@ -1,13 +1,13 @@
 package org.jetbrains.iren.rename;
 
 import com.intellij.openapi.editor.Editor;
-import com.intellij.psi.*;
+import com.intellij.psi.PsiElement;
+import com.intellij.psi.PsiNamedElement;
 import com.intellij.refactoring.rename.NameSuggestionProvider;
 import com.intellij.refactoring.rename.inplace.MemberInplaceRenamer;
 import com.intellij.refactoring.rename.inplace.MyLookupExpression;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.jetbrains.iren.services.ConsistencyChecker;
 
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -43,9 +43,6 @@ public class IRenMemberInplaceRenamer extends MemberInplaceRenamer {
     @Override
     protected MyLookupExpression createLookupExpression(PsiElement selectedElement) {
         NameSuggestionProvider.suggestNames(myElementToRename, selectedElement, myNameSuggestions);
-        @NotNull SmartPsiElementPointer<PsiNameIdentifierOwner> pointer =
-                SmartPointerManager.createPointer((PsiNameIdentifierOwner) myElementToRename);
-        ConsistencyChecker.getInstance().rememberRenamedVariable(pointer);
         return new IRenLookupExpression(getInitialName(),
                 myNameSuggestions,
                 myElementToRename,
