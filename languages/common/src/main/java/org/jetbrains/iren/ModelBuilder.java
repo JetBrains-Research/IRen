@@ -32,9 +32,6 @@ public class ModelBuilder {
         ProgressManager.getInstance().run(new Task.Backgroundable(project, IRenBundle.message("training.task.title")) {
             @Override
             public void run(@NotNull ProgressIndicator indicator) {
-                indicator.setText(IRenBundle.message("training.progress.indexing"));
-                DumbService.getInstance(project).waitForSmartMode();
-                indicator.setText(IRenBundle.message("training.progress.indicator.text", project.getName()));
                 trainProjectNGramModel(project, indicator, true);
             }
         });
@@ -43,6 +40,12 @@ public class ModelBuilder {
     public static void trainProjectNGramModel(@NotNull Project project,
                                               @Nullable ProgressIndicator progressIndicator,
                                               boolean save) {
+        if (progressIndicator != null) {
+            progressIndicator.setText(IRenBundle.message("training.progress.indexing"));
+//            Waits until indexes are prepared
+            DumbService.getInstance(project).waitForSmartMode();
+            progressIndicator.setText(IRenBundle.message("training.progress.indicator.text", project.getName()));
+        }
         @NotNull ModelStatsService modelStats = ModelStatsService.getInstance();
         if (modelStats.isTraining()) return;
         modelStats.setTraining(true);
