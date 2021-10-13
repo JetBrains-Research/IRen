@@ -22,7 +22,6 @@ import org.jetbrains.annotations.Nullable;
 import org.jetbrains.iren.IRenBundle;
 import org.jetbrains.iren.VocabularyManager;
 import org.jetbrains.iren.services.IRenSuggestingService;
-import org.jetbrains.iren.services.ModelManager;
 import org.jetbrains.iren.storages.Context;
 import org.jetbrains.iren.storages.VarNamePrediction;
 import org.jetbrains.iren.utils.LanguageSupporter;
@@ -108,23 +107,32 @@ public class NGramModelRunner {
         return suggestNames(variable, false);
     }
 
-    public @NotNull List<VarNamePrediction> suggestNames(@NotNull PsiNameIdentifierOwner variable, boolean forgetContext) {
-        @NotNull Context<Integer> intContext = Context.fromStringToInt(LanguageSupporter.getInstance(variable.getLanguage())
-                .getContext(variable, false), myVocabulary);
-        if (forgetContext) {
-            ModelManager.getInstance().invokeLater(variable.getProject(),
-                    (String name) -> learnContext(name != null ?
-                            intContext.with(myVocabulary.toIndex(name)) :
-                            intContext));
-            forgetContext(intContext);
-        }
-
+    public synchronized @NotNull List<VarNamePrediction> suggestNames(@NotNull PsiNameIdentifierOwner variable, boolean forgetContext) {
+        @NotNull Context<Integer> intContext = prepareContext(variable, forgetContext);
         Context<Integer> unknownContext = intContext.with(0);
         Set<Integer> candidates = new HashSet<>();
         for (int idx : intContext.getVarIdxs()) {
             candidates.addAll(getCandidates(unknownContext.getTokens(), idx));
         }
         return rankCandidates(candidates, unknownContext);
+    }
+
+    public synchronized @NotNull Pair<Double, Integer> getProbability(PsiNameIdentifierOwner variable, boolean forgetContext) {
+        @NotNull Context<Integer> intContext = prepareContext(variable, forgetContext);
+        return new Pair<>(getLogProb(intContext), getModelPriority());
+    }
+
+    @NotNull
+    private Context<Integer> prepareContext(@NotNull PsiNameIdentifierOwner variable, boolean forgetContext) {
+        @NotNull Context<Integer> intContext = Context.fromStringToInt(LanguageSupporter.getInstance(variable.getLanguage())
+                .getContext(variable, false), myVocabulary);
+        if (forgetContext) {
+//            I don't try to relearn context after refactoring because forgetting
+//            context makes sense only for models that trained on a single file.
+//            It means that this model will be discarded and relearning things is a waste of the time.
+            forgetContext(intContext);
+        }
+        return intContext;
     }
 
     private @NotNull List<VarNamePrediction> rankCandidates(@NotNull Set<Integer> candidates, @NotNull Context<Integer> intContext) {
@@ -169,20 +177,6 @@ public class NGramModelRunner {
             }
         }
         return logProb;
-    }
-
-    public @NotNull Pair<Double, Integer> getProbability(PsiNameIdentifierOwner variable, boolean forgetContext) {
-        @NotNull Context<Integer> intContext = Context.fromStringToInt(LanguageSupporter.getInstance(variable.getLanguage())
-                .getContext(variable, false), myVocabulary);
-        if (forgetContext) {
-            ModelManager.getInstance().invokeLater(variable.getProject(),
-                    (String name) -> learnContext(name != null ?
-                            intContext.with(myVocabulary.toIndex(name)) :
-                            intContext));
-            forgetContext(intContext);
-        }
-
-        return new Pair<>(getLogProb(intContext), getModelPriority());
     }
 
     private @NotNull Set<Integer> getCandidates(@NotNull List<Integer> tokenIdxs, int idx) {

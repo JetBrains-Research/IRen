@@ -5,6 +5,7 @@ import com.intellij.openapi.Disposable;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.application.PathManager;
 import com.intellij.openapi.project.Project;
+import com.intellij.psi.PsiFile;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.iren.impl.NGramModelRunner;
@@ -13,7 +14,6 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.function.Consumer;
 
 public class ModelManager implements Disposable {
     private final Map<String, NGramModelRunner> myModelRunners = new HashMap<>();
@@ -56,23 +56,15 @@ public class ModelManager implements Disposable {
         myModelRunners.clear();
     }
 
-    private final Map<String, Consumer<String>> consumerMap = new HashMap<>();
+    private final Map<String, PsiFile> fileMap = new HashMap<>();
 
-    public synchronized void invokeLater(@NotNull Project project, Consumer<String> consumer) {
-        invoke(project, null);
-        @NotNull String projectHash = project.getLocationHash();
-        if (consumerMap.containsKey(projectHash)) System.out.println("invokeLater bug");
-        consumerMap.put(projectHash, consumer);
-    }
-
-    private void invoke(@NotNull Project project, String name) {
-        Consumer<String> consumer = consumerMap.remove(project.getLocationHash());
-        if (consumer != null) {
-            try {
-                consumer.accept(name);
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
+    public synchronized void forgetFileIfNeeded(@NotNull NGramModelRunner modelRunner, @NotNull PsiFile newFile) {
+        String modelKey = modelRunner.toString();
+        PsiFile oldFile = fileMap.get(modelKey);
+        if (newFile != oldFile) {
+            if (oldFile != null) modelRunner.learnPsiFile(oldFile);
+            modelRunner.forgetPsiFile(newFile);
+            fileMap.put(modelKey, newFile);
         }
     }
 }
