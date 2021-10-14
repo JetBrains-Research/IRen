@@ -12,10 +12,10 @@ import com.intellij.psi.SmartPsiElementPointer;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.Objects;
-import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
@@ -32,12 +32,11 @@ public class ConsistencyChecker implements Disposable {
                     .build(new CacheLoader<>() {
                                @Override
                                public Boolean load(@NotNull PsiNameIdentifierOwner variable) {
-                                   return !isRenamedVariable(SmartPointerManager.createPointer(variable)) &&
-                                           !hasGoodPredictionList(variable);
+                                   return !hasGoodPredictionList(variable);
                                }
                            }
                     );
-    private final Set<SmartPsiElementPointer<PsiNameIdentifierOwner>> renamedVariables = new HashSet<>();
+    private final Collection<SmartPsiElementPointer<PsiNameIdentifierOwner>> renamedVariables = new HashSet<>();
 
     public boolean isRenamedVariable(SmartPsiElementPointer<PsiNameIdentifierOwner> pointer) {
         return renamedVariables.contains(pointer);
@@ -48,6 +47,8 @@ public class ConsistencyChecker implements Disposable {
     }
 
     public @NotNull Boolean isInconsistent(@NotNull PsiNameIdentifierOwner variable) {
+//        SmartPointers don't work properly for python.
+        if (isRenamedVariable(SmartPointerManager.createPointer(variable))) return false;
         Boolean res = null;
         try {
             res = inconsistentVariablesMap.get(variable);
