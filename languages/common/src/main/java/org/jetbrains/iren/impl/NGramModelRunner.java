@@ -36,19 +36,50 @@ import java.util.stream.Collectors;
 import static java.lang.Math.*;
 
 public class NGramModelRunner {
+    private final static String COUNTER_FILE = "counter.ser";
+    private final static String FORWARD_COUNTER_FILE = "forwardCounter.ser";
+    private final static String REVERSE_COUNTER_FILE = "reverseCounter.ser";
+    private final static String REMEMBER_IDENTIFIERS_FILE = "rememberedIdentifiers.json";
+    private final static String VOCABULARY_FILE = "vocabulary.txt";
+    public static boolean DEFAULT_BIDIRECTIONAL = true;
     /**
      * {@link Set} of identifier names.
      */
     private final Set<Integer> myRememberedIdentifiers;
-
     private final Model myModel;
     private final Vocabulary myVocabulary;
-
-    private boolean myTraining = false;
     private final boolean biDirectional;
     private final int order;
+    private boolean myTraining = false;
 
-    public static boolean DEFAULT_BIDIRECTIONAL = true;
+    public NGramModelRunner() {
+        this(true, DEFAULT_BIDIRECTIONAL, 6);
+    }
+
+    public NGramModelRunner(boolean isLargeCorpora, boolean biDirectional, int order) {
+        this.biDirectional = biDirectional;
+        this.order = order;
+        myVocabulary = new Vocabulary();
+        myRememberedIdentifiers = new HashSet<>();
+        if (biDirectional) {
+            myModel = new BiDirectionalModel(new JMModel(order, 0.5, isLargeCorpora ? new GigaCounter() : new ArrayTrieCounter()),
+                    new JMModel(order, 0.5, isLargeCorpora ? new GigaCounter() : new ArrayTrieCounter()));
+        } else {
+            myModel = new JMModel(order, 0.5, isLargeCorpora ? new GigaCounter() : new ArrayTrieCounter());
+        }
+    }
+
+    public NGramModelRunner(boolean isLargeCorpora) {
+        this(isLargeCorpora, false, 6);
+    }
+
+    public NGramModelRunner(Model model, Vocabulary vocabulary, Set<Integer> rememberedIdentifiers, boolean biDirectional, int order){
+        myModel = model;
+        myVocabulary = vocabulary;
+        myRememberedIdentifiers = rememberedIdentifiers;
+        this.biDirectional = biDirectional;
+        this.order = order;
+    }
 
     public void train() {
         myTraining = true;
@@ -68,39 +99,6 @@ public class NGramModelRunner {
 
     public Vocabulary getVocabulary() {
         return myVocabulary;
-    }
-
-    public NGramModelRunner() {
-        this(true, DEFAULT_BIDIRECTIONAL, 6);
-    }
-
-    public NGramModelRunner(boolean isLargeCorpora) {
-        this(isLargeCorpora, false, 6);
-    }
-
-    public NGramModelRunner(boolean isLargeCorpora, boolean biDirectional, int order) {
-        this.biDirectional = biDirectional;
-        this.order = order;
-        myVocabulary = new Vocabulary();
-        myRememberedIdentifiers = new HashSet<>();
-        if (biDirectional) {
-            myModel = new BiDirectionalModel(new JMModel(order, 0.5, isLargeCorpora ? new GigaCounter() : new ArrayTrieCounter()),
-                    new JMModel(order, 0.5, isLargeCorpora ? new GigaCounter() : new ArrayTrieCounter()));
-        } else {
-            myModel = new JMModel(order, 0.5, isLargeCorpora ? new GigaCounter() : new ArrayTrieCounter());
-        }
-    }
-
-    public NGramModelRunner(Model model, Vocabulary vocabulary, Set<Integer> rememberedIdentifiers, boolean biDirectional, int order){
-        myModel = model;
-        myVocabulary = vocabulary;
-        myRememberedIdentifiers = rememberedIdentifiers;
-        this.biDirectional = biDirectional;
-        this.order = order;
-    }
-
-    public int getModelPriority() {
-        return myVocabulary.size();
     }
 
     public @NotNull List<VarNamePrediction> suggestNames(@NotNull PsiNameIdentifierOwner variable) {
@@ -135,6 +133,22 @@ public class NGramModelRunner {
         return intContext;
     }
 
+    public void learnContext(@NotNull Context<Integer> context) {
+        myModel.learn(context.getTokens());
+    }
+
+    public void forgetContext(@NotNull Context<Integer> context) {
+        myModel.forget(context.getTokens());
+    }
+
+    private @NotNull Set<Integer> getCandidates(@NotNull List<Integer> tokenIdxs, int idx) {
+        return myModel.predictToken(tokenIdxs, idx)
+                .keySet()
+                .stream()
+                .filter(myRememberedIdentifiers::contains)
+                .collect(Collectors.toSet());
+    }
+
     private @NotNull List<VarNamePrediction> rankCandidates(@NotNull Set<Integer> candidates, @NotNull Context<Integer> intContext) {
         List<Integer> cs = new ArrayList<>();
         List<Double> logits = new ArrayList<>();
@@ -154,15 +168,6 @@ public class NGramModelRunner {
         return predictions.subList(0, Math.min(predictions.size(), IRenSuggestingService.PREDICTION_CUTOFF));
     }
 
-    private static @NotNull List<Double> softmax(@NotNull List<Double> logits, double temperature) {
-        if (logits.isEmpty()) return logits;
-        List<Double> logits_t = logits.stream().map(l -> l / temperature).collect(Collectors.toList());
-        Double maxLogit = Collections.max(logits_t);
-        List<Double> probs = logits_t.stream().map(logit -> exp(logit - maxLogit)).collect(Collectors.toList());
-        double sumProbs = probs.stream().mapToDouble(Double::doubleValue).sum();
-        return probs.stream().map(p -> p / sumProbs).collect(Collectors.toList());
-    }
-
     private double getLogProb(@NotNull Context<Integer> intContext) {
         double logProb = 0.;
         int leftIdx;
@@ -179,20 +184,27 @@ public class NGramModelRunner {
         return logProb;
     }
 
-    private @NotNull Set<Integer> getCandidates(@NotNull List<Integer> tokenIdxs, int idx) {
-        return myModel.predictToken(tokenIdxs, idx)
-                .keySet()
-                .stream()
-                .filter(myRememberedIdentifiers::contains)
-                .collect(Collectors.toSet());
+    public int getOrder() {
+        return order;
     }
 
-    public void forgetContext(@NotNull Context<Integer> context) {
-        myModel.forget(context.getTokens());
+    private double toProb(@NotNull Pair<Double, Double> probConf) {
+        double prob = probConf.getFirst();
+        double conf = probConf.getSecond();
+        return prob * conf + (1 - conf) / myVocabulary.size();
     }
 
-    public void learnContext(@NotNull Context<Integer> context) {
-        myModel.learn(context.getTokens());
+    private static @NotNull List<Double> softmax(@NotNull List<Double> logits, double temperature) {
+        if (logits.isEmpty()) return logits;
+        List<Double> logits_t = logits.stream().map(l -> l / temperature).collect(Collectors.toList());
+        Double maxLogit = Collections.max(logits_t);
+        List<Double> probs = logits_t.stream().map(logit -> exp(logit - maxLogit)).collect(Collectors.toList());
+        double sumProbs = probs.stream().mapToDouble(Double::doubleValue).sum();
+        return probs.stream().map(p -> p / sumProbs).collect(Collectors.toList());
+    }
+
+    public int getModelPriority() {
+        return myVocabulary.size();
     }
 
     public void learnPsiFile(@NotNull PsiFile file) {
@@ -200,6 +212,16 @@ public class NGramModelRunner {
         if (supporter == null) return;
         @NotNull List<String> lexed = supporter.lexPsiFile(file, myTraining ? rememberIdName(supporter) : null);
         learnLexed(lexed);
+    }
+
+    private Consumer<PsiElement> rememberIdName(LanguageSupporter supporter) {
+        return (PsiElement element) -> {
+            if (supporter.isVariableDeclaration(element)) {
+                synchronized (this) {
+                    myRememberedIdentifiers.add(myVocabulary.toIndex(element.getText()));
+                }
+            }
+        };
     }
 
     private synchronized void learnLexed(List<String> lexed) {
@@ -213,32 +235,6 @@ public class NGramModelRunner {
     public void forgetPsiFile(@NotNull PsiFile file) {
         myModel.forget(myVocabulary.toIndices(LanguageSupporter.getInstance(file.getLanguage()).lexPsiFile(file)));
     }
-
-    private Consumer<PsiElement> rememberIdName(LanguageSupporter supporter) {
-        return (PsiElement element) -> {
-            if (supporter.isVariableDeclaration(element)) {
-                synchronized (this) {
-                    myRememberedIdentifiers.add(myVocabulary.toIndex(element.getText()));
-                }
-            }
-        };
-    }
-
-    private double toProb(@NotNull Pair<Double, Double> probConf) {
-        double prob = probConf.getFirst();
-        double conf = probConf.getSecond();
-        return prob * conf + (1 - conf) / myVocabulary.size();
-    }
-
-    public int getOrder() {
-        return order;
-    }
-
-    private final static String COUNTER_FILE = "counter.ser";
-    private final static String FORWARD_COUNTER_FILE = "forwardCounter.ser";
-    private final static String REVERSE_COUNTER_FILE = "reverseCounter.ser";
-    private final static String REMEMBER_IDENTIFIERS_FILE = "rememberedIdentifiers.json";
-    private final static String VOCABULARY_FILE = "vocabulary.txt";
 
     public double save(@NotNull Path model_directory, @Nullable ProgressIndicator progressIndicator) {
         model_directory = model_directory.resolve(myModel.toString() + "_" + order);
