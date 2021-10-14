@@ -11,6 +11,7 @@ import com.intellij.psi.PsiFile;
 import com.intellij.psi.PsiNameIdentifierOwner;
 import com.intellij.psi.search.FileTypeIndex;
 import com.intellij.psi.search.GlobalSearchScope;
+import com.intellij.psi.tree.IElementType;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.iren.storages.Context;
@@ -29,6 +30,8 @@ public interface LanguageSupporter {
     @NotNull Language getLanguage();
 
     @NotNull FileType getFileType();
+
+    @NotNull IElementType getIdentifierType();
 
     @NotNull Collection<Class<? extends PsiNameIdentifierOwner>> getVariableClasses();
 

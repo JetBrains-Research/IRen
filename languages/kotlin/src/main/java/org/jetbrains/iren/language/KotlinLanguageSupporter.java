@@ -24,18 +24,15 @@ import org.jetbrains.kotlin.psi.KtNameReferenceExpression;
 import org.jetbrains.kotlin.psi.KtParameter;
 import org.jetbrains.kotlin.psi.KtProperty;
 
-import java.util.ArrayList;
 import java.util.List;
 
 import static org.jetbrains.iren.utils.StringUtils.*;
 
 public class KotlinLanguageSupporter extends LanguageSupporterBase {
     public static final TokenSet NumberTypes = TokenSet.create(KtTokens.FLOAT_LITERAL, KtTokens.INTEGER_LITERAL);
-    private static final List<Class<? extends PsiNameIdentifierOwner>> variableClasses = new ArrayList<>();
+    private static final List<Class<? extends PsiNameIdentifierOwner>> variableClasses = List.of(KtProperty.class, KtParameter.class);
 
     static {
-        variableClasses.add(KtParameter.class);
-        variableClasses.add(KtProperty.class);
         NGramVariableNamesContributor.SUPPORTED_TYPES.addAll(variableClasses);
     }
 
@@ -47,6 +44,11 @@ public class KotlinLanguageSupporter extends LanguageSupporterBase {
     @Override
     public @NotNull FileType getFileType() {
         return KotlinFileType.INSTANCE;
+    }
+
+    @Override
+    public @NotNull IElementType getIdentifierType() {
+        return KtTokens.IDENTIFIER;
     }
 
     @Override

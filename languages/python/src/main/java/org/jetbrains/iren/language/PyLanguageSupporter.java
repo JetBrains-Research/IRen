@@ -43,6 +43,11 @@ public class PyLanguageSupporter extends LanguageSupporterBase {
     }
 
     @Override
+    public @NotNull IElementType getIdentifierType() {
+        return IDENTIFIER;
+    }
+
+    @Override
     public @NotNull Collection<Class<? extends PsiNameIdentifierOwner>> getVariableClasses() {
         return variableClasses;
     }

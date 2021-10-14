@@ -1,6 +1,7 @@
 package org.jetbrains.iren.utils;
 
 import com.intellij.completion.ngram.slp.translating.Vocabulary;
+import com.intellij.lang.ASTNode;
 import com.intellij.openapi.progress.ProcessCanceledException;
 import com.intellij.openapi.progress.ProgressManager;
 import com.intellij.openapi.progress.StandardProgressIndicator;
@@ -37,101 +38,6 @@ public abstract class LanguageSupporterBase implements LanguageSupporter {
         return !info.isEmpty();
     }
 
-    public @Nullable Collection<PsiReference> findReferences(@NotNull PsiNameIdentifierOwner identifierOwner, @NotNull PsiFile file) {
-//        Unknown problems when using GlobalSearchScope.projectScope. Most likely there are too many fields and searching breaks.
-        return runForSomeTime(() -> RenamePsiElementProcessor.forElement(identifierOwner)
-                .findReferences(identifierOwner, GlobalSearchScope.fileScope(file), false), 100);
-    }
-
-    public @NotNull String processToken(@NotNull PsiElement token) {
-        String text = token.getText();
-        if (text.contains("\n")) {
-            return STRING_TOKEN;
-        }
-        String literal = processLiteral(token, text);
-        if (literal != null) return literal;
-        return text;
-    }
-
-    protected abstract String processLiteral(@NotNull PsiElement token, @NotNull String text);
-
-    public boolean isVariableOrReference(@NotNull PsiNameIdentifierOwner variable, @Nullable PsiElement token) {
-        if (token == null) return false;
-        return PsiManager.getInstance(variable.getProject())
-                .areElementsEquivalent(variable, findDeclaration(token));
-    }
-
-    public boolean isVariable(@Nullable PsiElement token) {
-        if (token == null) return false;
-        if (isVariableDeclaration(token)) return true;
-        @Nullable PsiNameIdentifierOwner declaration = findDeclaration(token);
-        return declaration != null && isVariableClass(declaration);
-    }
-
-    public boolean isVariableDeclaration(@Nullable PsiElement token) {
-        if (token == null) return false;
-        if (token instanceof PsiNameIdentifierOwner) {
-            return isVariableClass(token);
-        }
-        if (isIdentifier(token)) {
-            PsiElement parent = token.getParent();
-            return parent instanceof PsiNameIdentifierOwner && isVariableClass(parent);
-        }
-        return false;
-    }
-
-    protected boolean isVariableClass(@NotNull PsiElement token) {
-        return getVariableClasses().stream().anyMatch(cls -> cls.isAssignableFrom(token.getClass()));
-    }
-
-    public @Nullable PsiNameIdentifierOwner findDeclaration(@NotNull PsiElement token) {
-        if (isIdentifier(token)) {
-            PsiElement parent = token.getParent();
-            if (parent == null) return null;
-            PsiElement declaration = parent instanceof PsiNameIdentifierOwner ? parent : resolveReference(parent);
-            if (declaration instanceof PsiNameIdentifierOwner) {
-                return (PsiNameIdentifierOwner) declaration;
-            }
-        }
-        return null;
-    }
-
-    protected abstract @Nullable PsiElement resolveReference(@NotNull PsiElement reference);
-
-    public <T> @Nullable T runForSomeTime(@NotNull Computable<T> process, long runningTimeMs) {
-        ProgressManager progressManager = ProgressManager.getInstance();
-        try {
-            return progressManager.runProcess(process, new LimitedRunningTimeIndicator(runningTimeMs));
-        } catch (ProcessCanceledException e) {
-//            System.out.println("Canceled");
-            return null;
-        } catch (Exception e) {
-            e.printStackTrace();
-            return null;
-        }
-    }
-
-    public @NotNull List<PsiElement> findVarIdentifiersUnderNode(@Nullable PsiElement node) {
-        return SyntaxTraverser.psiTraverser()
-                .withRoot(node)
-                .forceIgnore(n -> n instanceof PsiComment)
-                .filter(this::isVariable)
-                .toList();
-    }
-
-
-    public boolean shouldLex(@NotNull PsiElement element) {
-        return isLeaf(element) && !isBlank(element);
-    }
-
-    public boolean isBlank(@NotNull PsiElement element) {
-        return StringUtils.isBlank(element.getText());
-    }
-
-    public boolean isLeaf(@NotNull PsiElement element) {
-        return element.getFirstChild() == null;
-    }
-
     @Override
     public @NotNull Context<String> getContext(@NotNull PsiNameIdentifierOwner variable, boolean changeToUnknown) {
         PsiFile file = variable.getContainingFile();
@@ -164,6 +70,40 @@ public abstract class LanguageSupporterBase implements LanguageSupporter {
                 .collect(Collectors.toSet());
     }
 
+    public @Nullable Collection<PsiReference> findReferences(@NotNull PsiNameIdentifierOwner identifierOwner, @NotNull PsiFile file) {
+//        Unknown problems when using GlobalSearchScope.projectScope. Most likely there are too many fields and searching breaks.
+        return runForSomeTime(() -> RenamePsiElementProcessor.forElement(identifierOwner)
+                .findReferences(identifierOwner, GlobalSearchScope.fileScope(file), false), 100);
+    }
+
+    public <T> @Nullable T runForSomeTime(@NotNull Computable<T> process, long runningTimeMs) {
+        ProgressManager progressManager = ProgressManager.getInstance();
+        try {
+            return progressManager.runProcess(process, new LimitedRunningTimeIndicator(runningTimeMs));
+        } catch (ProcessCanceledException e) {
+//            System.out.println("Canceled");
+            return null;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+
+    private @Nullable PsiElement getIdentifier(Object element) {
+        @Nullable PsiElement result = null;
+        if (element instanceof PsiNameIdentifierOwner) {
+            result = ((PsiNameIdentifierOwner) element).getNameIdentifier();
+        } else if (element instanceof PsiReference) {
+            result = getIdentifierFromReference((PsiReference) element);
+        }
+        return result;
+    }
+
+    private PsiElement getIdentifierFromReference(PsiReference reference) {
+        @Nullable ASTNode element = reference.getElement().getNode().findChildByType(getIdentifierType());
+        return element == null ? null : element.getPsi();
+    }
+
     private @NotNull PsiElement findRoot(@NotNull PsiFile file, @NotNull Collection<PsiElement> usages) {
         if (usages.size() < 2) return file;
         List<Set<PsiElement>> parents = usages.stream()
@@ -175,16 +115,6 @@ public abstract class LanguageSupporterBase implements LanguageSupporter {
         return res.orElse(file);
     }
 
-    private @Nullable PsiElement getIdentifier(Object element) {
-        @Nullable PsiElement result = null;
-        if (element instanceof PsiNameIdentifierOwner) {
-            result = ((PsiNameIdentifierOwner) element).getNameIdentifier();
-        } else if (element instanceof PsiReference) {
-            result = ((PsiReference) element).getElement();
-        }
-        return result;
-    }
-
     private @NotNull Set<PsiElement> getParents(@NotNull PsiElement element) {
         Set<PsiElement> parents = new LinkedHashSet<>();
         PsiElement parent = element.getParent();
@@ -194,6 +124,30 @@ public abstract class LanguageSupporterBase implements LanguageSupporter {
         }
         return parents;
     }
+
+    public boolean shouldLex(@NotNull PsiElement element) {
+        return isLeaf(element) && !isBlank(element);
+    }
+
+    public boolean isLeaf(@NotNull PsiElement element) {
+        return element.getFirstChild() == null;
+    }
+
+    public boolean isBlank(@NotNull PsiElement element) {
+        return StringUtils.isBlank(element.getText());
+    }
+
+    public @NotNull String processToken(@NotNull PsiElement token) {
+        String text = token.getText();
+        if (text.contains("\n")) {
+            return STRING_TOKEN;
+        }
+        String literal = processLiteral(token, text);
+        if (literal != null) return literal;
+        return text;
+    }
+
+    protected abstract String processLiteral(@NotNull PsiElement token, @NotNull String text);
 
     public @NotNull List<String> lexPsiFile(@NotNull PsiFile file) {
         return lexPsiFile(file, null);
@@ -216,11 +170,62 @@ public abstract class LanguageSupporterBase implements LanguageSupporter {
                 .collect(Collectors.toList());
     }
 
+    public boolean isVariable(@Nullable PsiElement token) {
+        if (token == null) return false;
+        if (isVariableDeclaration(token)) return true;
+        @Nullable PsiNameIdentifierOwner declaration = findDeclaration(token);
+        return declaration != null && isVariableClass(declaration);
+    }
+
+    public boolean isVariableDeclaration(@Nullable PsiElement token) {
+        if (token == null) return false;
+        if (token instanceof PsiNameIdentifierOwner) {
+            return isVariableClass(token);
+        }
+        if (isIdentifier(token)) {
+            PsiElement parent = token.getParent();
+            return parent instanceof PsiNameIdentifierOwner && isVariableClass(parent);
+        }
+        return false;
+    }
+
     @Override
     public void printAvgTime() {
         System.out.printf("%s\t%s\ttotal: %d%n", this.getClass().getSimpleName(), total > 0 ? Duration.ofNanos(time / total).toString() : "0", total);
         time = 0;
         total = 0;
+    }
+
+    protected boolean isVariableClass(@NotNull PsiElement token) {
+        return getVariableClasses().stream().anyMatch(cls -> cls.isAssignableFrom(token.getClass()));
+    }
+
+    public boolean isVariableOrReference(@NotNull PsiNameIdentifierOwner variable, @Nullable PsiElement token) {
+        if (token == null) return false;
+        return PsiManager.getInstance(variable.getProject())
+                .areElementsEquivalent(variable, findDeclaration(token));
+    }
+
+    public @Nullable PsiNameIdentifierOwner findDeclaration(@NotNull PsiElement token) {
+        if (isIdentifier(token)) {
+            PsiElement parent = token.getParent();
+            if (parent == null) return null;
+            PsiElement declaration = parent instanceof PsiNameIdentifierOwner ? parent : resolveReference(parent);
+            if (declaration instanceof PsiNameIdentifierOwner) {
+                return (PsiNameIdentifierOwner) declaration;
+            }
+        }
+        return null;
+    }
+
+    protected abstract @Nullable PsiElement resolveReference(@NotNull PsiElement reference);
+
+    public @NotNull List<PsiElement> findVarIdentifiersUnderNode(@Nullable PsiElement node) {
+        return SyntaxTraverser.psiTraverser()
+                .withRoot(node)
+                .forceIgnore(n -> n instanceof PsiComment)
+                .filter(this::isVariable)
+                .toList();
     }
 
     /**
@@ -253,11 +258,6 @@ class LimitedRunningTimeIndicator extends AbstractProgressIndicatorBase implemen
     }
 
     @Override
-    public void checkCanceled() {
-        super.checkCanceled();
-    }
-
-    @Override
     public boolean isCanceled() {
         if (super.isCanceled()) {
             return true;
@@ -267,5 +267,10 @@ class LimitedRunningTimeIndicator extends AbstractProgressIndicatorBase implemen
             return true;
         }
         return false;
+    }
+
+    @Override
+    public void checkCanceled() {
+        super.checkCanceled();
     }
 }
