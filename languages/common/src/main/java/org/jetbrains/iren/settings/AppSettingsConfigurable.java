@@ -72,7 +72,7 @@ public class AppSettingsConfigurable implements Configurable {
                 @Override
                 public void run(@NotNull ProgressIndicator indicator) {
                     for (Project project : ProjectManager.getInstance().getOpenProjects()) {
-                        ModelBuilder.trainProjectNGramModel(project, indicator, true);
+                        ModelBuilder.train(project, indicator, true);
                     }
                 }
             });

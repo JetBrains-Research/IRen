@@ -105,7 +105,7 @@ public class NGramModelRunner {
         return suggestNames(variable, false);
     }
 
-    public synchronized @NotNull List<VarNamePrediction> suggestNames(@NotNull PsiNameIdentifierOwner variable, boolean forgetContext) {
+    public @NotNull List<VarNamePrediction> suggestNames(@NotNull PsiNameIdentifierOwner variable, boolean forgetContext) {
         @NotNull Context<Integer> intContext = prepareContext(variable, forgetContext);
         Context<Integer> unknownContext = intContext.with(0);
         Set<Integer> candidates = new HashSet<>();
@@ -115,7 +115,7 @@ public class NGramModelRunner {
         return rankCandidates(candidates, unknownContext);
     }
 
-    public synchronized @NotNull Pair<Double, Integer> getProbability(PsiNameIdentifierOwner variable, boolean forgetContext) {
+    public @NotNull Pair<Double, Integer> getProbability(PsiNameIdentifierOwner variable, boolean forgetContext) {
         @NotNull Context<Integer> intContext = prepareContext(variable, forgetContext);
         return new Pair<>(getLogProb(intContext), getModelPriority());
     }

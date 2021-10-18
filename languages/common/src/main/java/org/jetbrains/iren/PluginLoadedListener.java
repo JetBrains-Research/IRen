@@ -46,7 +46,7 @@ public class PluginLoadedListener implements DynamicPluginListener {
                     notification.expire();
                     @Nullable Project project = e.getProject();
                     if (project == null) return;
-                    ModelBuilder.trainProjectNGramModelInBackground(project);
+                    ModelBuilder.trainInBackground(project);
                 }
             });
             notification.addAction(new NotificationAction("No") {

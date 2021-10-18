@@ -76,7 +76,7 @@ public abstract class LanguageSupporterBase implements LanguageSupporter {
                 .findReferences(identifierOwner, GlobalSearchScope.fileScope(file), false), 100);
     }
 
-    public <T> @Nullable T runForSomeTime(@NotNull Computable<T> process, long runningTimeMs) {
+    public static <T> @Nullable T runForSomeTime(@NotNull Computable<T> process, long runningTimeMs) {
         ProgressManager progressManager = ProgressManager.getInstance();
         try {
             return progressManager.runProcess(process, new LimitedRunningTimeIndicator(runningTimeMs));

@@ -13,7 +13,7 @@ public class TrainProjectNGramModelAction extends AbstractTrainModelAction {
     protected void doActionPerformed(@NotNull AnActionEvent e) {
         Project project = e.getProject();
         assert project != null;
-        ModelBuilder.trainProjectNGramModelInBackground(project);
+        ModelBuilder.trainInBackground(project);
     }
 
     @Override

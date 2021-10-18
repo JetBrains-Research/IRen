@@ -20,14 +20,14 @@ public class LoadingModelStartupActivity implements StartupActivity.Background {
         AppSettingsState settings = AppSettingsState.getInstance();
         if (!settings.firstOpen && settings.automaticTraining &&
                 ModelStatsService.getInstance().needRetraining(ProjectVariableNamesContributor.class, project)) {
-            ModelBuilder.trainProjectNGramModelInBackground(project);
+            ModelBuilder.trainInBackground(project);
             return;
         }
         ProgressManager.getInstance().run(new Task.Backgroundable(project, IRenBundle.message("loading.project.model", project.getName())) {
             @Override
             public void run(@NotNull ProgressIndicator indicator) {
                 if (!ModelBuilder.loadModels(project, indicator) && !settings.firstOpen && settings.automaticTraining) {
-                    ModelBuilder.trainProjectNGramModel(project, indicator, true);
+                    ModelBuilder.train(project, indicator, true);
                 }
             }
         });

@@ -30,7 +30,6 @@ dependencies {
     implementation(project(":languages:java"))
     implementation(project(":languages:kotlin"))
     implementation(project(":languages:python"))
-    implementation("org.jetbrains.intellij.deps.completion:ngram-slp:0.0.3")
 }
 
 // Configure Gradle Changelog Plugin - read more: https://github.com/JetBrains/gradle-changelog-plugin

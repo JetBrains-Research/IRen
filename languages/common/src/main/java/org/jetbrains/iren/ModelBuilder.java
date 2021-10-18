@@ -30,18 +30,18 @@ import java.util.Collection;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 public class ModelBuilder {
-    public static void trainProjectNGramModelInBackground(Project project) {
+    public static void trainInBackground(Project project) {
         ProgressManager.getInstance().run(new Task.Backgroundable(project, IRenBundle.message("training.task.title")) {
             @Override
             public void run(@NotNull ProgressIndicator indicator) {
-                trainProjectNGramModel(project, indicator, true);
+                train(project, indicator, true);
             }
         });
     }
 
-    public static void trainProjectNGramModel(@NotNull Project project,
-                                              @Nullable ProgressIndicator progressIndicator,
-                                              boolean save) {
+    public static void train(@NotNull Project project,
+                             @Nullable ProgressIndicator progressIndicator,
+                             boolean save) {
         if (progressIndicator != null) {
             progressIndicator.setText(IRenBundle.message("training.progress.indexing"));
 //            Waits until indexes are prepared
@@ -53,7 +53,7 @@ public class ModelBuilder {
         modelStats.setTraining(true);
         try {
             for (LanguageSupporter supporter : LanguageSupporter.INSTANCE.getExtensionList()) {
-                trainProjectNGramModelWithSupporter(project, supporter, progressIndicator, save);
+                trainWithSupporter(project, supporter, progressIndicator, save);
                 if (progressIndicator != null && progressIndicator.isCanceled()) break;
             }
             modelStats.setTrainedTime(ProjectVariableNamesContributor.class, project);
@@ -63,20 +63,17 @@ public class ModelBuilder {
         }
     }
 
-    public static void trainProjectNGramModelWithSupporter(@NotNull Project project,
-                                                           @NotNull LanguageSupporter supporter,
-                                                           @Nullable ProgressIndicator progressIndicator,
-                                                           boolean save) {
+    public static void trainWithSupporter(@NotNull Project project,
+                                          @NotNull LanguageSupporter supporter,
+                                          @Nullable ProgressIndicator progressIndicator,
+                                          boolean save) {
         String name = ModelManager.getName(project, supporter.getLanguage());
-        NGramModelRunner modelRunner = new NGramModelRunner();
         ModelStatsService.getInstance().setUsable(name, false);
         if (progressIndicator != null)
             progressIndicator.setText(IRenBundle.message("training.progress.indicator.text",
                     String.format("%s; %s", project.getName(), supporter.getLanguage())));
-
-        modelRunner.train();
-        if (!learnProject(modelRunner, project, supporter, progressIndicator)) return;
-        modelRunner.eval();
+        NGramModelRunner modelRunner = new NGramModelRunner();
+        if (!trainModelRunnerWithSupporter(modelRunner, project, supporter, progressIndicator, save)) return;
 
         if (progressIndicator != null) {
             if (progressIndicator.isCanceled()) return;
@@ -98,6 +95,13 @@ public class ModelBuilder {
             System.out.printf("Project: %s;\t%s;\tModel size: %.3f Mb;\tVocab size: %d\n", project.getName(), supporter.getLanguage(), size, vocabSize);
         }
         ModelStatsService.getInstance().setUsable(name, true);
+    }
+
+    public static boolean trainModelRunnerWithSupporter(NGramModelRunner modelRunner, Project project, LanguageSupporter supporter, ProgressIndicator progressIndicator, boolean save) {
+        modelRunner.train();
+        if (!learnProject(modelRunner, project, supporter, progressIndicator)) return false;
+        modelRunner.eval();
+        return true;
     }
 
     public static boolean learnProject(NGramModelRunner modelRunner,
