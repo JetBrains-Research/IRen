@@ -1,6 +1,12 @@
 <!-- Keep a Changelog guide -> https://keepachangelog.com -->
 
 # IRen Changelog
+## [0.0.4]
+### Added
+- Inspection history
+### Fixed
+- Variable names were suggested looking on the declaration only
+- Inspection cache
 
 ## [0.0.3]
 ### Added
