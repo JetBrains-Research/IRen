@@ -21,16 +21,16 @@ class GNNVarNamer(saveDir: Path, supporter: LanguageSupporter, ngramType: String
     private val LOG = logger<GNNVarNamer>()
     private val GNN_SERVER_URL = "http://127.0.0.1:5000/"
 
-    override fun predictPsiFile(file: PsiFile): List<VarNamePredictions>? {
+    override suspend fun predictPsiFile(file: PsiFile, thread: Int): Collection<VarNamePredictions>? {
         graphExtractor = JavaGraphExtractor(file)
-        return super.predictPsiFile(file)
+        return super.predictPsiFile(file, thread)
     }
 
-    override fun predictWithNN(variable: PsiNameIdentifierOwner): Any {
+    override fun predictWithNN(variable: PsiNameIdentifierOwner, thread: Int): Any {
 //        works only with java
         val varData = GraphDatasetExtractor.getVarData(variable as PsiVariable, graphExtractor.file, graphExtractor)
         return HttpRequests.post(GNN_SERVER_URL, HttpRequests.JSON_CONTENT_TYPE)
-            .connect(HttpRequests.RequestProcessor {
+            .connect( {
                 it.write(GsonBuilder().create().toJson(varData))
                 val str = it.readString()
                 ObjectMapper().readValue(str, Any::class.java)

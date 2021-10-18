@@ -12,8 +12,8 @@ import com.intellij.openapi.util.TextRange
 import com.intellij.psi.*
 import com.intellij.psi.search.FileTypeIndex
 import com.intellij.psi.search.GlobalSearchScope
+import kotlinx.coroutines.*
 import org.jetbrains.iren.impl.NGramModelRunner
-import org.jetbrains.iren.services.ModelManager
 import org.jetbrains.iren.storages.VarNamePrediction
 import org.jetbrains.iren.utils.LanguageSupporter
 import java.io.File
@@ -28,11 +28,25 @@ open class VarNamer(
     private val supporter: LanguageSupporter,
     private val ngramType: String
 ) {
-    private lateinit var modelRunner: NGramModelRunner
+    private var maxNumberOfThreads = 6
 
-    fun predict(project: Project) : Boolean {
-        modelRunner = ModelManager.getInstance()
-            .getModelRunner(ModelManager.getName(project, supporter.language)) ?: return false
+    private val modelRunners: ArrayList<NGramModelRunner> = ArrayList(maxNumberOfThreads)
+    private lateinit var fileEditorManager: FileEditorManager
+
+    fun predict(modelRunner: NGramModelRunner, project: Project): Boolean {
+        val modelDir = saveDir.resolve("tmp_model")
+        val size = modelRunner.save(modelDir, null)
+        val numberOfThreads = (4096 / size).toInt().coerceAtLeast(1).coerceAtMost(maxNumberOfThreads)
+        println("Number of threads: $numberOfThreads")
+        assert(modelRunners.isEmpty())
+        for (i in 0 until numberOfThreads) {
+            println("Preparing ${i + 1}-th runner")
+            val runner = NGramModelRunner(true, true, 6)
+            runner.load(modelDir, null)
+            modelRunners.add(runner)
+        }
+        assert(modelRunners.size == numberOfThreads)
+        fileEditorManager = FileEditorManager.getInstance(project)
         val mapper = ObjectMapper()
         val predictionsFile: File = saveDir.resolve("${project.name}_${ngramType}_predictions.jsonl").toFile()
         predictionsFile.parentFile.mkdirs()
@@ -56,30 +70,43 @@ open class VarNamer(
         val start = Instant.now()
         val psiManager = PsiManager.getInstance(project)
         println("Number of files to parse: $total")
-        for (file in files) {
-            val psiFile = psiManager.findFile(file)
-            if (psiFile === null) continue
-            val filePath = file.path
-            val filePredictions = HashMap<String, List<VarNamePredictions>>()
+        runBlocking {
+            coroutineScope {
+                files.withIndex().groupBy { it.index % numberOfThreads }.forEach { (thread, fs) ->
+                    launch {
+                        println("Launching ${thread + 1}-th thread")
+                        fs.map { it.value }.forEach forEach2@{ file ->
+                            val psiFile = psiManager.findFile(file)
+                            if (psiFile === null) return@forEach2
+                            val filePath = file.path
+                            val filePredictions = HashMap<String, Collection<VarNamePredictions>>()
 
-            val predictions = predictPsiFile(psiFile)
+                            val predictions = predictPsiFile(psiFile, thread)
 
-            if (predictions === null) continue
-            filePredictions[filePath] = predictions
-            FileOutputStream(predictionsFile, true).bufferedWriter().use {
-                it.write(mapper.writeValueAsString(filePredictions))
-                it.newLine()
-            }
-            val fraction = ++progress / total.toDouble()
-            if (total < 100 || progress % (total / 100) == 0) {
-                val timeSpent = Duration.between(start, Instant.now())
-                val timeLeft = Duration.ofSeconds((timeSpent.seconds * (1 / fraction - 1)).toLong())
-                System.out.printf(
-                    "Status: %.0f%%;\tTime spent: %s;\tTime left: %s\r",
-                    fraction * 100.0,
-                    timeSpent,
-                    timeLeft
-                )
+                            withContext(Dispatchers.Default) {
+                                val fraction = ++progress / total.toDouble()
+                                if (total < 100 || progress % (total / 100) == 0) {
+                                    val timeSpent = Duration.between(start, Instant.now())
+                                    val timeLeft = Duration.ofSeconds((timeSpent.seconds * (1 / fraction - 1)).toLong())
+                                    System.out.printf(
+                                        "Status: %.0f%%;\tTime spent: %s;\tTime left: %s\r",
+                                        fraction * 100.0,
+                                        timeSpent,
+                                        timeLeft
+                                    )
+                                }
+                            }
+                            filePredictions[filePath] = predictions ?: return@forEach2
+                            withContext(Dispatchers.IO) {
+                                FileOutputStream(predictionsFile, true)
+                                    .bufferedWriter().use {
+                                        it.write(mapper.writeValueAsString(filePredictions))
+                                        it.newLine()
+                                    }
+                            }
+                        }
+                    }
+                } // forEach
             }
         }
         val end = Instant.now()
@@ -88,51 +115,60 @@ open class VarNamer(
             "Done in %s\n",
             timeSpent
         )
+        modelRunners.clear()
         return true
     }
 
-    protected open fun predictPsiFile(file: PsiFile): List<VarNamePredictions>? {
-        val fileEditorManager = FileEditorManager.getInstance(file.project)
+    protected open suspend fun predictPsiFile(file: PsiFile, thread: Int): Collection<VarNamePredictions>? {
         try {
+            val variables =
+                SyntaxTraverser.psiTraverser()
+                    .withRoot(file)
+                    .onRange(TextRange(0, 64 * 1024)) // first 128 KB of chars
+                    .filter { element: PsiElement? ->
+                        element is PsiNameIdentifierOwner &&
+                                supporter.isVariableDeclaration(element)
+                    }
+                    .toList()
             val editor = fileEditorManager.openTextEditor(
                 OpenFileDescriptor(
                     file.project,
                     file.virtualFile
                 ), true
             )!!
-            val variables = SyntaxTraverser.psiTraverser()
-                .withRoot(file)
-                .onRange(TextRange(0, 64 * 1024)) // first 128 KB of chars
-                .filter { element: PsiElement? ->
-                    element is PsiNameIdentifierOwner &&
-                            supporter.isVariableDeclaration(element)
-                }
-                .toList()
-            modelRunner.forgetPsiFile(file)
-            return variables
-                .asSequence()
-                .filterNotNull()
-                .map { v -> predictVarName(v as PsiNameIdentifierOwner, editor) }
-                .filterNotNull()
-                .toList()
+            modelRunners[thread].forgetPsiFile(file)
+            val result = mutableListOf<VarNamePredictions?>()
+            coroutineScope {
+                variables
+                    .asSequence()
+                    .filterNotNull()
+                    .map { v -> async { predictVarName(v as PsiNameIdentifierOwner, editor, thread) } }
+                    .forEach { result.add(it.await()) }
+            }
+            return result.filterNotNull()
         } catch (e: Exception) {
+            e.printStackTrace()
             return null
         } finally {
-            modelRunner.learnPsiFile(file)
+            modelRunners[thread].learnPsiFile(file)
             fileEditorManager.closeFile(file.virtualFile)
         }
     }
 
-    private fun predictVarName(variable: PsiNameIdentifierOwner, editor: Editor): VarNamePredictions? {
+    private fun predictVarName(
+        variable: PsiNameIdentifierOwner,
+        editor: Editor,
+        thread: Int
+    ): VarNamePredictions? {
         val nameIdentifier = variable.nameIdentifier
         if (nameIdentifier === null || nameIdentifier.text == "") return null
 
         var startTime = System.nanoTime()
-        val nGramPredictions = predictWithNGram(variable)
+        val nGramPredictions = predictWithNGram(variable, thread)
         val nGramEvaluationTime = (System.nanoTime() - startTime) / 1.0e9
 
         startTime = System.nanoTime()
-        val nnPredictions = predictWithNN(variable)
+        val nnPredictions = predictWithNN(variable, thread)
         val nnEvaluationTime = (System.nanoTime() - startTime) / 1.0e9
 
         return VarNamePredictions(
@@ -148,8 +184,8 @@ open class VarNamer(
         )
     }
 
-    private fun predictWithNGram(variable: PsiNameIdentifierOwner): List<ModelPrediction> {
-        val nameSuggestions: List<VarNamePrediction> = modelRunner.suggestNames(variable)
+    private fun predictWithNGram(variable: PsiNameIdentifierOwner, thread: Int): List<ModelPrediction> {
+        val nameSuggestions: List<VarNamePrediction> = modelRunners[thread].suggestNames(variable)
         return nameSuggestions.map { x: VarNamePrediction -> ModelPrediction(x.name, x.probability) }
     }
 
@@ -157,15 +193,15 @@ open class VarNamer(
         return editor.offsetToLogicalPosition(identifier.textOffset).line
     }
 
-    open fun predictWithNN(variable: PsiNameIdentifierOwner): Any {
+    open fun predictWithNN(variable: PsiNameIdentifierOwner, thread: Int): Any {
 //        Predict with the forward model of the BiDirectional model
         assert(ngramType == "BiDirectional")
         val forwardModel = NGramModelRunner(
-            (modelRunner.model as BiDirectionalModel).forward,
-            modelRunner.vocabulary,
-            modelRunner.rememberedIdentifiers,
+            (modelRunners[thread].model as BiDirectionalModel).forward,
+            modelRunners[thread].vocabulary,
+            modelRunners[thread].rememberedIdentifiers,
             false,
-            modelRunner.order
+            modelRunners[thread].order
         )
         val nameSuggestions: List<VarNamePrediction> = forwardModel.suggestNames(variable)
         return nameSuggestions.map { x: VarNamePrediction -> ModelPrediction(x.name, x.probability) }

@@ -8,7 +8,6 @@ import com.intellij.openapi.project.ProjectManager
 import com.jetbrains.python.PythonLanguage
 import org.jetbrains.iren.ModelBuilder
 import org.jetbrains.iren.impl.NGramModelRunner
-import org.jetbrains.iren.services.ModelManager
 import org.jetbrains.iren.settings.AppSettingsState
 import org.jetbrains.iren.utils.LanguageSupporter
 import org.jetbrains.kotlin.idea.KotlinLanguage
@@ -18,6 +17,7 @@ import java.nio.file.Path
 import java.nio.file.Paths
 import java.time.Duration
 import java.time.Instant
+import java.util.*
 import kotlin.system.exitProcess
 
 open class PluginRunner : ApplicationStarter {
@@ -36,7 +36,6 @@ open class PluginRunner : ApplicationStarter {
     protected open val javaSmallTest =
         listOf("libgdx", "hadoop")
 
-    //        listOf("TestProject")
     private val projectList: List<String>? = null
 
     override fun getCommandName(): String = "modelsEvaluator"
@@ -46,7 +45,7 @@ open class PluginRunner : ApplicationStarter {
             dataset = File(args[1])
             saveDir = Paths.get(args[2])
             supporter = LanguageSupporter.getInstance(
-                when (args[3].toLowerCase()) {
+                when (args[3].lowercase(Locale.getDefault())) {
                     "java" -> JavaLanguage.INSTANCE
                     "python" -> PythonLanguage.INSTANCE
                     "kotlin" -> KotlinLanguage.INSTANCE
@@ -114,7 +113,9 @@ open class PluginRunner : ApplicationStarter {
                 val settings = AppSettingsState.getInstance()
                 settings.maxTrainingTime = 420
                 settings.vocabularyCutOff = 0
-                ModelBuilder.trainProjectNGramModelWithSupporter(
+                val modelRunner = NGramModelRunner(true, true, 6)
+                ModelBuilder.trainModelRunnerWithSupporter(
+                    modelRunner,
                     project,
                     supporter,
                     null,
@@ -126,7 +127,7 @@ open class PluginRunner : ApplicationStarter {
                 }
 
                 start = Instant.now()
-                if (varNamer.predict(project)) {
+                if (varNamer.predict(modelRunner, project)) {
                     val evaluationTime = Duration.between(start, Instant.now())
 
                     FileOutputStream(timeSpentFile, true).bufferedWriter().use {
@@ -137,7 +138,6 @@ open class PluginRunner : ApplicationStarter {
                 FileOutputStream(timeSpentFile, true).bufferedWriter().use {
                     it.write("\n")
                 }
-                ModelManager.getInstance().deleteProjectModelRunners(project)
                 projectToClose = project
             }
         }

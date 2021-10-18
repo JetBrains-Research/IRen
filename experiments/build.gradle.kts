@@ -3,6 +3,7 @@ dependencies {
     implementation(project(":languages:common"))
     implementation(project(":languages:java"))
     implementation(project(":languages:kotlin"))
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.5.2")
 }
 
 tasks {
@@ -15,6 +16,6 @@ tasks {
         val ngramType: String? by project
         args = listOfNotNull(evaluatorToUse, dataset, saveDir, languageFile, ngramType)
         jvmArgs = listOf("-Djava.awt.headless=true")
-        maxHeapSize = "12g"
+        maxHeapSize = "28g"
     }
 }
