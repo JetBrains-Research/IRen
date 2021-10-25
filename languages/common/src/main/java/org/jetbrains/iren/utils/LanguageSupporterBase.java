@@ -1,5 +1,6 @@
 package org.jetbrains.iren.utils;
 
+import com.google.common.collect.Streams;
 import com.intellij.completion.ngram.slp.translating.Vocabulary;
 import com.intellij.lang.ASTNode;
 import com.intellij.openapi.progress.ProcessCanceledException;
@@ -44,8 +45,8 @@ public abstract class LanguageSupporterBase implements LanguageSupporter {
     public @NotNull Context<String> getContext(@NotNull PsiNameIdentifierOwner variable, boolean changeToUnknown) {
         PsiFile file = variable.getContainingFile();
         Collection<PsiElement> referenceElements = getReferenceElementsSet(variable, file);
-        PsiElement root = findRoot(file, referenceElements);
-        List<Integer> varIdxs = new ArrayList<>(referenceElements.size());
+        PsiElement root = findRoot(file, variable, referenceElements);
+        List<Integer> varIdxs = new ArrayList<>(referenceElements.size() + 1);
         List<PsiElement> elements = getLeafElementsFromRoot(root);
         List<String> tokens = new ArrayList<>();
         int offset = 0;
@@ -130,9 +131,9 @@ public abstract class LanguageSupporterBase implements LanguageSupporter {
         return element == null ? null : element.getPsi();
     }
 
-    private @NotNull PsiElement findRoot(@NotNull PsiFile file, @NotNull Collection<PsiElement> usages) {
+    private @NotNull PsiElement findRoot(@NotNull PsiFile file, @NotNull PsiNameIdentifierOwner variable, @NotNull Collection<PsiElement> usages) {
         if (usages.size() < 2) return file;
-        List<Set<PsiElement>> parents = usages.stream()
+        List<Set<PsiElement>> parents = Streams.concat(Stream.of(variable), usages.stream())
                 .map(this::getParents)
                 .collect(Collectors.toList());
         Set<PsiElement> common = parents.remove(0);
