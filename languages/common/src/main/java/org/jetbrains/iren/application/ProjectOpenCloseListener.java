@@ -1,21 +1,22 @@
-package org.jetbrains.iren;
+package org.jetbrains.iren.application;
 
 import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.progress.ProgressManager;
 import com.intellij.openapi.progress.Task;
 import com.intellij.openapi.project.Project;
-import com.intellij.openapi.startup.StartupActivity;
+import com.intellij.openapi.project.ProjectManagerListener;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.iren.IRenBundle;
+import org.jetbrains.iren.ModelBuilder;
 import org.jetbrains.iren.contributors.ProjectVariableNamesContributor;
+import org.jetbrains.iren.services.ModelManager;
 import org.jetbrains.iren.services.ModelStatsService;
 import org.jetbrains.iren.settings.AppSettingsState;
 import org.jetbrains.iren.utils.LanguageSupporter;
 
-import static org.jetbrains.iren.PluginLoadedListener.askPermissions;
-
-public class LoadingModelStartupActivity implements StartupActivity.Background {
+public class ProjectOpenCloseListener implements ProjectManagerListener {
     @Override
-    public void runActivity(@NotNull Project project) {
+    public void projectOpened(@NotNull Project project) {
         LanguageSupporter.removeRenameHandlers();
         AppSettingsState settings = AppSettingsState.getInstance();
         if (!settings.firstOpen && settings.automaticTraining &&
@@ -27,10 +28,14 @@ public class LoadingModelStartupActivity implements StartupActivity.Background {
             @Override
             public void run(@NotNull ProgressIndicator indicator) {
                 if (!ModelBuilder.loadModels(project, indicator) && !settings.firstOpen && settings.automaticTraining) {
-                    ModelBuilder.train(project, indicator, true);
+                    ModelBuilder.trainModelsForAllLanguages(project, indicator, true);
                 }
             }
         });
-        askPermissions();
+    }
+
+    @Override
+    public void projectClosed(@NotNull Project project) {
+        ModelManager.getInstance().deleteProjectModelRunners(project);
     }
 }

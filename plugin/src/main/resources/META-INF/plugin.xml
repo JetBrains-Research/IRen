@@ -27,6 +27,10 @@
     <depends optional="true" config-file="java.xml">com.intellij.java</depends>
     <depends optional="true" config-file="kotlin.xml">org.jetbrains.kotlin</depends>
     <depends optional="true" config-file="python.xml">com.intellij.modules.python</depends>
+    <applicationListeners>
+        <listener class="org.jetbrains.iren.application.ProjectOpenCloseListener"
+                  topic="com.intellij.openapi.project.ProjectManagerListener"/>
+    </applicationListeners>
     <extensions defaultExtensionNs="com.intellij">
         <!--    Settings part    -->
         <registryKey key="iren.verbose.inference"
@@ -52,8 +56,7 @@
                          implementationClass="org.jetbrains.iren.inspections.variable.VariableNamesInspection"/>
         <renameHandler implementation="org.jetbrains.iren.rename.IRenVariableInplaceRenameHandler"/>
         <renameHandler implementation="org.jetbrains.iren.rename.IRenMemberInplaceRenameHandler"/>
-        <backgroundPostStartupActivity
-                implementation="org.jetbrains.iren.LoadingModelStartupActivity"/>
+        <preloadingActivity implementation="org.jetbrains.iren.application.AskPermissionsPreloadingActivity"/>
     </extensions>
     <extensions defaultExtensionNs="org.jetbrains.iren">
         <variableNamesContributor
