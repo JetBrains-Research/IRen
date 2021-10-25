@@ -7,6 +7,7 @@ import com.intellij.openapi.progress.ProgressManager;
 import com.intellij.openapi.progress.StandardProgressIndicator;
 import com.intellij.openapi.progress.util.AbstractProgressIndicatorBase;
 import com.intellij.openapi.util.Computable;
+import com.intellij.openapi.util.Pair;
 import com.intellij.openapi.util.TextRange;
 import com.intellij.psi.*;
 import com.intellij.psi.search.GlobalSearchScope;
@@ -14,6 +15,7 @@ import com.intellij.refactoring.rename.RenamePsiElementProcessor;
 import com.intellij.usageView.UsageInfo;
 import com.intellij.util.SmartList;
 import org.apache.commons.lang3.StringUtils;
+import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.iren.storages.Context;
@@ -41,42 +43,66 @@ public abstract class LanguageSupporterBase implements LanguageSupporter {
     @Override
     public @NotNull Context<String> getContext(@NotNull PsiNameIdentifierOwner variable, boolean changeToUnknown) {
         PsiFile file = variable.getContainingFile();
-        Collection<PsiElement> usages = findUsages(variable, file);
-        PsiElement root = findRoot(file, usages);
-        List<Integer> varIdxs = new ArrayList<>();
-        List<PsiElement> elements = SyntaxTraverser.psiTraverser()
+        Collection<PsiElement> referenceElements = getReferenceElementsSet(variable, file);
+        PsiElement root = findRoot(file, referenceElements);
+        List<Integer> varIdxs = new ArrayList<>(referenceElements.size());
+        List<PsiElement> elements = getLeafElementsFromRoot(root);
+        List<String> tokens = new ArrayList<>();
+        int offset = 0;
+        for (int i = 0; i < elements.size(); i++) {
+            PsiElement element = elements.get(i);
+            if (identifierIsVariableDeclaration(element)) {
+                Pair<List<String>, Integer> listIdx = processVariableDeclaration(file, element);
+                List<String> varWithType = listIdx.getFirst();
+                int varIdx = listIdx.getSecond();
+                tokens.addAll(varWithType);
+                if (element.getParent().isEquivalentTo(variable)) {
+                    varIdxs.add(i + offset + varIdx);
+                    offset += varWithType.size() - 1;
+                    continue;
+                }
+                offset += varWithType.size() - 1;
+            } else {
+                tokens.add(processToken(element));
+            }
+            if (referenceElements.contains(element)) {
+                varIdxs.add(i + offset);
+            }
+        }
+        Context<String> result = new Context<>(tokens, varIdxs);
+        return changeToUnknown ? result.with(Vocabulary.unknownCharacter) : result;
+    }
+
+    private List<PsiElement> getLeafElementsFromRoot(PsiElement root) {
+        return SyntaxTraverser.psiTraverser()
                 .withRoot(root)
                 .forceIgnore(node -> node instanceof PsiComment)
                 .filter(this::shouldLex)
                 .toList();
-        List<String> tokens = new ArrayList<>();
-        for (int i = 0; i < elements.size(); i++) {
-            PsiElement element = elements.get(i);
-            if (usages.contains(element)) {
-                varIdxs.add(i);
-                tokens.add(changeToUnknown ? Vocabulary.unknownCharacter : element.getText());
-            } else {
-                tokens.add(processToken(element));
-            }
-        }
-        return new Context<>(tokens, varIdxs);
     }
 
-    public Collection<PsiElement> findUsages(PsiNameIdentifierOwner variable, PsiFile file) {
+    /**
+     * @param variable declaration
+     * @param file     where to find usages
+     * @return usages without declaration
+     */
+    public Collection<PsiElement> getReferenceElementsSet(PsiNameIdentifierOwner variable, PsiFile file) {
         @Nullable Collection<PsiReference> references = findReferences(variable, file);
-        return Stream.concat(Stream.of(variable), references != null ? references.stream() : Stream.empty())
-                .map(this::getIdentifier)
-                .filter(Objects::nonNull)
-                .collect(Collectors.toSet());
+        return references != null ?
+                references.stream()
+                        .map(this::getIdentifier)
+                        .filter(Objects::nonNull)
+                        .collect(Collectors.toSet()) :
+                Collections.emptyList();
     }
 
     public @Nullable Collection<PsiReference> findReferences(@NotNull PsiNameIdentifierOwner identifierOwner, @NotNull PsiFile file) {
 //        Unknown problems when using GlobalSearchScope.projectScope. Most likely there are too many fields and searching breaks.
-        return runForSomeTime(() -> RenamePsiElementProcessor.forElement(identifierOwner)
-                .findReferences(identifierOwner, GlobalSearchScope.fileScope(file), false), 100);
+        return runForSomeTime(100, () -> RenamePsiElementProcessor.forElement(identifierOwner)
+                .findReferences(identifierOwner, GlobalSearchScope.fileScope(file), false));
     }
 
-    public static <T> @Nullable T runForSomeTime(@NotNull Computable<T> process, long runningTimeMs) {
+    public static <T> @Nullable T runForSomeTime(long runningTimeMs, @NotNull Computable<T> process) {
         ProgressManager progressManager = ProgressManager.getInstance();
         try {
             return progressManager.runProcess(process, new LimitedRunningTimeIndicator(runningTimeMs));
@@ -147,6 +173,16 @@ public abstract class LanguageSupporterBase implements LanguageSupporter {
         return text;
     }
 
+    /**
+     * Adds variable type if needed
+     *
+     * @param file variable containing file
+     * @param identifier identifier of the declaration
+     * @return First: list of the variable type and name in a language specific order.
+     * Second: index of the variable name in the list.
+     */
+    protected abstract @NotNull Pair<List<String>, Integer> processVariableDeclaration(@NotNull PsiFile file, @NotNull PsiElement identifier);
+
     protected abstract String processLiteral(@NotNull PsiElement token, @NotNull String text);
 
     public @NotNull List<String> lexPsiFile(@NotNull PsiFile file) {
@@ -166,27 +202,32 @@ public abstract class LanguageSupporterBase implements LanguageSupporter {
                         consumer.accept(element);
                     }
                 })
-                .map(this::processToken)
+                .flatMap(element -> {
+                    if (identifierIsVariableDeclaration(element)) {
+                        return processVariableDeclaration(file, element).getFirst().stream();
+                    } else {
+                        return Stream.of(processToken(element));
+                    }
+                })
                 .collect(Collectors.toList());
     }
 
     public boolean isVariable(@Nullable PsiElement token) {
         if (token == null) return false;
-        if (isVariableDeclaration(token)) return true;
+        if (token instanceof PsiNameIdentifierOwner) {
+            return isVariableClass(token);
+        }
         @Nullable PsiNameIdentifierOwner declaration = findDeclaration(token);
         return declaration != null && isVariableClass(declaration);
     }
 
-    public boolean isVariableDeclaration(@Nullable PsiElement token) {
-        if (token == null) return false;
-        if (token instanceof PsiNameIdentifierOwner) {
-            return isVariableClass(token);
-        }
-        if (isIdentifier(token)) {
-            PsiElement parent = token.getParent();
-            return parent instanceof PsiNameIdentifierOwner && isVariableClass(parent);
-        }
-        return false;
+    @Contract("null -> false")
+    public boolean identifierIsVariableDeclaration(@Nullable PsiElement token) {
+        return isIdentifier(token) && elementIsVariableDeclaration(token.getParent());
+    }
+
+    public boolean elementIsVariableDeclaration(@Nullable PsiElement element) {
+        return element instanceof PsiNameIdentifierOwner && isVariableClass(element);
     }
 
     @Override
@@ -196,7 +237,13 @@ public abstract class LanguageSupporterBase implements LanguageSupporter {
         total = 0;
     }
 
-    protected boolean isVariableClass(@NotNull PsiElement token) {
+    @Override
+    public boolean isStopName(@NotNull String name) {
+        return false;
+    }
+
+    @Override
+    public boolean isVariableClass(@NotNull PsiElement token) {
         return getVariableClasses().stream().anyMatch(cls -> cls.isAssignableFrom(token.getClass()));
     }
 
@@ -267,10 +314,5 @@ class LimitedRunningTimeIndicator extends AbstractProgressIndicatorBase implemen
             return true;
         }
         return false;
-    }
-
-    @Override
-    public void checkCanceled() {
-        super.checkCanceled();
     }
 }

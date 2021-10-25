@@ -5,6 +5,7 @@ import com.intellij.ide.highlighter.JavaFileType;
 import com.intellij.lang.Language;
 import com.intellij.lang.java.JavaLanguage;
 import com.intellij.openapi.fileTypes.FileType;
+import com.intellij.openapi.util.Pair;
 import com.intellij.psi.*;
 import com.intellij.psi.tree.IElementType;
 import com.intellij.psi.tree.TokenSet;
@@ -12,10 +13,12 @@ import com.intellij.refactoring.rename.RenameHandler;
 import com.intellij.refactoring.rename.inplace.MemberInplaceRenameHandler;
 import com.intellij.refactoring.rename.inplace.VariableInplaceRenameHandler;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.jetbrains.iren.contributors.NGramVariableNamesContributor;
 import org.jetbrains.iren.inspections.variable.JavaVariableVisitor;
 import org.jetbrains.iren.utils.LanguageSupporterBase;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
@@ -59,6 +62,18 @@ public class JavaLanguageSupporter extends LanguageSupporterBase {
     }
 
     @Override
+    protected @NotNull Pair<List<String>, Integer> processVariableDeclaration(@NotNull PsiFile file, @NotNull PsiElement identifier) {
+        final @NotNull PsiVariable variable = (PsiVariable) identifier.getParent();
+        List<String> varWithType = new ArrayList<>();
+        @Nullable PsiTypeElement typeElement = variable.getTypeElement();
+        if (typeElement == null || typeElement.isInferredType()) {
+            varWithType.addAll(splitVariableType(variable.getType().getPresentableText()));
+        }
+        varWithType.add(identifier.getText());
+        return new Pair<>(varWithType, varWithType.size() - 1);
+    }
+
+    @Override
     protected String processLiteral(@NotNull PsiElement token, @NotNull String text) {
         if (token.getParent() instanceof PsiLiteral) {
             @NotNull IElementType literalType = token.getNode().getElementType();
@@ -78,7 +93,7 @@ public class JavaLanguageSupporter extends LanguageSupporterBase {
     }
 
     @Override
-    public boolean isIdentifier(PsiElement token) {
+    public boolean isIdentifier(@Nullable PsiElement token) {
         return token instanceof PsiIdentifier;
     }
 

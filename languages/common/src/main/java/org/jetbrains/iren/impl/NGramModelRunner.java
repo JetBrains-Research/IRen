@@ -51,6 +51,7 @@ public class NGramModelRunner {
     private final boolean biDirectional;
     private final int order;
     private boolean myTraining = false;
+    private LanguageSupporter mySupporter = null;
 
     public NGramModelRunner() {
         this(true, DEFAULT_BIDIRECTIONAL, 6);
@@ -73,7 +74,7 @@ public class NGramModelRunner {
         this(isLargeCorpora, false, 6);
     }
 
-    public NGramModelRunner(Model model, Vocabulary vocabulary, Set<Integer> rememberedIdentifiers, boolean biDirectional, int order){
+    public NGramModelRunner(Model model, Vocabulary vocabulary, Set<Integer> rememberedIdentifiers, boolean biDirectional, int order) {
         myModel = model;
         myVocabulary = vocabulary;
         myRememberedIdentifiers = rememberedIdentifiers;
@@ -115,15 +116,9 @@ public class NGramModelRunner {
         return rankCandidates(candidates, unknownContext);
     }
 
-    public @NotNull Pair<Double, Integer> getProbability(PsiNameIdentifierOwner variable, boolean forgetContext) {
-        @NotNull Context<Integer> intContext = prepareContext(variable, forgetContext);
-        return new Pair<>(getLogProb(intContext), getModelPriority());
-    }
-
     @NotNull
     private Context<Integer> prepareContext(@NotNull PsiNameIdentifierOwner variable, boolean forgetContext) {
-        @NotNull Context<Integer> intContext = Context.fromStringToInt(LanguageSupporter.getInstance(variable.getLanguage())
-                .getContext(variable, false), myVocabulary);
+        @NotNull Context<Integer> intContext = Context.fromStringToInt(getSupporter(variable).getContext(variable, false), myVocabulary);
         if (forgetContext) {
 //            I don't try to relearn context after refactoring because forgetting
 //            context makes sense only for models that trained on a single file.
@@ -133,8 +128,12 @@ public class NGramModelRunner {
         return intContext;
     }
 
-    public void learnContext(@NotNull Context<Integer> context) {
-        myModel.learn(context.getTokens());
+    private LanguageSupporter getSupporter(PsiElement element) {
+        if (mySupporter == null) {
+            mySupporter = LanguageSupporter.getInstance(element.getLanguage());
+        }
+        assert mySupporter.getLanguage() == element.getLanguage();
+        return mySupporter;
     }
 
     public void forgetContext(@NotNull Context<Integer> context) {
@@ -142,25 +141,26 @@ public class NGramModelRunner {
     }
 
     private @NotNull Set<Integer> getCandidates(@NotNull List<Integer> tokenIdxs, int idx) {
-        return myModel.predictToken(tokenIdxs, idx)
-                .keySet()
-                .stream()
-                .filter(myRememberedIdentifiers::contains)
-                .collect(Collectors.toSet());
+        return myModel.predictToken(tokenIdxs, idx).keySet();
     }
 
-    private @NotNull List<VarNamePrediction> rankCandidates(@NotNull Set<Integer> candidates, @NotNull Context<Integer> intContext) {
+    private @NotNull List<VarNamePrediction> rankCandidates(@NotNull Set<Integer> candidates,
+                                                            @NotNull Context<Integer> intContext) {
         List<Integer> cs = new ArrayList<>();
         List<Double> logits = new ArrayList<>();
-        candidates.forEach(candidate -> {
-            cs.add(candidate);
-            logits.add(getLogProb(intContext.with(candidate)));
-        });
+        candidates.stream()
+                .filter(myRememberedIdentifiers::contains)
+                .forEach(candidate -> {
+                    cs.add(candidate);
+                    logits.add(getLogProb(intContext.with(candidate)));
+                });
 //        List<Double> probs = logits;
         List<Double> probs = softmax(logits, 6);
         List<VarNamePrediction> predictions = new ArrayList<>();
         for (int i = 0; i < cs.size(); i++) {
-            predictions.add(new VarNamePrediction(myVocabulary.toWord(cs.get(i)),
+            String name = myVocabulary.toWord(cs.get(i));
+            if (mySupporter.isStopName(name)) continue;
+            predictions.add(new VarNamePrediction(name,
                     probs.get(i),
                     getModelPriority()));
         }
@@ -207,8 +207,17 @@ public class NGramModelRunner {
         return myVocabulary.size();
     }
 
+    public @NotNull Pair<Double, Integer> getProbability(PsiNameIdentifierOwner variable, boolean forgetContext) {
+        @NotNull Context<Integer> intContext = prepareContext(variable, forgetContext);
+        return new Pair<>(getLogProb(intContext), getModelPriority());
+    }
+
+    public void learnContext(@NotNull Context<Integer> context) {
+        myModel.learn(context.getTokens());
+    }
+
     public void learnPsiFile(@NotNull PsiFile file) {
-        LanguageSupporter supporter = LanguageSupporter.getInstance(file.getLanguage());
+        LanguageSupporter supporter = getSupporter(file);
         if (supporter == null) return;
         @NotNull List<String> lexed = supporter.lexPsiFile(file, myTraining ? rememberIdName(supporter) : null);
         learnLexed(lexed);
@@ -216,7 +225,7 @@ public class NGramModelRunner {
 
     private Consumer<PsiElement> rememberIdName(LanguageSupporter supporter) {
         return (PsiElement element) -> {
-            if (supporter.isVariableDeclaration(element)) {
+            if (supporter.identifierIsVariableDeclaration(element)) {
                 synchronized (this) {
                     myRememberedIdentifiers.add(myVocabulary.toIndex(element.getText()));
                 }
@@ -233,7 +242,7 @@ public class NGramModelRunner {
     }
 
     public void forgetPsiFile(@NotNull PsiFile file) {
-        myModel.forget(myVocabulary.toIndices(LanguageSupporter.getInstance(file.getLanguage()).lexPsiFile(file)));
+        myModel.forget(myVocabulary.toIndices(getSupporter(file).lexPsiFile(file)));
     }
 
     public double save(@NotNull Path model_directory, @Nullable ProgressIndicator progressIndicator) {

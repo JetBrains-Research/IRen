@@ -12,19 +12,22 @@ import com.intellij.psi.PsiNameIdentifierOwner;
 import com.intellij.psi.search.FileTypeIndex;
 import com.intellij.psi.search.GlobalSearchScope;
 import com.intellij.psi.tree.IElementType;
+import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.iren.storages.Context;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.NoSuchElementException;
 import java.util.function.Consumer;
 
 public interface LanguageSupporter {
     ExtensionPointName<LanguageSupporter> INSTANCE = ExtensionPointName.create("org.jetbrains.iren.language.supporter");
 
-    static LanguageSupporter getInstance(Language language) {
-        return INSTANCE.extensions().filter(x -> x.getLanguage() == language).findFirst().orElse(null);
+    static @NotNull LanguageSupporter getInstance(Language language) {
+        return INSTANCE.extensions().filter(x -> x.getLanguage() == language).findFirst()
+                .orElseThrow(() -> new NoSuchElementException("Language is not supported"));
     }
 
     @NotNull Language getLanguage();
@@ -70,9 +73,12 @@ public interface LanguageSupporter {
 
     boolean isVariable(@Nullable PsiElement token);
 
-    boolean isVariableDeclaration(@Nullable PsiElement token);
+    boolean identifierIsVariableDeclaration(@Nullable PsiElement identifier);
 
-    boolean isIdentifier(PsiElement token);
+    boolean isVariableClass(@NotNull PsiElement token);
+
+    @Contract("null -> false")
+    boolean isIdentifier(@Nullable PsiElement token);
 
     /**
      * Compare execution time of a chosen snippet of the code.
@@ -84,9 +90,12 @@ public interface LanguageSupporter {
     void printAvgTime();
 
     static PsiElementVisitor getVariableVisitor(@NotNull Language language, @NotNull ProblemsHolder holder) {
-        LanguageSupporter supporter = getInstance(language);
-        return supporter == null ? PsiElementVisitor.EMPTY_VISITOR : supporter.createVariableVisitor(holder);
+        return getInstance(language).createVariableVisitor(holder);
     }
 
     @NotNull PsiElementVisitor createVariableVisitor(@NotNull ProblemsHolder holder);
+
+    boolean isStopName(@NotNull String name);
+
+    boolean elementIsVariableDeclaration(@Nullable PsiElement element);
 }
