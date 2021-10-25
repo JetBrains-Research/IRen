@@ -51,7 +51,7 @@ open class PluginRunner : ApplicationStarter {
                     "kotlin" -> KotlinLanguage.INSTANCE
                     else -> throw AssertionError("Unknown language")
                 }
-            )!!
+            )
             ngramType = args[4]
             assert(ngramTypes.contains(ngramType))
             varNamer = createVarNamer()
@@ -114,13 +114,7 @@ open class PluginRunner : ApplicationStarter {
                 settings.maxTrainingTime = 420
                 settings.vocabularyCutOff = 0
                 val modelRunner = NGramModelRunner(true, true, 6)
-                ModelBuilder.trainModelRunnerWithSupporter(
-                    modelRunner,
-                    project,
-                    supporter,
-                    null,
-                    false
-                )
+                ModelBuilder(project, supporter, null).trainModelRunner(modelRunner)
                 val trainingTime = Duration.between(start, Instant.now())
                 FileOutputStream(timeSpentFile, true).bufferedWriter().use {
                     it.write("${project.name},$trainingTime,")

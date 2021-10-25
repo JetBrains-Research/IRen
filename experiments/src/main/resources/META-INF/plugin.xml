@@ -19,8 +19,9 @@
     <depends optional="true" config-file="kotlin.xml">org.jetbrains.kotlin</depends>
     <depends optional="true" config-file="python.xml">com.intellij.modules.python</depends>
     <extensions defaultExtensionNs="com.intellij">
-        <registryKey key="iren.developer.mode" description="Registry for showing id names suggesting plugin notifications"
-                     defaultValue="false" restartRequired="false"/>
+        <registryKey key="iren.verbose.inference"
+                     description="Registry for showing IRen plugin notifications with inference statistics"
+                     defaultValue="False" restartRequired="false"/>
         <applicationService serviceImplementation="org.jetbrains.iren.settings.AppSettingsState"/>
         <!-- Headless running part-->
         <appStarter implementation="tools.gnnEvaluator.GNNPluginRunner"/>

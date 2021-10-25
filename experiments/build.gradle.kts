@@ -3,7 +3,7 @@ dependencies {
     implementation(project(":languages:common"))
     implementation(project(":languages:java"))
     implementation(project(":languages:kotlin"))
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.5.2")
+    implementation("me.tongfei:progressbar:0.9.2")
 }
 
 tasks {

@@ -63,12 +63,8 @@ class PluginRunner : ApplicationStarter {
             val trainingTime = ArrayList<Long>()
             for (i in 1..5) {
                 val start = Instant.now()
-                ModelBuilder.learnProject(
-                    NGramModelRunner(true, true, 6),
-                    project,
-                    LanguageSupporter.getInstance(JavaLanguage.INSTANCE),
-                    null
-                )
+                ModelBuilder(project, LanguageSupporter.getInstance(JavaLanguage.INSTANCE), null)
+                    .trainModelRunner(NGramModelRunner(true, true, 6))
                 trainingTime.add(Duration.between(start, Instant.now()).seconds)
             }
             projectTime.put(projectDir, trainingTime)

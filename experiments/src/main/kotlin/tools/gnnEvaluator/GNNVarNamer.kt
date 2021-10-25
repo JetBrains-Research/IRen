@@ -21,7 +21,7 @@ class GNNVarNamer(saveDir: Path, supporter: LanguageSupporter, ngramType: String
     private val LOG = logger<GNNVarNamer>()
     private val GNN_SERVER_URL = "http://127.0.0.1:5000/"
 
-    override suspend fun predictPsiFile(file: PsiFile, thread: Int): Collection<VarNamePredictions>? {
+    override fun predictPsiFile(file: PsiFile, thread: Int): Collection<VarNamePredictions>? {
         graphExtractor = JavaGraphExtractor(file)
         return super.predictPsiFile(file, thread)
     }
