@@ -2,15 +2,8 @@
 package org.jetbrains.iren.settings;
 
 import com.intellij.openapi.options.Configurable;
-import com.intellij.openapi.progress.ProgressIndicator;
-import com.intellij.openapi.progress.ProgressManager;
-import com.intellij.openapi.progress.Task;
-import com.intellij.openapi.project.Project;
-import com.intellij.openapi.project.ProjectManager;
 import org.jetbrains.annotations.Nls;
-import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.jetbrains.iren.IRenBundle;
 import org.jetbrains.iren.ModelBuilder;
 
 import javax.swing.*;
@@ -68,14 +61,7 @@ public class AppSettingsConfigurable implements Configurable {
         settings.modelsLifetime = mySettingsComponent.getModelsLifetime();
         settings.modelsLifetimeUnit = mySettingsComponent.getModelsLifetimeUnit();
         if (settings.automaticTraining && modified) {
-            ProgressManager.getInstance().run(new Task.Backgroundable(null, IRenBundle.message("training.task.title")) {
-                @Override
-                public void run(@NotNull ProgressIndicator indicator) {
-                    for (Project project : ProjectManager.getInstance().getOpenProjects()) {
-                        ModelBuilder.train(project, indicator, true);
-                    }
-                }
-            });
+            ModelBuilder.trainModelsForAllProjectsInBackground();
         }
     }
 
