@@ -32,7 +32,7 @@ public class ConsistencyChecker implements Disposable {
                     .build(new CacheLoader<>() {
                                @Override
                                public Boolean load(@NotNull PsiNameIdentifierOwner variable) {
-                                   return !hasGoodPredictionList(variable);
+                                   return isBetterNamesSuggested(variable);
                                }
                            }
                     );
@@ -59,9 +59,9 @@ public class ConsistencyChecker implements Disposable {
     }
 
 
-    public static boolean hasGoodPredictionList(@NotNull PsiNameIdentifierOwner variable) {
+    public static boolean isBetterNamesSuggested(@NotNull PsiNameIdentifierOwner variable) {
         @NotNull LinkedHashMap<String, Double> predictions = IRenSuggestingService.getInstance().suggestVariableName(variable);
-        if (predictions.isEmpty()) return false;
+        if (predictions.values().stream().findFirst().orElse(0.) < 0.5) return false;
         int varIdx = 100;
         int unkIdx = 100;
         int i = 0;
@@ -74,7 +74,7 @@ public class ConsistencyChecker implements Disposable {
             }
             i++;
         }
-        return unkIdx == 0 || varIdx < 5;
+        return unkIdx != 0 && varIdx > 10;
     }
 
     @Override
