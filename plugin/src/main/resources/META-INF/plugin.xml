@@ -29,8 +29,8 @@
     <depends optional="true" config-file="python.xml">com.intellij.modules.python</depends>
     <extensions defaultExtensionNs="com.intellij">
         <!--    Settings part    -->
-        <registryKey key="iren.developer.mode"
-                     description="Registry for showing id names suggesting plugin notifications"
+        <registryKey key="iren.verbose.inference"
+                     description="Registry for showing IRen plugin notifications with inference statistics"
                      defaultValue="False" restartRequired="false"/>
         <applicationService serviceImplementation="org.jetbrains.iren.settings.AppSettingsState"/>
         <applicationConfigurable parentId="tools"

@@ -12,7 +12,7 @@ public class NotificationsUtil {
      * Checks if intellij is in the "developer.mode" and then sends notification.
      */
     public static void notify(Project project, String title, String context) {
-        if (isDeveloperMode()) {
+        if (isVerboseInference()) {
             Notifications.Bus.notify(
                     new Notification(IRenBundle.message("name"),
                             title,
@@ -22,7 +22,7 @@ public class NotificationsUtil {
         }
     }
 
-    public static boolean isDeveloperMode(){
-        return Registry.get("iren.developer.mode").asBoolean();
+    public static boolean isVerboseInference() {
+        return Registry.get("iren.verbose.inference").asBoolean();
     }
 }

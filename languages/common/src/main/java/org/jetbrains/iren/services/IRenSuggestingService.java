@@ -26,9 +26,9 @@ public class IRenSuggestingService {
     public @NotNull LinkedHashMap<String, Double> suggestVariableName(@NotNull PsiNameIdentifierOwner variable) {
         Instant timerStart = Instant.now();
         List<VarNamePrediction> nameSuggestions = new ArrayList<>();
-        boolean isDeveloperMode = NotificationsUtil.isDeveloperMode();
+        boolean verboseInference = NotificationsUtil.isVerboseInference();
         Map<String, Double> stats = new LinkedHashMap<>();
-        if (isDeveloperMode) {
+        if (verboseInference) {
             double p = getVariableNameProbability(variable);
             stats.put("p", p);
             // toNanos because toMillis return long but I want it to be more precise, plus stats already has probability(p) which is anyway Double.
