@@ -104,14 +104,10 @@ public abstract class LanguageSupporterBase implements LanguageSupporter {
     }
 
     public static <T> @Nullable T runForSomeTime(long runningTimeMs, @NotNull Computable<T> process) {
-        ProgressManager progressManager = ProgressManager.getInstance();
         try {
-            return progressManager.runProcess(process, new LimitedRunningTimeIndicator(runningTimeMs));
+            return ProgressManager.getInstance().runProcess(process, new LimitedRunningTimeIndicator(runningTimeMs));
         } catch (ProcessCanceledException e) {
 //            System.out.println("Canceled");
-            return null;
-        } catch (Exception e) {
-            e.printStackTrace();
             return null;
         }
     }
@@ -131,15 +127,16 @@ public abstract class LanguageSupporterBase implements LanguageSupporter {
         return element == null ? null : element.getPsi();
     }
 
-    private @NotNull PsiElement findRoot(@NotNull PsiFile file, @NotNull PsiNameIdentifierOwner variable, @NotNull Collection<PsiElement> usages) {
-        if (usages.size() < 2) return file;
-        List<Set<PsiElement>> parents = Streams.concat(Stream.of(variable), usages.stream())
+    private @NotNull PsiElement findRoot(@NotNull PsiFile file, @NotNull PsiNameIdentifierOwner variable, @NotNull Collection<PsiElement> references) {
+        if (references.size() == 0) return variable.getParent().getParent();
+//        TODO: use PsiTreeUtil.findCommonParent
+        List<Set<PsiElement>> parents = Streams.concat(Stream.of(variable), references.stream())
                 .map(this::getParents)
                 .collect(Collectors.toList());
         Set<PsiElement> common = parents.remove(0);
         parents.forEach(common::retainAll);
         Optional<PsiElement> res = common.stream().findFirst();
-        return res.orElse(file);
+        return res.orElseGet(() -> variable.getParent().getParent());
     }
 
     private @NotNull Set<PsiElement> getParents(@NotNull PsiElement element) {
@@ -177,7 +174,7 @@ public abstract class LanguageSupporterBase implements LanguageSupporter {
     /**
      * Adds variable type if needed
      *
-     * @param file variable containing file
+     * @param file       variable containing file
      * @param identifier identifier of the declaration
      * @return First: list of the variable type and name in a language specific order.
      * Second: index of the variable name in the list.
@@ -310,10 +307,6 @@ class LimitedRunningTimeIndicator extends AbstractProgressIndicatorBase implemen
         if (super.isCanceled()) {
             return true;
         }
-        if ((System.currentTimeMillis() - startTime) > runningTimeMs) {
-            cancel();
-            return true;
-        }
-        return false;
+        return (System.currentTimeMillis() - startTime) > runningTimeMs;
     }
 }

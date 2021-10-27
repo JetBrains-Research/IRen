@@ -53,8 +53,7 @@ public class RenameUtils {
                                                     @NotNull LinkedHashMap<String, Double> nameProbabilities) {
         LanguageSupporter supporter = LanguageSupporter.getInstance(elementToRename.getLanguage());
         if (ModelStatsService.getInstance().isUsable(
-                ModelManager.getName(elementToRename.getProject(), elementToRename.getLanguage())) &&
-                supporter != null && supporter.isVariable(elementToRename)) {
+                ModelManager.getName(elementToRename.getProject(), elementToRename.getLanguage())) && supporter.isVariable(elementToRename)) {
             LinkedHashMap<String, Double> nameProbs = IRenSuggestingService.getInstance().suggestVariableName((PsiNameIdentifierOwner) elementToRename);
             double unknownNameProb = nameProbs.getOrDefault(Vocabulary.unknownCharacter, 0.);
             double varNameProb = nameProbs.getOrDefault(elementToRename.getText(), 0.) - 1e-4;
