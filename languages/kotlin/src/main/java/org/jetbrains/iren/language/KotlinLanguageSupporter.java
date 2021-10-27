@@ -26,7 +26,6 @@ import org.jetbrains.kotlin.idea.references.ReferenceUtilsKt;
 import org.jetbrains.kotlin.lexer.KtTokens;
 import org.jetbrains.kotlin.psi.*;
 import org.jetbrains.kotlin.types.KotlinType;
-import org.jetbrains.kotlin.types.UnwrappedType;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -76,11 +75,18 @@ public class KotlinLanguageSupporter extends LanguageSupporterBase {
         List<String> varWithType = new ArrayList<>(List.of(identifier.getText()));
         final @NotNull PsiElement parent = identifier.getParent();
         if (parent instanceof KtCallableDeclaration && ((KtCallableDeclaration) parent).getTypeReference() == null) {
-            KotlinType type = runForSomeTime(5, () -> TypeUtilsKt.getType((KtDeclaration) parent));
+            KotlinType type = null;
+            try {
+//                type = runForSomeTime(5, () -> TypeUtilsKt.getType((KtDeclaration) parent));
+                type = TypeUtilsKt.getType((KtDeclaration) parent);
+            } catch (Exception ignore) {
+            }
             if (type != null) {
-                UnwrappedType unwraped = type.unwrap();
-                varWithType.add(":");
-                varWithType.addAll(splitVariableType(renderType(unwraped).replaceAll("/\\*.*\\*/", "")));
+                String rendered = renderType(type).replaceAll("/\\*.*\\*/", "");
+                if (!rendered.isBlank()) {
+                    varWithType.add(":");
+                    varWithType.addAll(splitVariableType(rendered));
+                }
             }
         }
         return new Pair<>(varWithType, 0);
