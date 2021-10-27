@@ -1,6 +1,5 @@
 package org.jetbrains.iren.utils;
 
-import com.google.common.collect.Streams;
 import com.intellij.completion.ngram.slp.translating.Vocabulary;
 import com.intellij.lang.ASTNode;
 import com.intellij.openapi.progress.ProcessCanceledException;
@@ -11,6 +10,7 @@ import com.intellij.openapi.util.Computable;
 import com.intellij.openapi.util.TextRange;
 import com.intellij.psi.*;
 import com.intellij.psi.search.GlobalSearchScope;
+import com.intellij.psi.util.PsiTreeUtil;
 import com.intellij.refactoring.rename.RenamePsiElementProcessor;
 import com.intellij.usageView.UsageInfo;
 import com.intellij.util.SmartList;
@@ -113,24 +113,8 @@ public abstract class LanguageSupporterBase implements LanguageSupporter {
 
     private @NotNull PsiElement findRoot(@NotNull PsiNameIdentifierOwner variable, @NotNull Collection<PsiElement> usages) {
         if (usages.size() < 2) return variable.getParent().getParent();
-//        TODO: use PsiTreeUtil.findCommonParent
-        List<Set<PsiElement>> parents = Streams.concat(Stream.of(variable), usages.stream())
-                .map(this::getParents)
-                .collect(Collectors.toList());
-        Set<PsiElement> common = parents.remove(0);
-        parents.forEach(common::retainAll);
-        Optional<PsiElement> res = common.stream().findFirst();
-        return res.orElseGet(() -> variable.getParent().getParent());
-    }
-
-    private @NotNull Set<PsiElement> getParents(@NotNull PsiElement element) {
-        Set<PsiElement> parents = new LinkedHashSet<>();
-        PsiElement parent = element.getParent();
-        while (!(parent instanceof PsiFile)) {
-            parents.add(parent);
-            parent = parent.getParent();
-        }
-        return parents;
+        @Nullable PsiElement result = PsiTreeUtil.findCommonParent(usages.toArray(new PsiElement[]{}));
+        return result != null ? result : variable.getParent().getParent();
     }
 
     public boolean shouldLex(@NotNull PsiElement element) {
