@@ -75,8 +75,6 @@ public interface LanguageSupporter {
 
     boolean identifierIsVariableDeclaration(@Nullable PsiElement identifier);
 
-    boolean isVariableClass(@NotNull PsiElement token);
-
     @Contract("null -> false")
     boolean isIdentifier(@Nullable PsiElement token);
 

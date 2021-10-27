@@ -3,26 +3,23 @@ package org.jetbrains.iren.language;
 import com.intellij.codeInspection.ProblemsHolder;
 import com.intellij.lang.Language;
 import com.intellij.openapi.fileTypes.FileType;
-import com.intellij.openapi.util.Pair;
 import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiElementVisitor;
-import com.intellij.psi.PsiFile;
 import com.intellij.psi.PsiNameIdentifierOwner;
 import com.intellij.psi.tree.IElementType;
 import com.intellij.refactoring.rename.RenameHandler;
 import com.intellij.refactoring.rename.inplace.VariableInplaceRenameHandler;
 import com.jetbrains.python.PythonFileType;
 import com.jetbrains.python.PythonLanguage;
-import com.jetbrains.python.psi.*;
-import com.jetbrains.python.psi.types.PyType;
-import com.jetbrains.python.psi.types.TypeEvalContext;
+import com.jetbrains.python.psi.PyNamedParameter;
+import com.jetbrains.python.psi.PyReferenceExpression;
+import com.jetbrains.python.psi.PyTargetExpression;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.iren.contributors.NGramVariableNamesContributor;
 import org.jetbrains.iren.inspections.variable.PyVariableVisitor;
 import org.jetbrains.iren.utils.LanguageSupporterBase;
 
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
@@ -60,25 +57,6 @@ public class PyLanguageSupporter extends LanguageSupporterBase {
     @Override
     public void removeHandlers() {
         RenameHandler.EP_NAME.getPoint().unregisterExtension(VariableInplaceRenameHandler.class);
-    }
-
-    @Override
-    protected @NotNull Pair<List<String>, Integer> processVariableDeclaration(@NotNull PsiFile file, @NotNull PsiElement identifier) {
-        List<String> varWithType = new ArrayList<>(List.of(identifier.getText()));
-        final @NotNull PsiElement parent = identifier.getParent();
-        if (parent instanceof PyAnnotationOwner && ((PyAnnotationOwner) parent).getAnnotation() == null) {
-            if (parent instanceof PyTypedElement) {
-                final PyType type = runForSomeTime(5, () -> TypeEvalContext.codeCompletion(file.getProject(), file).getType((PyTypedElement) parent));
-                if (type != null) {
-                    String typeName = type.getName();
-                    if (typeName != null) {
-                        varWithType.add(":");
-                        varWithType.addAll(splitVariableType(typeName));
-                    }
-                }
-            }
-        }
-        return new Pair<>(varWithType, 0);
     }
 
     @Override
