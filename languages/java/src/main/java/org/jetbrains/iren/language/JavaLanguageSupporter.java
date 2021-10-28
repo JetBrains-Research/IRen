@@ -14,8 +14,8 @@ import com.intellij.refactoring.rename.inplace.VariableInplaceRenameHandler;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.iren.contributors.NGramVariableNamesContributor;
+import org.jetbrains.iren.impl.LanguageSupporterBase;
 import org.jetbrains.iren.inspections.variable.JavaVariableVisitor;
-import org.jetbrains.iren.utils.LanguageSupporterBase;
 
 import java.util.Collection;
 import java.util.List;

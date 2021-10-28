@@ -10,6 +10,7 @@ import com.intellij.psi.SmartPointerManager;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.iren.IRenBundle;
+import org.jetbrains.iren.api.LanguageSupporter;
 import org.jetbrains.iren.inspections.variable.RenameVariableQuickFix;
 import org.jetbrains.iren.services.ConsistencyChecker;
 import org.jetbrains.iren.services.IRenSuggestingService;

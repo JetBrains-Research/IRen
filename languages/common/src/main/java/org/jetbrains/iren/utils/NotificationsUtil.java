@@ -10,7 +10,7 @@ import com.intellij.openapi.util.registry.Registry;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.iren.IRenBundle;
-import org.jetbrains.iren.ModelBuilder;
+import org.jetbrains.iren.ngram.ModelBuilder;
 import org.jetbrains.iren.settings.AppSettingsState;
 
 import java.nio.file.Path;

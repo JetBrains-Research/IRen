@@ -73,11 +73,11 @@
         <extensionPoint qualifiedName="org.jetbrains.iren.variableNamesContributor"
                         interface="org.jetbrains.iren.api.VariableNamesContributor" dynamic="true"/>
         <extensionPoint
-                interface="org.jetbrains.iren.utils.LanguageSupporter"
+                interface="org.jetbrains.iren.api.LanguageSupporter"
                 dynamic="true" qualifiedName="org.jetbrains.iren.language.supporter"/>
     </extensionPoints>
     <applicationListeners>
-        <listener class="org.jetbrains.iren.PluginLoadedListener"
+        <listener class="org.jetbrains.iren.application.PluginLoadedListener"
                   topic="com.intellij.ide.plugins.DynamicPluginListener"/>
     </applicationListeners>
 </idea-plugin>

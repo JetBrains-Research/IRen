@@ -1,4 +1,4 @@
-package org.jetbrains.iren;
+package org.jetbrains.iren.ngram;
 
 import com.intellij.completion.ngram.slp.translating.Vocabulary;
 import com.intellij.openapi.application.ApplicationManager;
@@ -18,14 +18,14 @@ import com.intellij.psi.search.GlobalSearchScope;
 import com.intellij.util.ObjectUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.iren.IRenBundle;
+import org.jetbrains.iren.api.LanguageSupporter;
 import org.jetbrains.iren.contributors.ProjectVariableNamesContributor;
-import org.jetbrains.iren.impl.NGramModelRunner;
 import org.jetbrains.iren.services.ConsistencyChecker;
 import org.jetbrains.iren.services.ModelManager;
 import org.jetbrains.iren.services.ModelStatsService;
 import org.jetbrains.iren.settings.AppSettingsState;
 import org.jetbrains.iren.storages.StringCounter;
-import org.jetbrains.iren.utils.LanguageSupporter;
 import org.jetbrains.iren.utils.NotificationsUtil;
 
 import java.nio.file.Path;

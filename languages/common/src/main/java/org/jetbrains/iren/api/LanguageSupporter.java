@@ -1,4 +1,4 @@
-package org.jetbrains.iren.utils;
+package org.jetbrains.iren.api;
 
 import com.intellij.codeInspection.ProblemsHolder;
 import com.intellij.lang.Language;

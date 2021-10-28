@@ -3,10 +3,10 @@ package org.jetbrains.iren.impl;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.project.Project;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.iren.ModelBuilder;
 import org.jetbrains.iren.api.AbstractTrainModelAction;
+import org.jetbrains.iren.api.LanguageSupporter;
+import org.jetbrains.iren.ngram.ModelBuilder;
 import org.jetbrains.iren.services.ModelStatsService;
-import org.jetbrains.iren.utils.LanguageSupporter;
 
 public class TrainProjectNGramModelAction extends AbstractTrainModelAction {
     @Override

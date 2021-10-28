@@ -1,4 +1,4 @@
-package org.jetbrains.iren.impl;
+package org.jetbrains.iren.ngram;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -20,11 +20,10 @@ import kotlin.Pair;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.iren.IRenBundle;
-import org.jetbrains.iren.VocabularyManager;
+import org.jetbrains.iren.api.LanguageSupporter;
 import org.jetbrains.iren.services.IRenSuggestingService;
 import org.jetbrains.iren.storages.Context;
 import org.jetbrains.iren.storages.VarNamePrediction;
-import org.jetbrains.iren.utils.LanguageSupporter;
 
 import java.io.*;
 import java.nio.charset.StandardCharsets;

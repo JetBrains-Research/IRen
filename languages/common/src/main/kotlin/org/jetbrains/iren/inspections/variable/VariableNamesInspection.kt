@@ -3,9 +3,9 @@ package org.jetbrains.iren.inspections.variable
 import com.intellij.codeInspection.LocalInspectionTool
 import com.intellij.codeInspection.ProblemsHolder
 import com.intellij.psi.PsiElementVisitor
+import org.jetbrains.iren.api.LanguageSupporter
 import org.jetbrains.iren.services.ModelManager
 import org.jetbrains.iren.services.ModelStatsService
-import org.jetbrains.iren.utils.LanguageSupporter
 
 class VariableNamesInspection : LocalInspectionTool() {
     override fun buildVisitor(holder: ProblemsHolder, isOnTheFly: Boolean): PsiElementVisitor {

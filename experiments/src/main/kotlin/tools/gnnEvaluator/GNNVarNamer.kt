@@ -7,7 +7,7 @@ import com.intellij.psi.PsiFile
 import com.intellij.psi.PsiNameIdentifierOwner
 import com.intellij.psi.PsiVariable
 import com.intellij.util.io.HttpRequests
-import org.jetbrains.iren.utils.LanguageSupporter
+import org.jetbrains.iren.api.LanguageSupporter
 import tools.graphVarMiner.GraphDatasetExtractor
 import tools.graphVarMiner.JavaGraphExtractor
 import tools.modelsEvaluatorApi.VarNamePredictions

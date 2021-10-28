@@ -17,8 +17,8 @@ import com.jetbrains.python.psi.PyTargetExpression;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.iren.contributors.NGramVariableNamesContributor;
+import org.jetbrains.iren.impl.LanguageSupporterBase;
 import org.jetbrains.iren.inspections.variable.PyVariableVisitor;
-import org.jetbrains.iren.utils.LanguageSupporterBase;
 
 import java.util.Collection;
 import java.util.List;

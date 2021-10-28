@@ -1,4 +1,4 @@
-package org.jetbrains.iren.utils;
+package org.jetbrains.iren.impl;
 
 import com.intellij.completion.ngram.slp.translating.Vocabulary;
 import com.intellij.lang.ASTNode;
@@ -18,6 +18,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.iren.api.LanguageSupporter;
 import org.jetbrains.iren.storages.Context;
 
 import java.time.Duration;

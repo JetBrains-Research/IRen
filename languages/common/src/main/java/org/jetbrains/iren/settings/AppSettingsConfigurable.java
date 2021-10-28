@@ -4,7 +4,7 @@ package org.jetbrains.iren.settings;
 import com.intellij.openapi.options.Configurable;
 import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.Nullable;
-import org.jetbrains.iren.ModelBuilder;
+import org.jetbrains.iren.ngram.ModelBuilder;
 
 import javax.swing.*;
 

@@ -1,4 +1,4 @@
-package org.jetbrains.iren;
+package org.jetbrains.iren.ngram;
 
 import com.intellij.completion.ngram.slp.translating.Vocabulary;
 import com.intellij.completion.ngram.slp.translating.VocabularyRunner;

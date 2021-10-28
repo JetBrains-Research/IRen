@@ -8,7 +8,7 @@ import com.intellij.openapi.project.Project;
 import com.intellij.psi.PsiFile;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.jetbrains.iren.impl.NGramModelRunner;
+import org.jetbrains.iren.ngram.NGramModelRunner;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;

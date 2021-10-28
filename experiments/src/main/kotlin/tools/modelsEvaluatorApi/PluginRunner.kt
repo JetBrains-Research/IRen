@@ -6,10 +6,10 @@ import com.intellij.openapi.application.ApplicationStarter
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.project.ProjectManager
 import com.jetbrains.python.PythonLanguage
-import org.jetbrains.iren.ModelBuilder
-import org.jetbrains.iren.impl.NGramModelRunner
+import org.jetbrains.iren.api.LanguageSupporter
+import org.jetbrains.iren.ngram.ModelBuilder
+import org.jetbrains.iren.ngram.NGramModelRunner
 import org.jetbrains.iren.settings.AppSettingsState
-import org.jetbrains.iren.utils.LanguageSupporter
 import org.jetbrains.kotlin.idea.KotlinLanguage
 import java.io.File
 import java.io.FileOutputStream
@@ -55,7 +55,7 @@ open class PluginRunner : ApplicationStarter {
             ngramType = args[4]
             assert(ngramTypes.contains(ngramType))
             varNamer = createVarNamer()
-            evaluateOn()
+            evaluate()
         } catch (e: IllegalArgumentException) {
             e.printStackTrace()
         } catch (e: OutOfMemoryError) {
@@ -89,7 +89,7 @@ open class PluginRunner : ApplicationStarter {
 //        }
 //    }
 
-    private fun evaluateOn() {
+    private fun evaluate() {
         println("Evaluating models...")
         var projectToClose: Project? = null
         val timeSpentFile: File = saveDir.resolve("timeSpent.csv").toFile()
@@ -111,7 +111,7 @@ open class PluginRunner : ApplicationStarter {
             try {
                 var start = Instant.now()
                 val settings = AppSettingsState.getInstance()
-                settings.maxTrainingTime = 420
+                settings.maxTrainingTime = 10000
                 settings.vocabularyCutOff = 0
                 val modelRunner = NGramModelRunner(true, true, 6)
                 ModelBuilder(project, supporter, null).trainModelRunner(modelRunner)

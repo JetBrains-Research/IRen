@@ -6,9 +6,9 @@ import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiNameIdentifierOwner;
 import kotlin.Pair;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.iren.api.LanguageSupporter;
 import org.jetbrains.iren.api.VariableNamesContributor;
 import org.jetbrains.iren.storages.VarNamePrediction;
-import org.jetbrains.iren.utils.LanguageSupporter;
 import org.jetbrains.iren.utils.NotificationsUtil;
 
 import java.time.Duration;

@@ -1,12 +1,12 @@
-package org.jetbrains.iren;
+package org.jetbrains.iren.application;
 
 import com.intellij.ide.plugins.DynamicPluginListener;
 import com.intellij.ide.plugins.IdeaPluginDescriptor;
 import com.intellij.openapi.util.Disposer;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.iren.api.LanguageSupporter;
 import org.jetbrains.iren.services.ConsistencyChecker;
 import org.jetbrains.iren.services.ModelManager;
-import org.jetbrains.iren.utils.LanguageSupporter;
 
 import static org.jetbrains.iren.utils.NotificationsUtil.askPermissions;
 

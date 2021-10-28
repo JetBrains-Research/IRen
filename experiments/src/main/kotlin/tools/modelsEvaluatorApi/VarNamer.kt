@@ -14,9 +14,9 @@ import com.intellij.psi.SyntaxTraverser
 import com.intellij.psi.search.FileTypeIndex
 import com.intellij.psi.search.GlobalSearchScope
 import me.tongfei.progressbar.ProgressBar
-import org.jetbrains.iren.impl.NGramModelRunner
+import org.jetbrains.iren.api.LanguageSupporter
+import org.jetbrains.iren.ngram.NGramModelRunner
 import org.jetbrains.iren.storages.VarNamePrediction
-import org.jetbrains.iren.utils.LanguageSupporter
 import java.io.File
 import java.io.FileOutputStream
 import java.nio.file.Path

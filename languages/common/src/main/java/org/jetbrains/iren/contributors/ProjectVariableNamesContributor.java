@@ -3,7 +3,7 @@ package org.jetbrains.iren.contributors;
 import com.intellij.psi.PsiNameIdentifierOwner;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.jetbrains.iren.impl.NGramModelRunner;
+import org.jetbrains.iren.ngram.NGramModelRunner;
 import org.jetbrains.iren.services.ModelManager;
 import org.jetbrains.iren.services.ModelStatsService;
 
