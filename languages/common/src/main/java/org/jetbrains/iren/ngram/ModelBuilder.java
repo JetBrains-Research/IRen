@@ -1,6 +1,7 @@
 package org.jetbrains.iren.ngram;
 
 import com.intellij.completion.ngram.slp.translating.Vocabulary;
+import com.intellij.history.core.Paths;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.application.ReadAction;
 import com.intellij.openapi.progress.ProgressIndicator;
@@ -102,6 +103,7 @@ public class ModelBuilder {
     private void train(boolean save) {
         String name = ModelManager.getName(myProject, mySupporter.getLanguage());
         ModelStatsService.getInstance().setUsable(name, false);
+        ModelManager.getInstance().removeModelRunner(name);
         if (myProgressIndicator != null)
             myProgressIndicator.setText(IRenBundle.message("training.progress.indicator.text",
                     String.format("%s; %s", myProject.getName(), mySupporter.getLanguage())));
@@ -151,7 +153,9 @@ public class ModelBuilder {
         }
         final Collection<VirtualFile> files = getProjectFilesInSource();
         if (files.size() == 0) return false;
-        ProgressBar progressBar = new ProgressBar(files.size(), myProgressIndicator);
+        ProgressBar progressBar = new ProgressBar(files.size(),
+                myProgressIndicator,
+                myProject.getBasePath() != null ? Paths.getParentOf(myProject.getBasePath()) : null);
         Instant trainingStart = Instant.now();
         if (vocabularyCutOff > 0) {
             trainVocabulary(modelRunner.getVocabulary(), files, progressBar, trainingStart);
@@ -261,13 +265,15 @@ public class ModelBuilder {
 
 class ProgressBar {
     private final ProgressIndicator progressIndicator;
+    private final String projectPath;
     int progress = 0;
     int total;
     boolean wasVocabTrained = false;
 
-    public ProgressBar(int total, ProgressIndicator progressIndicator) {
+    public ProgressBar(int total, ProgressIndicator progressIndicator, @Nullable String projectPath) {
         this.total = total;
         this.progressIndicator = progressIndicator;
+        this.projectPath = projectPath;
     }
 
     public void clear(int newTotal) {
@@ -290,7 +296,7 @@ class ProgressBar {
             System.out.printf("Status:\t%.0f%%\r", fraction * 100.);
         }
         if (progressIndicator != null) {
-            progressIndicator.setText2(file.getPath());
+            progressIndicator.setText2(projectPath != null ? Paths.relativeIfUnder(file.getPath(), projectPath) : file.getPath());
             progressIndicator.setFraction(modifyFraction.apply(fraction));
         }
     }

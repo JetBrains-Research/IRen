@@ -36,6 +36,6 @@ public class ProjectOpenCloseListener implements ProjectManagerListener {
 
     @Override
     public void projectClosed(@NotNull Project project) {
-        ModelManager.getInstance().deleteProjectModelRunners(project);
+        ModelManager.getInstance().removeProjectModelRunners(project);
     }
 }

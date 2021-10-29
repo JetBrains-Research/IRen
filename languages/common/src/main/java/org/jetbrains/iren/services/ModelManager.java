@@ -42,7 +42,11 @@ public class ModelManager implements Disposable {
         myModelRunners.put(name, modelRunner);
     }
 
-    public void deleteProjectModelRunners(@NotNull Project project) {
+    public void removeModelRunner(@NotNull String name) {
+        myModelRunners.remove(name);
+    }
+
+    public void removeProjectModelRunners(@NotNull Project project) {
         String name = project.getName() + "_" + project.getLocationHash();
         myModelRunners.entrySet().removeIf(entry -> entry.getKey().contains(name));
     }
