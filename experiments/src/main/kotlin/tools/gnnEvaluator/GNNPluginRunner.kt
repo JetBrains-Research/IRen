@@ -1,8 +1,7 @@
 package tools.gnnEvaluator
 
-import com.intellij.openapi.project.Project
 import tools.modelsEvaluatorApi.PluginRunner
-import java.nio.file.Path
+import tools.modelsEvaluatorApi.VarNamer
 
 class GNNPluginRunner : PluginRunner() {
     override val javaSmallTrain = listOf(
@@ -15,7 +14,7 @@ class GNNPluginRunner : PluginRunner() {
 
     override fun getCommandName(): String = "GNNEvaluator"
 
-    override fun predict(project: Project, dir: Path, ngramContributorType: String) {
-        GNNVarNamer().predict(project, dir, ngramContributorType)
+    override fun createVarNamer(): VarNamer {
+        return GNNVarNamer(saveDir, supporter, ngramType)
     }
 }

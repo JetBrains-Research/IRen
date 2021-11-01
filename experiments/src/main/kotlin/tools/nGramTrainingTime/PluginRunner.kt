@@ -2,11 +2,13 @@ package tools.nGramTrainingTime
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.intellij.ide.impl.ProjectUtil
+import com.intellij.lang.java.JavaLanguage
 import com.intellij.openapi.application.ApplicationStarter
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.project.ProjectManager
-import org.jetbrains.iren.contributors.NGramVariableNamesContributor
-import org.jetbrains.iren.impl.NGramModelRunner
+import org.jetbrains.iren.api.LanguageSupporter
+import org.jetbrains.iren.ngram.ModelBuilder
+import org.jetbrains.iren.ngram.NGramModelRunner
 import java.io.File
 import java.nio.file.Path
 import java.nio.file.Paths
@@ -61,11 +63,12 @@ class PluginRunner : ApplicationStarter {
             val trainingTime = ArrayList<Long>()
             for (i in 1..5) {
                 val start = Instant.now()
-                NGramModelRunner(
-                    NGramVariableNamesContributor.SUPPORTED_TYPES,
-                    true
+                ModelBuilder(
+                    project,
+                    LanguageSupporter.getInstance(JavaLanguage.INSTANCE),
+                    null
                 )
-                    .learnProject(project, null)
+                    .trainModelRunner(NGramModelRunner(true, true, 6))
                 trainingTime.add(Duration.between(start, Instant.now()).seconds)
             }
             projectTime.put(projectDir, trainingTime)

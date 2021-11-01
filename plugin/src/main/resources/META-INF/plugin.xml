@@ -24,11 +24,17 @@
     </description>
 
     <depends>com.intellij.modules.platform</depends>
-    <depends>com.intellij.modules.java</depends>
+    <depends optional="true" config-file="java.xml">com.intellij.java</depends>
+    <depends optional="true" config-file="kotlin.xml">org.jetbrains.kotlin</depends>
+    <depends optional="true" config-file="python.xml">com.intellij.modules.python</depends>
+    <applicationListeners>
+        <listener class="org.jetbrains.iren.application.ProjectOpenCloseListener"
+                  topic="com.intellij.openapi.project.ProjectManagerListener"/>
+    </applicationListeners>
     <extensions defaultExtensionNs="com.intellij">
         <!--    Settings part    -->
-        <registryKey key="iren.developer.mode"
-                     description="Registry for showing id names suggesting plugin notifications"
+        <registryKey key="iren.verbose.inference"
+                     description="Registry for showing IRen plugin notifications with inference statistics"
                      defaultValue="False" restartRequired="false"/>
         <applicationService serviceImplementation="org.jetbrains.iren.settings.AppSettingsState"/>
         <applicationConfigurable parentId="tools"
@@ -37,28 +43,20 @@
                                  displayName="IRen Settings"/>
         <!--    End of settings part    -->
         <lookup.usageDetails implementation="org.jetbrains.iren.statistics.IRenLookupUsageDescriptor"/>
-        <applicationService serviceImplementation="org.jetbrains.iren.ModelStatsService"/>
-        <applicationService serviceImplementation="org.jetbrains.iren.ModelManager"/>
-        <applicationService serviceImplementation="org.jetbrains.iren.IRenSuggestingService"/>
-        <applicationService serviceImplementation="org.jetbrains.iren.inspections.variable.PredictionsStorage"/>
-        <backgroundPostStartupActivity
-                implementation="org.jetbrains.iren.LoadingModelStartupActivity"/>
-        <inspectionToolProvider
-                implementation="org.jetbrains.iren.inspections.variable.VariableNamesProvider"/>
+        <applicationService serviceImplementation="org.jetbrains.iren.services.ModelStatsService"/>
+        <applicationService serviceImplementation="org.jetbrains.iren.services.ModelManager"/>
+        <applicationService serviceImplementation="org.jetbrains.iren.services.IRenSuggestingService"/>
+        <applicationService serviceImplementation="org.jetbrains.iren.services.ConsistencyChecker"/>
+        <localInspection displayName="Inconsistent variable names"
+                         groupBundle="messages.IRen"
+                         groupKey="inspection.group.key"
+                         shortName="VariableNamesInspection"
+                         enabledByDefault="true"
+                         level="WARNING"
+                         implementationClass="org.jetbrains.iren.inspections.variable.VariableNamesInspection"/>
         <renameHandler implementation="org.jetbrains.iren.rename.IRenVariableInplaceRenameHandler"/>
         <renameHandler implementation="org.jetbrains.iren.rename.IRenMemberInplaceRenameHandler"/>
-        <!-- Astrid part-->
-        <intentionAction>
-            <className>org.jetbrains.astrid.actions.SuggestionIntentionAction</className>
-            <category>Suggestions list</category>
-            <descriptionDirectoryName>SuggestionIntentionAction</descriptionDirectoryName>
-        </intentionAction>
-
-        <inspectionToolProvider implementation="org.jetbrains.astrid.inspections.method.MethodNamesProvider"/>
-        <inspectionToolProvider implementation="org.jetbrains.astrid.inspections.ifstatement.IfStatementProvider"/>
-
-        <applicationService serviceImplementation="org.jetbrains.astrid.stats.RenameMethodStatistics"/>
-        <!-- End of Astrid part-->
+        <preloadingActivity implementation="org.jetbrains.iren.application.AskPermissionsPreloadingActivity"/>
     </extensions>
     <extensions defaultExtensionNs="org.jetbrains.iren">
         <variableNamesContributor
@@ -74,9 +72,12 @@
     <extensionPoints>
         <extensionPoint qualifiedName="org.jetbrains.iren.variableNamesContributor"
                         interface="org.jetbrains.iren.api.VariableNamesContributor" dynamic="true"/>
+        <extensionPoint
+                interface="org.jetbrains.iren.api.LanguageSupporter"
+                dynamic="true" qualifiedName="org.jetbrains.iren.language.supporter"/>
     </extensionPoints>
     <applicationListeners>
-        <listener class="org.jetbrains.iren.PluginLoadedListener"
+        <listener class="org.jetbrains.iren.application.PluginLoadedListener"
                   topic="com.intellij.ide.plugins.DynamicPluginListener"/>
     </applicationListeners>
 </idea-plugin>

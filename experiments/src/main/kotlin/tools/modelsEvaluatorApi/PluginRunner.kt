@@ -1,33 +1,61 @@
 package tools.modelsEvaluatorApi
 
 import com.intellij.ide.impl.ProjectUtil
+import com.intellij.lang.java.JavaLanguage
 import com.intellij.openapi.application.ApplicationStarter
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.project.ProjectManager
-import org.jetbrains.iren.ModelTrainer
+import com.jetbrains.python.PythonLanguage
+import org.jetbrains.iren.api.LanguageSupporter
+import org.jetbrains.iren.ngram.ModelBuilder
+import org.jetbrains.iren.ngram.NGramModelRunner
+import org.jetbrains.iren.settings.AppSettingsState
+import org.jetbrains.kotlin.idea.KotlinLanguage
 import java.io.File
+import java.io.FileOutputStream
 import java.nio.file.Path
 import java.nio.file.Paths
+import java.time.Duration
+import java.time.Instant
+import java.util.*
 import kotlin.system.exitProcess
 
-abstract class PluginRunner : ApplicationStarter {
+open class PluginRunner : ApplicationStarter {
+    private lateinit var dataset: File
+    protected lateinit var saveDir: Path
+    protected lateinit var supporter: LanguageSupporter
+    protected lateinit var ngramType: String
+    private lateinit var varNamer: VarNamer
+
+    private val ngramTypes = listOf("BiDirectional", "OneDirectional")
+
     protected open val javaSmallTrain = listOf(
         "cassandra", "elasticsearch", "gradle", "hibernate-orm", "intellij-community",
         "liferay-portal", "presto", "spring-framework", "wildfly"
     )
     protected open val javaSmallTest =
         listOf("libgdx", "hadoop")
-//        listOf("TestProject")
+
+    private val projectList: List<String>? = null
 
     override fun getCommandName(): String = "modelsEvaluator"
 
     override fun main(args: Array<out String>) {
         try {
-            val dataset = File(args[1])
-            val saveDir = args[2]
-            val ngramContributorType = args[3]
-            if (ngramContributorType == "global") trainGlobalNGramModelOn(dataset, javaSmallTrain)
-            evaluateOn(dataset, javaSmallTest, Paths.get(saveDir), ngramContributorType)
+            dataset = File(args[1])
+            saveDir = Paths.get(args[2])
+            supporter = LanguageSupporter.getInstance(
+                when (args[3].lowercase(Locale.getDefault())) {
+                    "java" -> JavaLanguage.INSTANCE
+                    "python" -> PythonLanguage.INSTANCE
+                    "kotlin" -> KotlinLanguage.INSTANCE
+                    else -> throw AssertionError("Unknown language")
+                }
+            )
+            ngramType = args[4]
+            assert(ngramTypes.contains(ngramType))
+            varNamer = createVarNamer()
+            evaluate()
         } catch (e: IllegalArgumentException) {
             e.printStackTrace()
         } catch (e: OutOfMemoryError) {
@@ -40,47 +68,75 @@ abstract class PluginRunner : ApplicationStarter {
         }
     }
 
-    private fun trainGlobalNGramModelOn(dataset: File, projectList: List<String>) {
-        println("Training global NGram model...")
-        var projectToClose: Project? = null
-        for (projectDir in projectList) {
-            val projectPath = dataset.resolve(projectDir)
-            println("Opening project $projectDir...")
-            val project = ProjectUtil.openOrImport(projectPath.path, projectToClose, true) ?: continue
-
-            ModelTrainer.trainGlobalNGramModel(project, null, false)
-
-            projectToClose = project
-        }
-        if (projectToClose != null) {
-            ProjectManager.getInstance().closeAndDispose(projectToClose)
-        }
+    open fun createVarNamer(): VarNamer {
+        return VarNamer(saveDir, supporter, ngramType)
     }
 
-    private fun evaluateOn(
-        dataset: File,
-        projectList: List<String>,
-        dir: Path,
-        ngramContributorType: String
-    ) {
+//    private fun trainGlobalNGramModelOn(dataset: File, projectList: List<String>) {
+//        println("Training global NGram model...")
+//        var projectToClose: Project? = null
+//        for (projectDir in projectList) {
+//            val projectPath = dataset.resolve(projectDir)
+//            println("Opening project $projectDir...")
+//            val project = ProjectUtil.openOrImport(projectPath.path, projectToClose, true) ?: continue
+//
+//            ModelBuilder.trainGlobalNGramModel(project, null, false)
+//
+//            projectToClose = project
+//        }
+//        if (projectToClose != null) {
+//            ProjectManager.getInstance().closeAndDispose(projectToClose)
+//        }
+//    }
+
+    private fun evaluate() {
         println("Evaluating models...")
         var projectToClose: Project? = null
-        for (projectDir in projectList) {
+        val timeSpentFile: File = saveDir.resolve("timeSpent.csv").toFile()
+        timeSpentFile.parentFile.mkdirs()
+        if (timeSpentFile.createNewFile()) {
+            FileOutputStream(timeSpentFile, true).bufferedWriter()
+                .use { it.write("Project,TrainingTime,EvaluationTime\n") }
+        }
+        for (projectDir in projectList
+            ?: listOf(*dataset.list { file, name -> file.isDirectory && !name.startsWith(".") } ?: return)) {
             val projectPath = dataset.resolve(projectDir)
             println("Opening project $projectDir...")
             val project = ProjectUtil.openOrImport(projectPath.path, projectToClose, true) ?: continue
 
-            if (ngramContributorType == "project") {
-                ModelTrainer.trainProjectNGramModel(project, null, false)
+            if (ngramType == "OneDirectional") {
+                NGramModelRunner.DEFAULT_BIDIRECTIONAL = false
             }
-            predict(project, dir, ngramContributorType)
 
-            projectToClose = project
+            try {
+                var start = Instant.now()
+                val settings = AppSettingsState.getInstance()
+                settings.maxTrainingTime = 10000
+                settings.vocabularyCutOff = 0
+                val modelRunner = NGramModelRunner(true, true, 6)
+                ModelBuilder(project, supporter, null).trainModelRunner(modelRunner)
+                val trainingTime = Duration.between(start, Instant.now())
+                FileOutputStream(timeSpentFile, true).bufferedWriter().use {
+                    it.write("${project.name},$trainingTime,")
+                }
+
+                start = Instant.now()
+                if (varNamer.predict(modelRunner, project)) {
+                    val evaluationTime = Duration.between(start, Instant.now())
+
+                    FileOutputStream(timeSpentFile, true).bufferedWriter().use {
+                        it.write("$evaluationTime")
+                    }
+                }
+            } finally {
+                FileOutputStream(timeSpentFile, true).bufferedWriter().use {
+                    it.write("\n")
+                }
+                projectToClose = project
+            }
         }
         if (projectToClose != null) {
             ProjectManager.getInstance().closeAndDispose(projectToClose)
         }
     }
-
-    abstract fun predict(project: Project, dir: Path, ngramContributorType: String)
 }

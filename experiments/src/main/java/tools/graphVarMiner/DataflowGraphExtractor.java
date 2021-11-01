@@ -3,7 +3,7 @@ package tools.graphVarMiner;
 import com.intellij.psi.*;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.jetbrains.iren.utils.PsiUtils;
+import org.jetbrains.iren.utils.DeprecatedPsiUtils;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -11,7 +11,7 @@ import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import static org.jetbrains.iren.utils.PsiUtils.*;
+import static org.jetbrains.iren.utils.DeprecatedPsiUtils.*;
 
 public class DataflowGraphExtractor extends JavaElementVisitor implements PsiRecursiveVisitor {
     public static final String LAST_USE = "LastUse";
@@ -172,7 +172,7 @@ public class DataflowGraphExtractor extends JavaElementVisitor implements PsiRec
 //        Add GuardedBy and GuardedByNegation edges
         List<PsiVariable> includeOnly = findVarIdentifiersUnderNode(statement.getCondition())
                 .stream()
-                .map(PsiUtils::findVariableDeclaration)
+                .map(DeprecatedPsiUtils::findVariableDeclaration)
                 .collect(Collectors.toList());
         addEdgesFromNodeIdsToId(statement.getThenBranch(), statement.getCondition(), GUARDED_BY, includeOnly);
         addEdgesFromNodeIdsToId(statement.getElseBranch(), statement.getCondition(), GUARDED_BY_NEGATION, includeOnly);
@@ -283,7 +283,7 @@ public class DataflowGraphExtractor extends JavaElementVisitor implements PsiRec
 //        Add GuardedBy edges
         List<PsiVariable> includeOnly = findVarIdentifiersUnderNode(statement.getCondition())
                 .stream()
-                .map(PsiUtils::findVariableDeclaration)
+                .map(DeprecatedPsiUtils::findVariableDeclaration)
                 .collect(Collectors.toList());
         addEdgesFromNodeIdsToId(statement.getBody(), statement.getCondition(), GUARDED_BY, includeOnly);
     }
@@ -306,7 +306,7 @@ public class DataflowGraphExtractor extends JavaElementVisitor implements PsiRec
         //        Add GuardedBy edges
         List<PsiVariable> includeOnly = findVarIdentifiersUnderNode(statement.getCondition())
                 .stream()
-                .map(PsiUtils::findVariableDeclaration)
+                .map(DeprecatedPsiUtils::findVariableDeclaration)
                 .collect(Collectors.toList());
         addEdgesFromNodeIdsToId(statement.getBody(), statement.getCondition(), GUARDED_BY, includeOnly);
     }
@@ -335,7 +335,7 @@ public class DataflowGraphExtractor extends JavaElementVisitor implements PsiRec
         //        Add GuardedBy edges
         List<PsiVariable> includeOnly = findVarIdentifiersUnderNode(statement.getCondition())
                 .stream()
-                .map(PsiUtils::findVariableDeclaration)
+                .map(DeprecatedPsiUtils::findVariableDeclaration)
                 .collect(Collectors.toList());
         addEdgesFromNodeIdsToId(statement.getBody(), statement.getCondition(), GUARDED_BY, includeOnly);
     }

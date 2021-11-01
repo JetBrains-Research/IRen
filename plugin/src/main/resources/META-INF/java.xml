@@ -1,0 +1,20 @@
+<idea-plugin>
+    <depends>com.intellij.java</depends>
+    <extensions defaultExtensionNs="org.jetbrains.iren.language">
+        <supporter implementation="org.jetbrains.iren.language.JavaLanguageSupporter"/>
+    </extensions>
+    <extensions defaultExtensionNs="com.intellij">
+        <!-- Astrid part-->
+        <intentionAction>
+            <className>org.jetbrains.astrid.actions.SuggestionIntentionAction</className>
+            <category>Suggestions list</category>
+            <descriptionDirectoryName>SuggestionIntentionAction</descriptionDirectoryName>
+        </intentionAction>
+
+        <inspectionToolProvider implementation="org.jetbrains.astrid.inspections.method.MethodNamesProvider"/>
+        <inspectionToolProvider implementation="org.jetbrains.astrid.inspections.ifstatement.IfStatementProvider"/>
+
+        <applicationService serviceImplementation="org.jetbrains.astrid.stats.RenameMethodStatistics"/>
+        <!-- End of Astrid part-->
+    </extensions>
+</idea-plugin>

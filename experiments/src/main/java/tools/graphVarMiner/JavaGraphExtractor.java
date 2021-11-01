@@ -3,13 +3,13 @@ package tools.graphVarMiner;
 import com.intellij.openapi.util.TextRange;
 import com.intellij.psi.*;
 import org.jetbrains.annotations.Nullable;
-import org.jetbrains.iren.utils.PsiUtils;
+import org.jetbrains.iren.utils.DeprecatedPsiUtils;
 
 import java.util.HashMap;
 import java.util.Map;
 import java.util.stream.Stream;
 
-import static org.jetbrains.iren.utils.PsiUtils.*;
+import static org.jetbrains.iren.utils.DeprecatedPsiUtils.*;
 
 public class JavaGraphExtractor {
     public final static String NEXT_TOKEN = "NextToken";
@@ -27,7 +27,7 @@ public class JavaGraphExtractor {
                 .withRoot(file)
                 .onRange(new TextRange(0, 64 * 1024)) // first 128 KB of chars
                 .forceIgnore(node -> node instanceof PsiComment)
-                .filter(PsiUtils::shouldLex)) {
+                .filter(DeprecatedPsiUtils::shouldLex)) {
             if (lastToken != null) {
                 codeGraph.addEdge(lastToken, token, NEXT_TOKEN, true);
             }
@@ -80,7 +80,7 @@ public class JavaGraphExtractor {
     private Graph<PsiElement> createSubgraph(Graph<PsiElement> graph, PsiVariable variable) {
         Graph<PsiElement> subgraph = new Graph<>();
         Stream.concat(Stream.of(variable), findReferences(variable, this.file))
-                .map(PsiUtils::getIdentifier)
+                .map(DeprecatedPsiUtils::getIdentifier)
                 .forEach(identifier -> subgraph.copyEdgesFromNode(identifier, graph, 8));
         return subgraph;
     }
