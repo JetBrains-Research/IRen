@@ -10,19 +10,19 @@ import com.intellij.openapi.util.Key;
 import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiNameIdentifierOwner;
 import com.intellij.psi.PsiNamedElement;
+import com.intellij.util.containers.SmartHashSet;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.ArrayList;
+import java.util.Collection;
 import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
 
 public class ConsistencyChecker implements Disposable {
-    public static Key<List<String>> rememberedNames = Key.create("names");
+    public static Key<Collection<String>> rememberedNames = Key.create("names");
     public static ConsistencyChecker getInstance() {
         return ApplicationManager.getApplication().getService(ConsistencyChecker.class);
     }
@@ -40,9 +40,9 @@ public class ConsistencyChecker implements Disposable {
                     );
 
     public static void rememberVariableName(@NotNull PsiElement elementToStoreNames, @NotNull String insertedName) {
-        @Nullable List<String> names = elementToStoreNames.getUserData(ConsistencyChecker.rememberedNames);
+        @Nullable Collection<String> names = elementToStoreNames.getUserData(ConsistencyChecker.rememberedNames);
         if (names == null) {
-            names = new ArrayList<>();
+            names = new SmartHashSet<>();
             elementToStoreNames.putUserData(ConsistencyChecker.rememberedNames, names);
         }
         names.add(insertedName);
@@ -53,7 +53,7 @@ public class ConsistencyChecker implements Disposable {
         if (nameIdentifier == null) return false;
         final PsiElement elementToStoreNames = getElementToStoreNames(variable);
         if (elementToStoreNames == null) return false;
-        final List<String> names = elementToStoreNames.getUserData(rememberedNames);
+        final Collection<String> names = elementToStoreNames.getUserData(rememberedNames);
         return names != null && names.contains(nameIdentifier.getText());
     }
 
