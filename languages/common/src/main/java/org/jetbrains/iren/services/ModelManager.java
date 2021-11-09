@@ -8,7 +8,7 @@ import com.intellij.openapi.project.Project;
 import com.intellij.psi.PsiFile;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.jetbrains.iren.ngram.NGramModelRunner;
+import org.jetbrains.iren.api.ModelRunner;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -16,7 +16,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class ModelManager implements Disposable {
-    private final Map<String, NGramModelRunner> myModelRunners = new HashMap<>();
+    private final Map<String, ModelRunner> myModelRunners = new HashMap<>();
 
     public static final Path MODELS_DIRECTORY = Paths.get(PathManager.getSystemPath(), "models");
 
@@ -34,11 +34,11 @@ public class ModelManager implements Disposable {
                 (language != null ? language.getID() : "");
     }
 
-    public @Nullable NGramModelRunner getModelRunner(@NotNull String name) {
+    public @Nullable ModelRunner getModelRunner(@NotNull String name) {
         return myModelRunners.get(name);
     }
 
-    public void putModelRunner(@NotNull String name, @NotNull NGramModelRunner modelRunner) {
+    public void putModelRunner(@NotNull String name, @NotNull ModelRunner modelRunner) {
         myModelRunners.put(name, modelRunner);
     }
 
@@ -58,7 +58,7 @@ public class ModelManager implements Disposable {
 
     private final Map<String, PsiFile> fileMap = new HashMap<>();
 
-    public synchronized void forgetFileIfNeeded(@NotNull NGramModelRunner modelRunner, @NotNull PsiFile newFile) {
+    public synchronized void forgetFileIfNeeded(@NotNull ModelRunner modelRunner, @NotNull PsiFile newFile) {
         String modelKey = modelRunner.toString();
         PsiFile oldFile = fileMap.get(modelKey);
         if (newFile != oldFile) {

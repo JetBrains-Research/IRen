@@ -68,7 +68,7 @@ class PluginRunner : ApplicationStarter {
                     LanguageSupporter.getInstance(JavaLanguage.INSTANCE),
                     null
                 )
-                    .trainModelRunner(NGramModelRunner(true, true, 6))
+                    .trainModelRunner(NGramModelRunner(true, 6))
                 trainingTime.add(Duration.between(start, Instant.now()).seconds)
             }
             projectTime.put(projectDir, trainingTime)

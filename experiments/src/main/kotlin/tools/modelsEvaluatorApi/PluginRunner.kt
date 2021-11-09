@@ -113,7 +113,7 @@ open class PluginRunner : ApplicationStarter {
                 val settings = AppSettingsState.getInstance()
                 settings.maxTrainingTime = 10000
                 settings.vocabularyCutOff = 0
-                val modelRunner = NGramModelRunner(true, true, 6)
+                val modelRunner = NGramModelRunner(true, 6)
                 ModelBuilder(project, supporter, null).trainModelRunner(modelRunner)
                 val trainingTime = Duration.between(start, Instant.now())
                 FileOutputStream(timeSpentFile, true).bufferedWriter().use {

@@ -43,7 +43,7 @@ open class VarNamer(
         (0 until numberOfThreads).map {
             thread {
                 println("Preparing ${it + 1}-th runner")
-                val runner = NGramModelRunner(true, true, 6)
+                val runner = NGramModelRunner(true, 6)
                 runner.load(modelDir, null)
                 modelRunners.add(runner)
             }

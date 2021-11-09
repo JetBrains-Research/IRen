@@ -21,6 +21,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.iren.IRenBundle;
 import org.jetbrains.iren.api.LanguageSupporter;
+import org.jetbrains.iren.api.ModelRunner;
 import org.jetbrains.iren.contributors.ProjectVariableNamesContributor;
 import org.jetbrains.iren.services.ConsistencyChecker;
 import org.jetbrains.iren.services.ModelManager;
@@ -111,15 +112,15 @@ public class ModelBuilder {
         Instant start = Instant.now();
         NGramModelRunner modelRunner = new NGramModelRunner();
         if (!trainModelRunner(modelRunner)) return;
-
-        if (resolvingCounter(modelRunner)) return;
-        ModelManager.getInstance().putModelRunner(name, modelRunner);
         String saveStats = null;
         if (save) {
             if (myProgressIndicator != null) myProgressIndicator.setText(IRenBundle.message("saving.project.model",
                     String.format("%s; %s", myProject.getName(), mySupporter.getLanguage())));
 
-            double size = modelRunner.save(ModelManager.getPath(name), myProgressIndicator);
+            final Path modelPath = ModelManager.getPath(name);
+            modelRunner = new PersistentNGramModelRunner(modelRunner);
+            double size = modelRunner.save(modelPath, myProgressIndicator);
+            if (size <= 0 || !modelRunner.loadCounters(modelPath, myProgressIndicator)) return;
             saveStats = String.format("Model size: %.3f Mb", size);
             System.out.println(saveStats);
         }
@@ -130,23 +131,15 @@ public class ModelBuilder {
                         myProject.getName(),
                         mySupporter.getLanguage(),
                         Duration.between(start, Instant.now()).toSeconds(),
-                        modelRunner.getVocabulary().size()) + saveStats,
+                        modelRunner.getVocabulary().size()
+                ) + saveStats,
                 saveStats != null ? ModelManager.getPath(name) : null
         );
+        ModelManager.getInstance().putModelRunner(name, modelRunner);
         ModelStatsService.getInstance().setUsable(name, true);
     }
 
-    private boolean resolvingCounter(NGramModelRunner modelRunner) {
-        if (myProgressIndicator != null) {
-            if (myProgressIndicator.isCanceled()) return true;
-            myProgressIndicator.setIndeterminate(true);
-            myProgressIndicator.setText2("Resolving counter...");
-        }
-        modelRunner.resolveCounter();
-        return false;
-    }
-
-    public boolean trainModelRunner(@NotNull NGramModelRunner modelRunner) {
+    public boolean trainModelRunner(@NotNull ModelRunner modelRunner) {
         modelRunner.train();
         if (myProgressIndicator != null) {
             myProgressIndicator.setIndeterminate(false);
@@ -199,7 +192,7 @@ public class ModelBuilder {
                         .minusSeconds(maxTrainingTime).isNegative());
     }
 
-    private void trainNGramModel(@NotNull NGramModelRunner modelRunner,
+    private void trainNGramModel(@NotNull ModelRunner modelRunner,
                                  @NotNull Collection<VirtualFile> files,
                                  @NotNull ProgressBar progressBar,
                                  Instant trainingStart) {
@@ -238,14 +231,13 @@ public class ModelBuilder {
         for (LanguageSupporter supporter : LanguageSupporter.INSTANCE.getExtensionList()) {
             indicator.setText(supporter.getLanguage().toString());
             String name = ModelManager.getName(project, supporter.getLanguage());
-            NGramModelRunner modelRunner = new NGramModelRunner();
+            ModelRunner modelRunner = new PersistentNGramModelRunner();
             Instant start = Instant.now();
             final Path modelPath = ModelManager.getPath(name);
             boolean isLoaded = modelRunner.load(modelPath, indicator);
             isSmthngLoaded |= isLoaded;
             if (isLoaded) {
                 modelRunner.getVocabulary().close();
-                modelRunner.resolveCounter();
                 ModelManager.getInstance().putModelRunner(name, modelRunner);
                 ModelStatsService.getInstance().setUsable(name, true);
                 NotificationsUtil.notificationAboutModel(project,
