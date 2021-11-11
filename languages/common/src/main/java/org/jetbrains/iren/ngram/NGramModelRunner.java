@@ -57,16 +57,14 @@ public class NGramModelRunner implements ModelRunner {
     }
 
     public NGramModelRunner(boolean biDirectional, int order) {
-        this.biDirectional = biDirectional;
-        this.order = order;
-        myVocabulary = new Vocabulary();
-        myRememberedIdentifiers = new HashSet<>();
-        if (biDirectional) {
-            myModel = new BiDirectionalModel(new JMModel(order, 0.5, new MapTrieCounter()),
-                    new JMModel(order, 0.5, new MapTrieCounter()));
-        } else {
-            myModel = new JMModel(order, 0.5, new MapTrieCounter());
-        }
+        this(biDirectional ?
+                        new BiDirectionalModel(new JMModel(order, 0.5, new MapTrieCounter()),
+                                new JMModel(order, 0.5, new MapTrieCounter())) :
+                        new JMModel(order, 0.5, new MapTrieCounter()),
+                new Vocabulary(),
+                new HashSet<>(),
+                biDirectional,
+                order);
     }
 
     public NGramModelRunner(Model model, Vocabulary vocabulary, Set<Integer> rememberedIdentifiers, boolean biDirectional, int order) {

@@ -8,12 +8,16 @@ import com.intellij.completion.ngram.slp.modeling.ngram.NGramModel;
 import com.intellij.completion.ngram.slp.translating.Vocabulary;
 import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.psi.PsiFile;
+import com.intellij.psi.PsiNameIdentifierOwner;
+import kotlin.Pair;
+import my.counting.persistent.PersistentCounter;
 import my.counting.persistent.PersistentCounterManager;
 import my.counting.trie.MapTrieCounter;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.iren.IRenBundle;
 import org.jetbrains.iren.storages.Context;
+import org.jetbrains.iren.storages.VarNamePrediction;
 
 import java.io.*;
 import java.nio.file.Path;
@@ -28,40 +32,58 @@ public class PersistentNGramModelRunner extends NGramModelRunner {
                 modelRunner.order);
     }
 
+    @Override
+    public @NotNull Pair<Double, Integer> getProbability(PsiNameIdentifierOwner variable, boolean forgetContext) {
+        openRaf();
+        try {
+            return super.getProbability(variable, forgetContext);
+        } finally {
+            closeRaf();
+        }
+    }
+
+    @Override
+    public @NotNull List<VarNamePrediction> suggestNames(@NotNull PsiNameIdentifierOwner variable, boolean forgetContext) {
+        openRaf();
+        try {
+            return super.suggestNames(variable, forgetContext);
+        } finally {
+            closeRaf();
+        }
+    }
+
+    private void openRaf() {
+        if (biDirectional) {
+            ((PersistentCounter)((NGramModel) ((BiDirectionalModel) myModel).getForward())
+                    .getCounter()).getCache().openRaf();
+            ((PersistentCounter)((NGramModel) ((BiDirectionalModel) myModel).getReverse())
+                    .getCounter()).getCache().openRaf();
+        } else {
+            ((PersistentCounter)((NGramModel) myModel).getCounter()).getCache().openRaf();
+        }
+    }
+
+    private void closeRaf() {
+        if (biDirectional) {
+            ((PersistentCounter)((NGramModel) ((BiDirectionalModel) myModel).getForward())
+                    .getCounter()).getCache().closeRaf();
+            ((PersistentCounter)((NGramModel) ((BiDirectionalModel) myModel).getReverse())
+                    .getCounter()).getCache().closeRaf();
+        } else {
+            ((PersistentCounter)((NGramModel) myModel).getCounter()).getCache().closeRaf();
+        }
+    }
+
     public PersistentNGramModelRunner() {
-        this(DEFAULT_BIDIRECTIONAL, 6);
+        super();
     }
 
     public PersistentNGramModelRunner(boolean biDirectional, int order) {
-        this(biDirectional ?
-                        new BiDirectionalModel(new JMModel(order, 0.5, new MapTrieCounter()),
-                                new JMModel(order, 0.5, new MapTrieCounter())) :
-                        new JMModel(order, 0.5, new MapTrieCounter()),
-                new Vocabulary(),
-                new HashSet<>(),
-                biDirectional,
-                order);
+        super(biDirectional, order);
     }
 
     public PersistentNGramModelRunner(Model model, Vocabulary vocabulary, Set<Integer> rememberedIdentifiers, boolean biDirectional, int order) {
         super(model, vocabulary, rememberedIdentifiers, biDirectional, order);
-    }
-
-    @Override
-    public void learnContext(@NotNull Context<Integer> context) {
-    }
-
-    @Override
-    public void forgetContext(@NotNull Context<Integer> context) {
-    }
-
-    @Override
-    public void learnPsiFile(@NotNull PsiFile file) {
-    }
-
-    @Override
-    public void forgetPsiFile(@NotNull PsiFile file) {
-//        TODO: add counters which will be subtracted from myModel's counters
     }
 
     @Override
@@ -88,7 +110,7 @@ public class PersistentNGramModelRunner extends NGramModelRunner {
             File reverseCounterFile = modelPath.resolve(REVERSE_COUNTER_FILE).toFile();
             if (!forwardCounterFile.exists() || !reverseCounterFile.exists()) return false;
 
-            Counter counter = loadCounter(forwardCounterFile, progressIndicator);
+            PersistentCounter counter = loadCounter(forwardCounterFile, progressIndicator);
             if (counter == null) return false;
             ((NGramModel) ((BiDirectionalModel) myModel).getForward()).setCounter(counter);
 
@@ -98,14 +120,14 @@ public class PersistentNGramModelRunner extends NGramModelRunner {
         } else {
             File counterFile = modelPath.resolve(COUNTER_FILE).toFile();
             if (!counterFile.exists()) return false;
-            Counter counter = loadCounter(counterFile, progressIndicator);
+            PersistentCounter counter = loadCounter(counterFile, progressIndicator);
             if (counter == null) return false;
-            ((NGramModel) ((BiDirectionalModel) myModel).getReverse()).setCounter(counter);
+            ((NGramModel) myModel).setCounter(counter);
         }
         return true;
     }
 
-    private @Nullable Counter loadCounter(File counterFile, ProgressIndicator progressIndicator) {
+    private @Nullable PersistentCounter loadCounter(File counterFile, ProgressIndicator progressIndicator) {
         if (progressIndicator != null) {
             if (progressIndicator.isCanceled()) return null;
             progressIndicator.setIndeterminate(true);

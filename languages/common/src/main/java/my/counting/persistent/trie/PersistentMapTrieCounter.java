@@ -23,25 +23,23 @@ package my.counting.persistent.trie;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.io.ByteArrayInputStream;
+import java.io.DataInputStream;
 import java.io.IOException;
 import java.io.RandomAccessFile;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
-import static my.counting.persistent.PersistentCounterManager.readCounter;
+import java.util.*;
+import java.util.concurrent.locks.Lock;
 
 public class PersistentMapTrieCounter extends PersistentAbstractTrie {
     private HashMap<Integer, Integer> map;
     private ArrayList<Integer> pseudoOrdering;
 
-    public PersistentMapTrieCounter(String counterPath) {
-        this(counterPath, 1);
+    public PersistentMapTrieCounter(String counterPath, CountersCache cache) {
+        this(counterPath, cache, 1);
     }
 
-    public PersistentMapTrieCounter(String counterPath, int initSize) {
-        super(counterPath);
+    public PersistentMapTrieCounter(String counterPath, CountersCache cache, int initSize) {
+        super(counterPath, cache);
         //this.map = new Int2ObjectOpenHashMap<>(initSize);
         this.map = new HashMap<>(initSize);
         //this.map.defaultReturnValue(null);
@@ -50,9 +48,11 @@ public class PersistentMapTrieCounter extends PersistentAbstractTrie {
 
     private static final Map<Integer, Integer> cache = new HashMap<>();
 
+    /**
+     * Don't use. Added for compatibility reasons.
+     */
     public PersistentMapTrieCounter() {
-//		Added for compatibility reasons
-        super("");
+        super("", null);
     }
 
     @Override
@@ -76,7 +76,7 @@ public class PersistentMapTrieCounter extends PersistentAbstractTrie {
     @Override
     public @Nullable Object getSuccessor(int next) {
         @Nullable Integer idx = map.get(next);
-        return idx == null ? null : readCounter(counterPath, idx);
+        return idx == null ? null : readCounter(idx);
     }
 
     private int compareCounts(Integer i1, Integer i2) {
@@ -86,17 +86,31 @@ public class PersistentMapTrieCounter extends PersistentAbstractTrie {
     }
 
     @Override
-    public void readExternal(@NotNull RandomAccessFile raf) throws IOException {
-        this.counts = new int[2];
-        this.counts[0] = raf.readInt();
-        this.counts[1] = raf.readInt();
+    public void readExternal(@NotNull RandomAccessFile raf, @NotNull Lock rafLock) throws IOException {
         int successors = raf.readInt();
-        this.map = new HashMap<>(successors, 0.9f);
-        for (int pos = 0; pos < successors; pos++) {
-            int key = raf.readInt();
-            int idx = raf.readInt();
-            map.put(key, idx);
-            pseudoOrdering.add(key);
+        byte[] bs = new byte[(successors + 1) * 4 * 2];
+        try {
+            raf.readFully(bs);
+        } finally {
+            rafLock.unlock();
         }
+        try (ByteArrayInputStream bin = new ByteArrayInputStream(bs);
+             DataInputStream din = new DataInputStream(bin)) {
+            this.counts = new int[2];
+            this.counts[0] = din.readInt();
+            this.counts[1] = din.readInt();
+            this.map = new HashMap<>(successors, 0.9f);
+            for (int pos = 0; pos < successors; pos++) {
+                int key = din.readInt();
+                int idx = din.readInt();
+                map.put(key, idx);
+                pseudoOrdering.add(key);
+            }
+        }
+    }
+
+    @Override
+    protected Collection<Integer> getSuccessorIdxs() {
+        return map.values();
     }
 }

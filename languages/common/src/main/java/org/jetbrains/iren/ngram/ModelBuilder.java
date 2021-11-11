@@ -45,14 +45,6 @@ public class ModelBuilder {
     private final int vocabularyCutOff = AppSettingsState.getInstance().vocabularyCutOff;
     private final int maxTrainingTime = AppSettingsState.getInstance().maxTrainingTime;
 
-    public ModelBuilder(@NotNull Project project,
-                        @NotNull LanguageSupporter supporter,
-                        @Nullable ProgressIndicator progressIndicator) {
-        myProject = project;
-        mySupporter = supporter;
-        myProgressIndicator = progressIndicator;
-    }
-
     public static void trainModelsForAllProjectsInBackground() {
         ProgressManager.getInstance().run(new Task.Backgroundable(null, IRenBundle.message("training.task.title")) {
             @Override
@@ -99,6 +91,14 @@ public class ModelBuilder {
 
     public static void trainWithSupporter(Project project, LanguageSupporter supporter, ProgressIndicator progressIndicator, boolean save) {
         new ModelBuilder(project, supporter, progressIndicator).train(save);
+    }
+
+    public ModelBuilder(@NotNull Project project,
+                        @NotNull LanguageSupporter supporter,
+                        @Nullable ProgressIndicator progressIndicator) {
+        myProject = project;
+        mySupporter = supporter;
+        myProgressIndicator = progressIndicator;
     }
 
     private void train(boolean save) {

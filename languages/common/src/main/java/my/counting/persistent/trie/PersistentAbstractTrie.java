@@ -16,22 +16,36 @@
 package my.counting.persistent.trie;
 
 import com.intellij.completion.ngram.slp.counting.trie.ArrayStorage;
-import my.counting.persistent.PersistentCounterManager;
 import my.counting.persistent.PersistentCounter;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
-import java.io.*;
+import java.io.IOException;
+import java.io.ObjectInput;
+import java.io.ObjectOutput;
+import java.io.RandomAccessFile;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
-
-import static my.counting.persistent.PersistentCounterManager.readArray;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.locks.Lock;
 
 public abstract class PersistentAbstractTrie extends PersistentCounter {
     int[] counts;
     protected String counterPath;
 
-    public PersistentAbstractTrie(String counterPath) {
+    @Override
+    public @NotNull CountersCache getCache() {
+        return cache;
+    }
+
+    CountersCache cache;
+
+    public PersistentAbstractTrie(String counterPath, CountersCache cache) {
         this.counterPath = counterPath;
         this.counts = new int[2];
+        this.cache = cache;
     }
 
     /**
@@ -42,6 +56,8 @@ public abstract class PersistentAbstractTrie extends PersistentCounter {
 
     public abstract Object getSuccessor(int key);
 
+    protected abstract Collection<Integer> getSuccessorIdxs();
+
     abstract List<Integer> getTopSuccessorsInternal(int limit);
 
     public final void readExternal(ObjectInput in) {
@@ -50,11 +66,8 @@ public abstract class PersistentAbstractTrie extends PersistentCounter {
     public final void writeExternal(ObjectOutput out) {
     }
 
-    public abstract void readExternal(RandomAccessFile raf) throws IOException;
+    public abstract void readExternal(@NotNull RandomAccessFile raf, @NotNull Lock rafLock) throws IOException;
 
-    /*
-     * Getters and Setters
-     */
     @Override
     public final int getCount() {
         return this.counts[0];
@@ -135,4 +148,47 @@ public abstract class PersistentAbstractTrie extends PersistentCounter {
             return successors;
         }
     }
+
+    public @Nullable Object readCounter(int idx) {
+        try {
+            return cache.get(idx);
+        } catch (ExecutionException e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+
+    @Override
+    public void prepareCache() {
+        cache.openRaf();
+        try {
+            prepareCache(0);
+        } finally {
+            cache.closeRaf();
+        }
+    }
+
+    private void prepareCache(int currentDepth) {
+        if (currentDepth < CountersCache.CACHE_DEPTH) {
+            ConcurrentHashMap<Integer, Object> successors = new ConcurrentHashMap<>();
+            getSuccessorIdxs().forEach(idx -> {
+                if (idx < Integer.MAX_VALUE) {
+                    try {
+                        successors.put(idx, cache.readFromFile(idx));
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                }
+            });
+            successors.forEach((idx, counter) -> {
+                if (counter != null) {
+                    cache.addToStatic(idx, counter);
+                    if (counter instanceof PersistentAbstractTrie) {
+                        ((PersistentAbstractTrie) counter).prepareCache(currentDepth + 1);
+                    }
+                }
+            });
+        }
+    }
 }
+

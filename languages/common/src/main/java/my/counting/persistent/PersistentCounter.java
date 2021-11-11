@@ -1,7 +1,9 @@
 package my.counting.persistent;
 
 import com.intellij.completion.ngram.slp.counting.Counter;
+import my.counting.persistent.trie.CountersCache;
 import org.apache.commons.lang.NotImplementedException;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
 
@@ -18,11 +20,11 @@ public abstract class PersistentCounter implements Counter {
     }
 
     @Override
-    public final void count(List<Integer> indices) {
+    public void count(List<Integer> indices) {
     }
 
     @Override
-    public final void unCount(List<Integer> indices) {
+    public void unCount(List<Integer> indices) {
     }
 
     @Override
@@ -44,4 +46,8 @@ public abstract class PersistentCounter implements Counter {
     public final int getSuccessorCount() {
         return 0;
     }
+
+    public abstract void prepareCache();
+
+    public abstract @NotNull CountersCache getCache();
 }
