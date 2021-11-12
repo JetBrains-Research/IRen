@@ -29,10 +29,10 @@ import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.util.*;
 import java.util.concurrent.locks.Lock;
+import java.util.stream.Collectors;
 
 public class PersistentMapTrieCounter extends PersistentAbstractTrie {
     private HashMap<Integer, Integer> map;
-    private ArrayList<Integer> pseudoOrdering;
 
     public PersistentMapTrieCounter(String counterPath, CountersCache cache) {
         this(counterPath, cache, 1);
@@ -40,11 +40,8 @@ public class PersistentMapTrieCounter extends PersistentAbstractTrie {
 
     public PersistentMapTrieCounter(String counterPath, CountersCache cache, int initSize) {
         super(counterPath, cache);
-        this.map = new HashMap<>(initSize);
-        this.pseudoOrdering = new ArrayList<>();
+        this.map = new LinkedHashMap<>(initSize);
     }
-
-    private static final Map<Integer, Integer> cache = new HashMap<>();
 
     /**
      * Don't use. Added for compatibility reasons.
@@ -55,32 +52,14 @@ public class PersistentMapTrieCounter extends PersistentAbstractTrie {
 
     @Override
     public List<Integer> getTopSuccessorsInternal(int limit) {
-        int classKey = this.hashCode();
-        int countsKey = this.keyCode();
-        Integer cached = cache.get(classKey);
-        if (cached == null || cached != countsKey) {
-            this.pseudoOrdering.sort(this::compareCounts);
-        }
-        int end = Math.min(this.pseudoOrdering.size(), limit);
-        List<Integer> topSuccessors = new ArrayList<>(this.pseudoOrdering.subList(0, end));
-        if (this.getSuccessorCount() > 10) cache.put(classKey, countsKey);
-        return topSuccessors;
-    }
-
-    private int keyCode() {
-        return 31 * (this.getSuccessorCount() + 31 * this.getCount());
+        int end = Math.min(map.size(), limit);
+        return map.keySet().stream().limit(end).collect(Collectors.toList());
     }
 
     @Override
     public @Nullable Object getSuccessor(int next) {
         @Nullable Integer idx = map.get(next);
         return idx == null ? null : readCounter(idx);
-    }
-
-    private int compareCounts(Integer i1, Integer i2) {
-        int base = -Integer.compare(getCount(getSuccessor(i1)), getCount(getSuccessor(i2)));
-        if (base != 0) return base;
-        return Integer.compare(i1, i2);
     }
 
     @Override
@@ -102,7 +81,6 @@ public class PersistentMapTrieCounter extends PersistentAbstractTrie {
                 int key = din.readInt();
                 int idx = din.readInt();
                 map.put(key, idx);
-                pseudoOrdering.add(key);
             }
         }
     }

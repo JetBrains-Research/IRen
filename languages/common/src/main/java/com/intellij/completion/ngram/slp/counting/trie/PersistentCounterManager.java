@@ -8,9 +8,11 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.*;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.stream.Collectors;
 
 public class PersistentCounterManager {
     public static int MAP_TRIE_COUNTER_CODE = -1;
@@ -53,7 +55,7 @@ public class PersistentCounterManager {
 
     private int writeMapTrieCounter(@NotNull MapTrieCounter counter) throws IOException {
 //        Starting to write from children
-        Map<Integer, Integer> childrenToWrite = new LinkedHashMap<>();
+        Map<Integer, Integer> childrenToWrite = new HashMap<>();
         for (Entry<Integer, Object> entry : counter.map.entrySet()) {
             if (entry.getValue() != null) {
                 childrenToWrite.put(entry.getKey(), write(entry.getValue()));
@@ -68,7 +70,7 @@ public class PersistentCounterManager {
 
     private int writeArrayTrieCounter(@NotNull ArrayTrieCounter counter) throws IOException {
 //        Starting to write from children
-        Map<Integer, Integer> childrenToWrite = new LinkedHashMap<>();
+        Map<Integer, Integer> childrenToWrite = new HashMap<>();
         for (int i = 0; i < counter.indices.length; i++) {
             if (counter.indices[i] < Integer.MAX_VALUE &&
                     counter.successors[i] != null)
@@ -83,6 +85,7 @@ public class PersistentCounterManager {
 
     private void writeAfterChildren(@NotNull AbstractTrie counter,
                                     Map<Integer, Integer> childrenToWrite) throws IOException {
+        childrenToWrite = sortChildren(counter, childrenToWrite);
         writeInt(childrenToWrite.size());
         writeInt(counter.counts[0]);
         writeInt(counter.counts[1]);
@@ -90,6 +93,17 @@ public class PersistentCounterManager {
             writeInt(entry.getKey());
             writeInt(entry.getValue());
         }
+    }
+
+    private Map<Integer, Integer> sortChildren(AbstractTrie counter, Map<Integer, Integer> childrenToWrite) {
+        return counter.getTopSuccessorsInternal(Integer.MAX_VALUE).stream()
+                .collect(Collectors.toMap(
+                        i -> i,
+                        childrenToWrite::get,
+                        (v1, v2) -> {
+                            throw new IllegalStateException();
+                        },
+                        LinkedHashMap::new));
     }
 
     public int writeArray(int @NotNull [] array) throws IOException {

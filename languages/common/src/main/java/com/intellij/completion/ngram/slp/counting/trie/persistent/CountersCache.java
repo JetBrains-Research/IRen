@@ -26,7 +26,7 @@ public class CountersCache {
     private final Map<Integer, Object> staticCache = new HashMap<>();
     private final LoadingCache<Integer, Object> dynamicCache =
             CacheBuilder.newBuilder()
-                    .maximumSize(100_000_000)
+                    .maximumSize(1_000_000)
                     .build(new CacheLoader<>() {
                         @Override
                         public @NotNull Object load(@NotNull Integer key) throws IOException {
