@@ -13,7 +13,7 @@
  copies or substantial portions of the Software.
  */
 
-package my.counting.trie;
+package com.intellij.completion.ngram.slp.counting.trie;
 
 import com.intellij.completion.ngram.slp.counting.Counter;
 import com.intellij.completion.ngram.slp.modeling.runners.ModelRunner;
@@ -32,7 +32,7 @@ public abstract class AbstractTrie implements Counter {
 	public static int COUNT_OF_COUNTS_CUTOFF = 3;
 	public volatile static int[][] nCounts = new int[ModelRunner.DEFAULT_NGRAM_ORDER][4];
 	
-	public int[] counts;
+	int[] counts;
 
 	public AbstractTrie() {
 		this.counts = new int[2 + COUNT_OF_COUNTS_CUTOFF];

@@ -1,9 +1,8 @@
-package my.counting.persistent.trie;
+package com.intellij.completion.ngram.slp.counting.trie.persistent;
 
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
-import my.counting.persistent.PersistentCounterManager;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -27,7 +26,7 @@ public class CountersCache {
     private final Map<Integer, Object> staticCache = new HashMap<>();
     private final LoadingCache<Integer, Object> dynamicCache =
             CacheBuilder.newBuilder()
-                    .maximumSize(10_000_000)
+                    .maximumSize(100_000_000)
                     .build(new CacheLoader<>() {
                         @Override
                         public @NotNull Object load(@NotNull Integer key) throws IOException {
@@ -53,10 +52,11 @@ public class CountersCache {
         raf.seek(idx);
         int code = raf.readInt();
         if (code < 0) {
-            PersistentAbstractTrie value;
-            if (code == PersistentCounterManager.ARRAY_TRIE_COUNTER_CODE)
-                value = new PersistentArrayTrieCounter(counterPath, this);
-            else value = new PersistentMapTrieCounter(counterPath, this);
+//            For some reason PersistentArrayTrieCounter works buggy :(
+            PersistentAbstractTrie value = new PersistentMapTrieCounter(counterPath, this);
+//            if (code == PersistentCounterManager.ARRAY_TRIE_COUNTER_CODE)
+//                value = new PersistentArrayTrieCounter(counterPath, this);
+//            else value = new PersistentMapTrieCounter(counterPath, this);
             value.readExternal(raf, rafLock);
             return value;
         } else {
@@ -68,6 +68,8 @@ public class CountersCache {
         byte[] bs = new byte[length * 4];
         try {
             raf.readFully(bs);
+        } catch (EOFException e) {
+            System.out.printf("EOF: tried to read %d integers\n", length);
         } finally {
             rafLock.unlock();
         }

@@ -1,10 +1,9 @@
-package my.counting.persistent;
+package com.intellij.completion.ngram.slp.counting.trie;
 
 import com.intellij.completion.ngram.slp.counting.Counter;
-import my.counting.persistent.trie.CountersCache;
-import my.counting.trie.AbstractTrie;
-import my.counting.trie.ArrayTrieCounter;
-import my.counting.trie.MapTrieCounter;
+import com.intellij.completion.ngram.slp.counting.trie.persistent.CounterWithForgetting;
+import com.intellij.completion.ngram.slp.counting.trie.persistent.CountersCache;
+import com.intellij.completion.ngram.slp.counting.trie.persistent.PersistentCounter;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 

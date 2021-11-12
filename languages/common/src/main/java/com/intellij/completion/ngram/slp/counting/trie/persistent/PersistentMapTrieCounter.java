@@ -13,7 +13,7 @@
  copies or substantial portions of the Software.
  */
 
-package my.counting.persistent.trie;
+package com.intellij.completion.ngram.slp.counting.trie.persistent;
 
 //import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 //import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
@@ -40,9 +40,7 @@ public class PersistentMapTrieCounter extends PersistentAbstractTrie {
 
     public PersistentMapTrieCounter(String counterPath, CountersCache cache, int initSize) {
         super(counterPath, cache);
-        //this.map = new Int2ObjectOpenHashMap<>(initSize);
         this.map = new HashMap<>(initSize);
-        //this.map.defaultReturnValue(null);
         this.pseudoOrdering = new ArrayList<>();
     }
 

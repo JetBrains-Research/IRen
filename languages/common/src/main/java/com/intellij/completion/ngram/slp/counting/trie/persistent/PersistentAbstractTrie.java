@@ -13,10 +13,9 @@
  copies or substantial portions of the Software.
  */
 
-package my.counting.persistent.trie;
+package com.intellij.completion.ngram.slp.counting.trie.persistent;
 
 import com.intellij.completion.ngram.slp.counting.trie.ArrayStorage;
-import my.counting.persistent.PersistentCounter;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -53,7 +52,6 @@ public abstract class PersistentAbstractTrie extends PersistentCounter {
      * For instance, {@link PersistentMapTrieCounter} at present returns a map for the root and second level, than a regular Trie,
      * whereas TrieCounter always uses a Trie.
      */
-
     public abstract Object getSuccessor(int key);
 
     protected abstract Collection<Integer> getSuccessorIdxs();
@@ -149,7 +147,14 @@ public abstract class PersistentAbstractTrie extends PersistentCounter {
         }
     }
 
+    /**
+     * Read counter from the file specified in cache.
+     *
+     * @param idx position of the counter in the file.
+     * @return new or cached instance of the counter.
+     */
     public @Nullable Object readCounter(int idx) {
+        assert idx < Integer.MAX_VALUE;
         try {
             return cache.get(idx);
         } catch (ExecutionException e) {

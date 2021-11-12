@@ -13,7 +13,7 @@
  copies or substantial portions of the Software.
  */
 
-package my.counting.trie;
+package com.intellij.completion.ngram.slp.counting.trie;
 
 //import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 //import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
@@ -35,7 +35,7 @@ public class MapTrieCounter extends AbstractTrie {
 	 * no of distinct successors seen once, twice, up to the COCcutoff in Configuration
 	 */
 	//private Int2ObjectMap<Object> map;
-	public HashMap<Integer, Object> map;
+	HashMap<Integer, Object> map;
 	private final ArrayList<Integer> pseudoOrdering;
 
 	// Maximum depth in trie to use Map-tries, after this Array-Tries are used, which are slower but more memory-efficient

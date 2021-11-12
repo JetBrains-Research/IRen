@@ -13,7 +13,7 @@
  copies or substantial portions of the Software.
  */
 
-package my.counting.persistent.trie;
+package com.intellij.completion.ngram.slp.counting.trie.persistent;
 
 import com.intellij.completion.ngram.slp.util.Pair;
 import org.jetbrains.annotations.NotNull;
@@ -52,9 +52,9 @@ public class PersistentArrayTrieCounter extends PersistentAbstractTrie {
 
     @Override
     public List<Integer> getTopSuccessorsInternal(int limit) {
-        return IntStream.range(0, this.indices.length)
-                .filter(i -> this.indices[i] != Integer.MAX_VALUE)
-                .mapToObj(i -> Pair.of(this.indices[i], this.getCount(this.readSuccessor(i))))
+        return IntStream.range(0, indices.length)
+                .filter(i -> indices[i] != Integer.MAX_VALUE)
+                .mapToObj(i -> Pair.of(indices[i], getCount(readSuccessor(i))))
                 .filter(p -> p.right != null && p.right > 0)
                 .sorted((p1, p2) -> -Integer.compare(p1.right, p2.right))
                 .limit(limit)
@@ -66,7 +66,7 @@ public class PersistentArrayTrieCounter extends PersistentAbstractTrie {
         int ix = getSuccIx(key);
         if (ix < 0) {
             return null;
-        } else return this.readSuccessor(ix);
+        } else return readSuccessor(ix);
     }
 
     @Override

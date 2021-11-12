@@ -1,8 +1,6 @@
-package my.counting.persistent;
+package com.intellij.completion.ngram.slp.counting.trie.persistent;
 
 import com.intellij.completion.ngram.slp.counting.Counter;
-import my.counting.persistent.trie.CountersCache;
-import org.apache.commons.lang.NotImplementedException;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
