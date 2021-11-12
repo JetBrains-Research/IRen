@@ -19,16 +19,13 @@ import com.intellij.completion.ngram.slp.counting.trie.ArrayStorage;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.io.DataInputStream;
 import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
-import java.io.RandomAccessFile;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.locks.Lock;
 
 public abstract class PersistentAbstractTrie extends PersistentCounter {
     int[] counts;
@@ -58,13 +55,13 @@ public abstract class PersistentAbstractTrie extends PersistentCounter {
 
     abstract List<Integer> getTopSuccessorsInternal(int limit);
 
-    public final void readExternal(ObjectInput in) {
+    public final void readExternal(ObjectInput din) {
     }
 
     public final void writeExternal(ObjectOutput out) {
     }
 
-    public abstract void readExternal(@NotNull RandomAccessFile raf, @NotNull Lock rafLock) throws IOException;
+    public abstract void readExternal(@NotNull DataInputStream din) throws IOException;
 
     @Override
     public final int getCount() {
@@ -157,7 +154,7 @@ public abstract class PersistentAbstractTrie extends PersistentCounter {
         assert idx < Integer.MAX_VALUE;
         try {
             return cache.get(idx);
-        } catch (ExecutionException e) {
+        } catch (Exception e) {
             e.printStackTrace();
             return null;
         }
@@ -165,31 +162,21 @@ public abstract class PersistentAbstractTrie extends PersistentCounter {
 
     @Override
     public void prepareCache() {
-        cache.openRaf();
-        try {
-            prepareCache(0);
-        } finally {
-            cache.closeRaf();
-        }
+        prepareCache(0);
     }
 
     private void prepareCache(int currentDepth) {
         if (currentDepth < CountersCache.CACHE_DEPTH) {
-            ConcurrentHashMap<Integer, Object> successors = new ConcurrentHashMap<>();
-            getSuccessorIdxs().forEach(idx -> {
+            getSuccessorIdxs().parallelStream().forEach(idx -> {
                 if (idx < Integer.MAX_VALUE) {
                     try {
-                        successors.put(idx, cache.readFromFile(idx));
+                        @NotNull Object counter = cache.readFromFile(idx);
+                        cache.addToStatic(idx, counter);
+                        if (counter instanceof PersistentAbstractTrie) {
+                            ((PersistentAbstractTrie) counter).prepareCache(currentDepth + 1);
+                        }
                     } catch (IOException e) {
                         e.printStackTrace();
-                    }
-                }
-            });
-            successors.forEach((idx, counter) -> {
-                if (counter != null) {
-                    cache.addToStatic(idx, counter);
-                    if (counter instanceof PersistentAbstractTrie) {
-                        ((PersistentAbstractTrie) counter).prepareCache(currentDepth + 1);
                     }
                 }
             });

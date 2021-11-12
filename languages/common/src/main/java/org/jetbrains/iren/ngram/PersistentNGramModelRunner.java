@@ -1,23 +1,21 @@
 package org.jetbrains.iren.ngram;
 
 import com.intellij.completion.ngram.slp.counting.Counter;
+import com.intellij.completion.ngram.slp.counting.trie.PersistentCounterManager;
+import com.intellij.completion.ngram.slp.counting.trie.persistent.PersistentCounter;
 import com.intellij.completion.ngram.slp.modeling.Model;
 import com.intellij.completion.ngram.slp.modeling.mix.BiDirectionalModel;
 import com.intellij.completion.ngram.slp.modeling.ngram.NGramModel;
 import com.intellij.completion.ngram.slp.translating.Vocabulary;
 import com.intellij.openapi.progress.ProgressIndicator;
-import com.intellij.psi.PsiNameIdentifierOwner;
-import kotlin.Pair;
-import com.intellij.completion.ngram.slp.counting.trie.persistent.PersistentCounter;
-import com.intellij.completion.ngram.slp.counting.trie.PersistentCounterManager;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.iren.IRenBundle;
-import org.jetbrains.iren.storages.VarNamePrediction;
 
-import java.io.*;
+import java.io.File;
+import java.io.IOException;
 import java.nio.file.Path;
-import java.util.*;
+import java.util.Set;
 
 public class PersistentNGramModelRunner extends NGramModelRunner {
     public PersistentNGramModelRunner(NGramModelRunner modelRunner) {
@@ -26,48 +24,6 @@ public class PersistentNGramModelRunner extends NGramModelRunner {
                 modelRunner.myRememberedIdentifiers,
                 modelRunner.biDirectional,
                 modelRunner.order);
-    }
-
-    @Override
-    public @NotNull Pair<Double, Integer> getProbability(PsiNameIdentifierOwner variable, boolean forgetContext) {
-        openRaf();
-        try {
-            return super.getProbability(variable, forgetContext);
-        } finally {
-            closeRaf();
-        }
-    }
-
-    @Override
-    public @NotNull List<VarNamePrediction> suggestNames(@NotNull PsiNameIdentifierOwner variable, boolean forgetContext) {
-        openRaf();
-        try {
-            return super.suggestNames(variable, forgetContext);
-        } finally {
-            closeRaf();
-        }
-    }
-
-    private void openRaf() {
-        if (biDirectional) {
-            ((PersistentCounter)((NGramModel) ((BiDirectionalModel) myModel).getForward())
-                    .getCounter()).getCache().openRaf();
-            ((PersistentCounter)((NGramModel) ((BiDirectionalModel) myModel).getReverse())
-                    .getCounter()).getCache().openRaf();
-        } else {
-            ((PersistentCounter)((NGramModel) myModel).getCounter()).getCache().openRaf();
-        }
-    }
-
-    private void closeRaf() {
-        if (biDirectional) {
-            ((PersistentCounter)((NGramModel) ((BiDirectionalModel) myModel).getForward())
-                    .getCounter()).getCache().closeRaf();
-            ((PersistentCounter)((NGramModel) ((BiDirectionalModel) myModel).getReverse())
-                    .getCounter()).getCache().closeRaf();
-        } else {
-            ((PersistentCounter)((NGramModel) myModel).getCounter()).getCache().closeRaf();
-        }
     }
 
     public PersistentNGramModelRunner() {

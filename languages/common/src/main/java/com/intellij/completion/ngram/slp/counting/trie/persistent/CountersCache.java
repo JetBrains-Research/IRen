@@ -6,24 +6,24 @@ import com.google.common.cache.LoadingCache;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.io.*;
-import java.util.HashMap;
+import java.io.BufferedInputStream;
+import java.io.DataInputStream;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.nio.channels.FileChannel;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
 
 public class CountersCache {
-    public static int CACHE_DEPTH = 2;
+    public static int CACHE_DEPTH = 1;
     private final String counterPath;
-    private RandomAccessFile raf = null;
-    private final Lock rafLock = new ReentrantLock();
 
     public CountersCache(String counterPath) {
         this.counterPath = counterPath;
     }
 
-    private final Map<Integer, Object> staticCache = new HashMap<>();
+    private final Map<Integer, Object> staticCache = new ConcurrentHashMap<>();
     private final LoadingCache<Integer, Object> dynamicCache =
             CacheBuilder.newBuilder()
                     .maximumSize(1_000_000)
@@ -47,56 +47,28 @@ public class CountersCache {
     }
 
     public @NotNull Object readFromFile(int idx) throws IOException {
-        assert raf != null;
-        rafLock.lock();
-        raf.seek(idx);
-        int code = raf.readInt();
-        if (code < 0) {
-//            For some reason PersistentArrayTrieCounter works buggy :(
-            PersistentAbstractTrie value = new PersistentMapTrieCounter(counterPath, this);
-//            if (code == PersistentCounterManager.ARRAY_TRIE_COUNTER_CODE)
-//                value = new PersistentArrayTrieCounter(counterPath, this);
-//            else value = new PersistentMapTrieCounter(counterPath, this);
-            value.readExternal(raf, rafLock);
-            return value;
-        } else {
-            return readArray(raf, code, rafLock);
+        try (FileInputStream in = new FileInputStream(counterPath);
+             DataInputStream din = new DataInputStream(new BufferedInputStream(in))) {
+            changePosition(in, idx);
+            int code = din.readInt();
+            if (code < 0) {
+                PersistentAbstractTrie value = new PersistentMapTrieCounter(counterPath, this);
+                value.readExternal(din);
+                return value;
+            } else {
+                return readArray(din, code);
+            }
         }
     }
 
-    public static int @NotNull [] readArray(@NotNull RandomAccessFile raf, int length, @NotNull Lock rafLock) throws IOException {
-        byte[] bs = new byte[length * 4];
-        try {
-            raf.readFully(bs);
-        } catch (EOFException e) {
-            System.out.printf("EOF: tried to read %d integers\n", length);
-        } finally {
-            rafLock.unlock();
-        }
+    public static int @NotNull [] readArray(@NotNull DataInputStream din, int length) throws IOException {
         int[] res = new int[length];
-        try (ByteArrayInputStream bin = new ByteArrayInputStream(bs);
-             DataInputStream din = new DataInputStream(bin)) {
-            for (int j = 0; j < length; j++) res[j] = din.readInt();
-        }
+        for (int j = 0; j < length; j++) res[j] = din.readInt();
         return res;
     }
 
-    public void openRaf() {
-        if (raf != null) return;
-        try {
-            raf = new RandomAccessFile(counterPath, "r");
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
-        }
-    }
-
-    public void closeRaf() {
-        if (raf == null) return;
-        try {
-            raf.close();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        raf = null;
+    public static void changePosition(FileInputStream in, int idx) throws IOException {
+        FileChannel channel = in.getChannel();
+        channel.position(idx);
     }
 }

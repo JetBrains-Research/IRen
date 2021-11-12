@@ -15,20 +15,15 @@
 
 package com.intellij.completion.ngram.slp.counting.trie.persistent;
 
-//import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
-//import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
-//import it.unimi.dsi.fastutil.ints.IntArrayList;
-//import it.unimi.dsi.fastutil.ints.IntList;
-
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.io.ByteArrayInputStream;
 import java.io.DataInputStream;
 import java.io.IOException;
-import java.io.RandomAccessFile;
-import java.util.*;
-import java.util.concurrent.locks.Lock;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.stream.Collectors;
 
 public class PersistentMapTrieCounter extends PersistentAbstractTrie {
@@ -63,25 +58,16 @@ public class PersistentMapTrieCounter extends PersistentAbstractTrie {
     }
 
     @Override
-    public void readExternal(@NotNull RandomAccessFile raf, @NotNull Lock rafLock) throws IOException {
-        int successors = raf.readInt();
-        byte[] bs = new byte[(successors + 1) * 4 * 2];
-        try {
-            raf.readFully(bs);
-        } finally {
-            rafLock.unlock();
-        }
-        try (ByteArrayInputStream bin = new ByteArrayInputStream(bs);
-             DataInputStream din = new DataInputStream(bin)) {
-            this.counts = new int[2];
-            this.counts[0] = din.readInt();
-            this.counts[1] = din.readInt();
-            this.map = new HashMap<>(successors, 0.9f);
-            for (int pos = 0; pos < successors; pos++) {
-                int key = din.readInt();
-                int idx = din.readInt();
-                map.put(key, idx);
-            }
+    public void readExternal(@NotNull DataInputStream din) throws IOException {
+        int successors = din.readInt();
+        this.counts = new int[2];
+        this.counts[0] = din.readInt();
+        this.counts[1] = din.readInt();
+        this.map = new HashMap<>(successors, 0.9f);
+        for (int pos = 0; pos < successors; pos++) {
+            int key = din.readInt();
+            int idx = din.readInt();
+            map.put(key, idx);
         }
     }
 

@@ -8,6 +8,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.*;
+import java.nio.channels.FileChannel;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -119,20 +120,22 @@ public class PersistentCounterManager {
     }
 
     public static @Nullable PersistentCounter deserialize(String counterPath) {
-        try (RandomAccessFile raf = new RandomAccessFile(counterPath, "r")) {
+        final Object counter;
+        try (FileInputStream in = new FileInputStream(counterPath);
+             DataInputStream din = new DataInputStream(in)) {
 //            Integer from the end defines root counter
-            raf.seek(raf.length() - 4);
-            int idx = raf.readInt();
+            final FileChannel channel = in.getChannel();
+            channel.position(channel.size() - 4);
+            int idx = din.readInt();
             final CountersCache cache = new CountersCache(counterPath);
-            cache.openRaf();
-            final Object counter = cache.readFromFile(idx);
-            if (counter instanceof PersistentCounter) {
-                ((PersistentCounter) counter).prepareCache();
-                return new CounterWithForgetting((PersistentCounter) counter);
-            }
+            counter = cache.readFromFile(idx);
         } catch (IOException e) {
             e.printStackTrace();
             return null;
+        }
+        if (counter instanceof PersistentCounter) {
+            ((PersistentCounter) counter).prepareCache();
+            return new CounterWithForgetting((PersistentCounter) counter);
         }
         return null;
     }
