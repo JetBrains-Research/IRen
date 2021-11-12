@@ -108,7 +108,7 @@ public class ModelBuilder {
         if (myProgressIndicator != null)
             myProgressIndicator.setText(IRenBundle.message("training.progress.indicator.text",
                     String.format("%s; %s", myProject.getName(), mySupporter.getLanguage())));
-        System.out.printf("Project: %s\n%s\n", myProject.getName(), mySupporter.getLanguage());
+        System.out.printf("Project: %s\nLanguage: %s\n", myProject.getName(), mySupporter.getLanguage().getDisplayName());
         Instant start = Instant.now();
         NGramModelRunner modelRunner = new NGramModelRunner();
         if (!trainModelRunner(modelRunner)) return;
@@ -127,9 +127,9 @@ public class ModelBuilder {
         NotificationsUtil.notificationAboutModel(
                 myProject,
                 "NGram model training is completed",
-                String.format("Project: %s;\n%s;\nTime of training: %d s;\nVocabulary size: %d;\n",
+                String.format("Project: %s;\nLanguage: %s;\nTime of training: %d s;\nVocabulary size: %d;\n",
                         myProject.getName(),
-                        mySupporter.getLanguage(),
+                        mySupporter.getLanguage().getDisplayName(),
                         Duration.between(start, Instant.now()).toSeconds(),
                         modelRunner.getVocabulary().size()
                 ) + saveStats,
@@ -229,7 +229,7 @@ public class ModelBuilder {
     public static boolean loadModels(@NotNull Project project, @NotNull ProgressIndicator indicator) {
         boolean isSmthngLoaded = false;
         for (LanguageSupporter supporter : LanguageSupporter.INSTANCE.getExtensionList()) {
-            indicator.setText(supporter.getLanguage().toString());
+            indicator.setText(String.format("Language: %s", supporter.getLanguage().getDisplayName()));
             String name = ModelManager.getName(project, supporter.getLanguage());
             ModelRunner modelRunner = new PersistentNGramModelRunner();
             Instant start = Instant.now();
@@ -242,9 +242,9 @@ public class ModelBuilder {
                 ModelStatsService.getInstance().setUsable(name, true);
                 NotificationsUtil.notificationAboutModel(project,
                         "NGram model is loaded",
-                        String.format("Project: %s;\n%s;\nTime of loading: %d s;\nVocabulary size: %d;\n",
+                        String.format("Project: %s;\nLanguage: %s;\nTime of loading: %d s;\nVocabulary size: %d;\n",
                                 project.getName(),
-                                supporter.getLanguage(),
+                                supporter.getLanguage().getDisplayName(),
                                 Duration.between(start, Instant.now()).toSeconds(),
                                 modelRunner.getVocabulary().size()),
                         modelPath);
