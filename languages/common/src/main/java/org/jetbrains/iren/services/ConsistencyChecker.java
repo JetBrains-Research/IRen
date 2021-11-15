@@ -17,12 +17,14 @@ import org.jetbrains.annotations.Nullable;
 import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.Objects;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
+
+import static org.jetbrains.iren.impl.LanguageSupporterBase.runForSomeTime;
 
 
 public class ConsistencyChecker implements Disposable {
     public static Key<Collection<String>> rememberedNames = Key.create("names");
+
     public static ConsistencyChecker getInstance() {
         return ApplicationManager.getApplication().getService(ConsistencyChecker.class);
     }
@@ -63,12 +65,13 @@ public class ConsistencyChecker implements Disposable {
 
     public @NotNull Boolean isInconsistent(@NotNull PsiNameIdentifierOwner variable) {
         if (isRenamedVariable(variable)) return false;
-        Boolean res = null;
-        try {
-            res = inconsistentVariablesMap.get(variable);
-        } catch (ExecutionException e) {
-            e.printStackTrace();
-        }
+        Boolean res = runForSomeTime(300, () -> {
+            try {
+                return inconsistentVariablesMap.get(variable);
+            } catch (Exception ignore) {
+                return false;
+            }
+        });
         return res != null && res;
     }
 
