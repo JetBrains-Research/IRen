@@ -72,7 +72,6 @@ public class ModelBuilder {
             progressIndicator.setText(IRenBundle.message("training.progress.indexing"));
 //            Waits until indexes are prepared
             DumbService.getInstance(project).waitForSmartMode();
-            progressIndicator.setText(IRenBundle.message("training.progress.indicator.text", project.getName()));
         }
         @NotNull ModelStatsService modelStats = ModelStatsService.getInstance();
         if (modelStats.isTraining()) return;
@@ -107,7 +106,7 @@ public class ModelBuilder {
         ModelManager.getInstance().removeModelRunner(name);
         if (myProgressIndicator != null)
             myProgressIndicator.setText(IRenBundle.message("training.progress.indicator.text",
-                    String.format("%s; %s", myProject.getName(), mySupporter.getLanguage())));
+                    myProject.getName(), mySupporter.getLanguage().getDisplayName()));
         System.out.printf("Project: %s\nLanguage: %s\n", myProject.getName(), mySupporter.getLanguage().getDisplayName());
         Instant start = Instant.now();
         NGramModelRunner modelRunner = new NGramModelRunner();
@@ -121,18 +120,19 @@ public class ModelBuilder {
             modelRunner = new PersistentNGramModelRunner(modelRunner);
             double size = modelRunner.save(modelPath, myProgressIndicator);
             if (size <= 0 || !modelRunner.loadCounters(modelPath, myProgressIndicator)) return;
-            saveStats = String.format("Model size: %.3f Mb", size);
+//            saveStats = IRenBundle.message("model.size", new DecimalFormat("#.##").format(size));
+            saveStats = IRenBundle.message("model.size", size);
             System.out.println(saveStats);
         }
         NotificationsUtil.notificationAboutModel(
                 myProject,
-                "NGram model training is completed",
-                String.format("Project: %s;\nLanguage: %s;\nTime of training: %d s;\nVocabulary size: %d;\n",
+                IRenBundle.message("model.training.completed"),
+                IRenBundle.message("model.training.statistics",
                         myProject.getName(),
                         mySupporter.getLanguage().getDisplayName(),
                         Duration.between(start, Instant.now()).toSeconds(),
-                        modelRunner.getVocabulary().size()
-                ) + saveStats,
+                        modelRunner.getVocabulary().size())
+                + "\n" + saveStats,
                 saveStats != null ? ModelManager.getPath(name) : null
         );
         ModelManager.getInstance().putModelRunner(name, modelRunner);
@@ -229,7 +229,7 @@ public class ModelBuilder {
     public static boolean loadModels(@NotNull Project project, @NotNull ProgressIndicator indicator) {
         boolean isSmthngLoaded = false;
         for (LanguageSupporter supporter : LanguageSupporter.INSTANCE.getExtensionList()) {
-            indicator.setText(String.format("Language: %s", supporter.getLanguage().getDisplayName()));
+            indicator.setText(IRenBundle.message("language", supporter.getLanguage().getDisplayName()));
             String name = ModelManager.getName(project, supporter.getLanguage());
             ModelRunner modelRunner = new PersistentNGramModelRunner();
             Instant start = Instant.now();
@@ -241,8 +241,8 @@ public class ModelBuilder {
                 ModelManager.getInstance().putModelRunner(name, modelRunner);
                 ModelStatsService.getInstance().setUsable(name, true);
                 NotificationsUtil.notificationAboutModel(project,
-                        "NGram model is loaded",
-                        String.format("Project: %s;\nLanguage: %s;\nTime of loading: %d s;\nVocabulary size: %d;\n",
+                        IRenBundle.message("model.loaded"),
+                        IRenBundle.message("model.loading.statistics",
                                 project.getName(),
                                 supporter.getLanguage().getDisplayName(),
                                 Duration.between(start, Instant.now()).toSeconds(),
