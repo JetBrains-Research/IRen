@@ -4,15 +4,6 @@
 ![TeamCity build status](https://buildserver.labs.intellij.net/app/rest/builds/buildType:id:ijplatform_IntelliJProjectDependencies_CodeCompletionProjects_SuggestingIdentifierNames_Publish/statusIcon.svg)
 ## Description
 
-This plugin makes variable name suggestions for you.
-
-## Installation
-
-1. [Download](https://plugins.jetbrains.com/plugin/15432-iren/versions) latest version
-2. Install it manually `Preferences` > `Plugins` > `Install plugin from disk...`
-
-## Features
-
 This tool replaces default IDE refactoring with the new one
 that will recommend You better variable names with the help of Machine Learning methods.
 
@@ -23,6 +14,31 @@ if you want to manually control it you can switch off the corresponding option i
 Also in the settings you can tune some hyperparameters of the model.
 
 IRen inspection helps with maintenance of the code and marks all variables which names are not good enough.
+
+## Installation
+
+1. [Download](https://plugins.jetbrains.com/plugin/15432-iren/versions) latest version
+2. Install it manually `Preferences` > `Plugins` > `Install plugin from disk...`
+
+## Features
+
+- Enhanced inplace refactoring `Shift+F6` 
+
+<img src="pictures/Refactoring.gif" alt="Refactoring" width="50%" style='border:1px solid #000000'/>
+
+- Inspection that marks inconsistent variable names
+
+<img src="pictures/Inspection.gif" alt="Inspection" width="50%" style='border:1px solid #000000'/>
+
+- Training of the models:
+  - Action `Refactor` > `Train IRen model` (`Ctrl+Alt+Shift+Z`)
+  - Automatic on project opening (if selected in the settings)
+
+<img src="pictures/Training.gif" alt="Training" width="50%" style='border:1px solid #000000'/>
+
+- You can tweak some parameters in `Settings` > `Tools` > `IRen settings`
+
+<img src="pictures/Settings.png" alt="Settings" width="50%" style='border:1px solid #000000'/>
 
 ## Structure
 
