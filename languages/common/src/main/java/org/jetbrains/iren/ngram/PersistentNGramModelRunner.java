@@ -1,6 +1,7 @@
 package org.jetbrains.iren.ngram;
 
 import com.intellij.completion.ngram.slp.counting.Counter;
+import com.intellij.completion.ngram.slp.counting.trie.MapTrieCounter;
 import com.intellij.completion.ngram.slp.counting.trie.PersistentCounterManager;
 import com.intellij.completion.ngram.slp.counting.trie.persistent.PersistentCounter;
 import com.intellij.completion.ngram.slp.modeling.Model;
@@ -36,6 +37,36 @@ public class PersistentNGramModelRunner extends NGramModelRunner {
 
     public PersistentNGramModelRunner(Model model, Vocabulary vocabulary, Set<Integer> rememberedIdentifiers, boolean biDirectional, int order) {
         super(model, vocabulary, rememberedIdentifiers, biDirectional, order);
+    }
+
+    protected long saveCounters(@NotNull Path modelPath, @Nullable ProgressIndicator progressIndicator) {
+        if (biDirectional) {
+            File forwardCounterFile = modelPath.resolve(FORWARD_COUNTER_FILE).toFile();
+            final Counter forwardCounter = removeCounter(((NGramModel) ((BiDirectionalModel) myModel).getForward()));
+            long counterSize1 = saveCounter(forwardCounterFile,
+                    forwardCounter,
+                    progressIndicator);
+            if (counterSize1 < 0) return counterSize1;
+            File reverseCounterFile = modelPath.resolve(REVERSE_COUNTER_FILE).toFile();
+            final Counter reverseCounter = removeCounter((NGramModel) ((BiDirectionalModel) myModel).getReverse());
+            long counterSize2 = saveCounter(reverseCounterFile,
+                    reverseCounter,
+                    progressIndicator);
+            if (counterSize2 < 0) return counterSize2;
+            return counterSize1 + counterSize2;
+        } else {
+            File counterFile = modelPath.resolve(COUNTER_FILE).toFile();
+            final Counter counter = removeCounter((NGramModel) myModel);
+            return saveCounter(counterFile,
+                    counter,
+                    progressIndicator);
+        }
+    }
+
+    private @NotNull Counter removeCounter(@NotNull NGramModel model) {
+        final Counter res = model.getCounter();
+        model.setCounter(new MapTrieCounter());
+        return res;
     }
 
     @Override
