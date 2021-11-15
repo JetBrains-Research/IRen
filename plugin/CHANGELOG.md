@@ -1,6 +1,17 @@
 <!-- Keep a Changelog guide -> https://keepachangelog.com -->
 
 # IRen Changelog
+## [0.0.6]
+### Added
+- Persistent counter that works from the disk
+
+## [0.0.5]
+### Added
+- Notification about trained models
+### Fixed
+- Inspection triggers less
+- Filter stop names (it, self) from predictions
+
 ## [0.0.4]
 ### Added
 - Inspection history
