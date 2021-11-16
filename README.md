@@ -22,17 +22,16 @@ IRen inspection helps with maintenance of the code and marks all variables which
 
 ## Features
 
-- Enhanced inplace refactoring `Shift+F6` 
+- Enhanced in-place refactoring via `Shift+F6` 
 
 <img src="pictures/Refactoring.gif" alt="Refactoring" width="50%" style='border:1px solid #000000'/>
 
-- Inspection that marks inconsistent variable names
+- An inspection that highlights bad variable names
 
 <img src="pictures/Inspection.gif" alt="Inspection" width="50%" style='border:1px solid #000000'/>
 
-- Training of the models:
-  - Action `Refactor` > `Train IRen model` (`Ctrl+Alt+Shift+Z`)
-  - Automatic on project opening (if selected in the settings)
+- After installing the plugin it asks whether you want IRen to learn naming patterns from your projects automatically
+- Also, there is an action that trains models `Refactor` > `Train IRen model` (`Ctrl+Alt+Shift+Z`)
 
 <img src="pictures/Training.gif" alt="Training" width="50%" style='border:1px solid #000000'/>
 
