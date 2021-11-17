@@ -23,7 +23,7 @@ import java.time.temporal.ChronoUnit;
 public class AppSettingsState implements PersistentStateComponent<AppSettingsState> {
     public boolean firstOpen = true;
     public boolean automaticTraining = true;
-    public int maxTrainingTime = 30;
+    public int maxTrainingTime = 300;
     public int vocabularyCutOff = 3;
     public int modelsLifetime = 1;
     public ChronoUnit modelsLifetimeUnit = ChronoUnit.DAYS;
