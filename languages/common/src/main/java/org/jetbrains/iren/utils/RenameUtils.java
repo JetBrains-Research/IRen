@@ -7,6 +7,8 @@ import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiNameIdentifierOwner;
 import com.intellij.psi.PsiNamedElement;
 import com.intellij.psi.SmartPointerManager;
+import com.intellij.refactoring.rename.NameSuggestionProvider;
+import com.intellij.spellchecker.quickfixes.DictionarySuggestionProvider;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.iren.IRenBundle;
@@ -72,5 +74,25 @@ public class RenameUtils {
             }
             nameSuggestions.addAll(nameProbabilities.keySet());
         }
+    }
+
+    /**
+     * Checks if typo rename inactive.
+     *
+     * @return boolean
+     */
+    public static boolean notTypoRename() {
+        final DictionarySuggestionProvider provider = findDictionarySuggestionProvider();
+        return provider == null || provider.shouldCheckOthers();
+    }
+
+    @Nullable
+    public static DictionarySuggestionProvider findDictionarySuggestionProvider() {
+        for (Object extension : NameSuggestionProvider.EP_NAME.getExtensionList()) {
+            if (extension instanceof DictionarySuggestionProvider) {
+                return (DictionarySuggestionProvider) extension;
+            }
+        }
+        return null;
     }
 }

@@ -20,6 +20,7 @@ import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 
 import static org.jetbrains.iren.utils.RenameUtils.addIRenPredictionsIfPossible;
+import static org.jetbrains.iren.utils.RenameUtils.notTypoRename;
 
 public class IRenVariableInplaceRenamer extends VariableInplaceRenamer {
     private final LinkedHashMap<String, Double> myNameProbabilities = new LinkedHashMap<>();
@@ -40,7 +41,7 @@ public class IRenVariableInplaceRenamer extends VariableInplaceRenamer {
     @Override
     public boolean performInplaceRefactoring(@Nullable LinkedHashSet<String> nameSuggestions) {
         if (nameSuggestions == null) nameSuggestions = new LinkedHashSet<>();
-        addIRenPredictionsIfPossible(nameSuggestions, myElementToRename, myNameProbabilities);
+        if (notTypoRename()) addIRenPredictionsIfPossible(nameSuggestions, myElementToRename, myNameProbabilities);
         myElementToStoreNames = ConsistencyChecker.getElementToStoreNames(myElementToRename);
         return super.performInplaceRefactoring(nameSuggestions);
     }
