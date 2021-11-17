@@ -152,12 +152,7 @@ public abstract class PersistentAbstractTrie extends PersistentCounter {
      */
     public @Nullable Object readCounter(int idx) {
         assert idx < Integer.MAX_VALUE;
-        try {
-            return cache.get(idx);
-        } catch (Exception e) {
-            e.printStackTrace();
-            return null;
-        }
+        return cache.get(idx);
     }
 
     @Override
@@ -169,14 +164,9 @@ public abstract class PersistentAbstractTrie extends PersistentCounter {
         if (currentDepth < CountersCache.CACHE_DEPTH) {
             getSuccessorIdxs().parallelStream().forEach(idx -> {
                 if (idx < Integer.MAX_VALUE) {
-                    try {
-                        @NotNull Object counter = cache.readFromFile(idx);
-                        cache.addToStatic(idx, counter);
-                        if (counter instanceof PersistentAbstractTrie) {
-                            ((PersistentAbstractTrie) counter).prepareCache(currentDepth + 1);
-                        }
-                    } catch (IOException e) {
-                        e.printStackTrace();
+                    @Nullable Object counter = cache.get(idx);
+                    if (counter instanceof PersistentAbstractTrie) {
+                        ((PersistentAbstractTrie) counter).prepareCache(currentDepth + 1);
                     }
                 }
             });

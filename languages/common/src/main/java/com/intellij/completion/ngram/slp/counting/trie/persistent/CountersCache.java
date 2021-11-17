@@ -11,22 +11,20 @@ import java.io.DataInputStream;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.nio.channels.FileChannel;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 
 public class CountersCache {
     public static int CACHE_DEPTH = 1;
+    public static int MAXIMUM_CACHE_SIZE = 10_000;
     private final String counterPath;
 
     public CountersCache(String counterPath) {
         this.counterPath = counterPath;
     }
 
-    private final Map<Integer, Object> staticCache = new ConcurrentHashMap<>();
     private final LoadingCache<Integer, Object> dynamicCache =
             CacheBuilder.newBuilder()
-                    .maximumSize(1_000_000)
+                    .maximumSize(MAXIMUM_CACHE_SIZE)
                     .build(new CacheLoader<>() {
                         @Override
                         public @NotNull Object load(@NotNull Integer key) throws IOException {
@@ -35,15 +33,13 @@ public class CountersCache {
                     });
 
 
-    public @Nullable Object get(int idx) throws ExecutionException {
-        if (staticCache.containsKey(idx)) {
-            return staticCache.get(idx);
+    public @Nullable Object get(int idx) {
+        try {
+            return dynamicCache.get(idx);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
         }
-        return dynamicCache.get(idx);
-    }
-
-    public void addToStatic(int idx, Object o) {
-        staticCache.put(idx, o);
     }
 
     public @NotNull Object readFromFile(int idx) throws IOException {
