@@ -10,7 +10,7 @@ that will recommend you better variable names with the help of Machine Learning 
 To suggest consistent names IRen model has to train on a project in which you are currently working.
 By the default IRen plugin automatically trains/loads model on a startup of the opened project. 
 If you want to manually control it you can switch off the corresponding option in the settings
-**Tools | IRen settings** and launch training by yourself clicking **Refactor | Train IRen Model**.
+**Tools | IRen** and launch training by yourself clicking **Refactor | Train IRen Model**.
 Also in the settings you can tune some hyperparameters of the model.
 
 IRen inspection helps with maintenance of the code and marks all variables which names are not good enough.
@@ -35,7 +35,7 @@ IRen inspection helps with maintenance of the code and marks all variables which
 
 <img src="pictures/Training.gif" alt="Training" width="50%" style='border:1px solid #000000'/>
 
-- You can tweak some parameters in `Settings` > `Tools` > `IRen settings`
+- You can tweak some parameters in `Settings` > `Tools` > `IRen`
 
 <img src="pictures/Settings.png" alt="Settings" width="50%" style='border:1px solid #000000'/>
 
