@@ -20,13 +20,14 @@ import org.jetbrains.iren.services.ModelStatsService;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.Map;
+import java.util.NoSuchElementException;
 
 public class RenameUtils {
     /**
      * Register a problem if IRen considers that variable name is inconsistent.
      *
      * @param variable to be checked
-     * @param holder registers the problem
+     * @param holder   registers the problem
      */
     public static void visitVariable(PsiNameIdentifierOwner variable, ProblemsHolder holder) {
         if (!ModelStatsService.getInstance().isUsable(ModelManager.getName(variable.getProject(), variable.getLanguage())))
@@ -45,14 +46,19 @@ public class RenameUtils {
     /**
      * Add suggestions predicted by IRen model to {@code nameSuggestions}. Convenient static method that is used in all renamers.
      *
-     * @param nameSuggestions where to store predictions
-     * @param elementToRename IRen model suggests names for this element
+     * @param nameSuggestions   where to store predictions
+     * @param elementToRename   IRen model suggests names for this element
      * @param nameProbabilities stores probabilities of names
      */
     public static void addIRenPredictionsIfPossible(@NotNull LinkedHashSet<String> nameSuggestions,
                                                     @NotNull PsiNamedElement elementToRename,
                                                     @NotNull LinkedHashMap<String, Double> nameProbabilities) {
-        LanguageSupporter supporter = LanguageSupporter.getInstance(elementToRename.getLanguage());
+        LanguageSupporter supporter;
+        try {
+            supporter = LanguageSupporter.getInstance(elementToRename.getLanguage());
+        } catch (NoSuchElementException ignore) {
+            return;
+        }
         if (ModelStatsService.getInstance().isUsable(
                 ModelManager.getName(elementToRename.getProject(), elementToRename.getLanguage())) && supporter.isVariable(elementToRename)) {
             LinkedHashMap<String, Double> nameProbs = IRenSuggestingService.getInstance().suggestVariableName((PsiNameIdentifierOwner) elementToRename);

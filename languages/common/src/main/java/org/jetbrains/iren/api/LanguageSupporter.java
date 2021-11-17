@@ -25,7 +25,7 @@ import java.util.function.Consumer;
 public interface LanguageSupporter {
     ExtensionPointName<LanguageSupporter> INSTANCE = ExtensionPointName.create("org.jetbrains.iren.language.supporter");
 
-    static @NotNull LanguageSupporter getInstance(Language language) {
+    static @NotNull LanguageSupporter getInstance(Language language) throws NoSuchElementException {
         return INSTANCE.extensions().filter(x -> x.getLanguage() == language).findFirst()
                 .orElseThrow(() -> new NoSuchElementException("Language is not supported"));
     }
