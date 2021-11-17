@@ -1,6 +1,13 @@
 <!-- Keep a Changelog guide -> https://keepachangelog.com -->
 
 # IRen Changelog
+## [0.0.7]
+### Changed
+- IRen settings UI
+### Fixed
+- Reduce models' cache size
+- IRen suggestions in Typo quick fix
+
 ## [0.0.6]
 ### Added
 - Persistent counter that works from the disk
