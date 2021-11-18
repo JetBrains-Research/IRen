@@ -1,6 +1,6 @@
 public class Main {
     public static void main(String[] args) {
-        int i = 239;
-        i = <caret>i + 239;
+        int newName = 239;
+        newName = newName + 42;
     }
 }

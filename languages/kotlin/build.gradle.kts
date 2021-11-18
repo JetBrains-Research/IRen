@@ -4,4 +4,6 @@ intellij {
 
 dependencies {
     implementation(project(":languages:common"))
+
+    testImplementation(project(":plugin").dependencyProject.sourceSets["test"].output)
 }
