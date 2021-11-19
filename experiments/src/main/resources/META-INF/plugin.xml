@@ -8,9 +8,7 @@
 
     <description>
         <![CDATA[
-      <p>Provides assistance in naming variables.</p>
-
-      <p>To use the <b>Id Names Suggesting</b> tool, press <b>Alt+Enter</b> on a variable and select <b>Suggest variable name</b>.</p>
+      <p>Run experiments with IRen models in headless mode of IntelliJ IDEA.</p>
       ]]>
     </description>
 

@@ -20,6 +20,13 @@
       Also in the settings you can tune some hyperparameters of the model.</p>
 
       <p>IRen inspection helps with maintenance of the code and marks all variables which names are not good enough.</p>
+
+      <p>Supported languages:</p>
+        <ul>
+        <li>Java</li>
+        <li>Kotlin</li>
+        <li>Python</li>
+        </ul>
       ]]>
     </description>
 

@@ -11,4 +11,9 @@ if you want to manually control it you can switch off the corresponding option i
 Also in the settings you can tune some hyperparameters of the model.
 
 IRen inspection helps with maintenance of the code and marks all variables which names are not good enough.
+
+Supported languages:
+- Java
+- Kotlin
+- Python
 <!-- Plugin description end -->

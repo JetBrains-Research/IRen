@@ -15,6 +15,12 @@ Also in the settings you can tune some hyperparameters of the model.
 
 IRen inspection helps with maintenance of the code and marks all variables which names are not good enough.
 
+## Supported languages
+
+- Java
+- Kotlin
+- Python
+
 ## Installation
 
 1. [Download](https://plugins.jetbrains.com/plugin/15432-iren/versions) latest version
