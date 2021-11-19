@@ -22,7 +22,7 @@ IRen inspection helps with maintenance of the code and marks all variables which
 
 ## Features
 
-- Enhanced in-place refactoring via `Shift+F6` 
+- Enhanced in-place refactoring via `Shift+F6`. IRen suggestions are shown with probabilities, default ones – without.
 
 <img src="pictures/Refactoring.gif" alt="Refactoring" width="50%" style='border:1px solid #000000'/>
 
