@@ -16,9 +16,11 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class ModelManager implements Disposable {
-    private final Map<String, ModelRunner> myModelRunners = new HashMap<>();
-
     public static final Path MODELS_DIRECTORY = Paths.get(PathManager.getSystemPath(), "models");
+    public static final String INTELLIJ_NAME = "intellij";
+    public static final int INTELLIJ_MODEL_VERSION = 1;
+
+    private final Map<String, ModelRunner> myModelRunners = new HashMap<>();
 
     public static @NotNull ModelManager getInstance() {
         return ApplicationManager.getApplication().getService(ModelManager.class);
@@ -28,10 +30,15 @@ public class ModelManager implements Disposable {
         return MODELS_DIRECTORY.resolve(name);
     }
 
-    public static @NotNull String getName(@Nullable Project project,
-                                          @Nullable Language language) {
-        return (project != null ? project.getName() + "_" + project.getLocationHash() + "_" : "") +
-                (language != null ? language.getID() : "");
+    public static @NotNull String getName(@NotNull Project project,
+                                          @NotNull Language language) {
+        return project.getName() +
+                "_" + (isIntellijProject(project) ? INTELLIJ_MODEL_VERSION : project.getLocationHash()) +
+                "_" + language.getID();
+    }
+
+    public static boolean isIntellijProject(@NotNull Project project) {
+        return project.getName().equals(INTELLIJ_NAME);
     }
 
     public @Nullable ModelRunner getModelRunner(@NotNull String name) {
@@ -66,5 +73,11 @@ public class ModelManager implements Disposable {
             modelRunner.forgetPsiFile(newFile);
             fileMap.put(modelKey, newFile);
         }
+    }
+
+    public boolean containsIntellijModel() {
+        return myModelRunners.keySet().stream().anyMatch(name ->
+                name.startsWith(INTELLIJ_NAME + "_" + INTELLIJ_MODEL_VERSION)
+        );
     }
 }

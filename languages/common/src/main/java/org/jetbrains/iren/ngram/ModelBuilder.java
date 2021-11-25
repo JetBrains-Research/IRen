@@ -38,6 +38,9 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.function.DoubleFunction;
 import java.util.stream.Collectors;
 
+import static org.jetbrains.iren.ModelLoaderKt.downloadAndExtractIntellijModels;
+import static org.jetbrains.iren.services.ModelManager.isIntellijProject;
+
 public class ModelBuilder {
     private final Project myProject;
     private final LanguageSupporter mySupporter;
@@ -57,6 +60,7 @@ public class ModelBuilder {
     }
 
     public static void trainInBackground(Project project) {
+        if (loadIntellijModels(project)) return;
         ProgressManager.getInstance().run(new Task.Backgroundable(project, IRenBundle.message("training.task.title")) {
             @Override
             public void run(@NotNull ProgressIndicator indicator) {
@@ -68,6 +72,7 @@ public class ModelBuilder {
     public static void trainModelsForAllLanguages(@NotNull Project project,
                                                   @Nullable ProgressIndicator progressIndicator,
                                                   boolean save) {
+        if (isIntellijProject(project)) return;
         if (progressIndicator != null) {
             progressIndicator.setText(IRenBundle.message("training.progress.indexing"));
 //            Waits until indexes are prepared
@@ -224,6 +229,20 @@ public class ModelBuilder {
                 .stream()
                 .filter(ProjectFileIndex.getInstance(myProject)::isInSource)
                 .collect(Collectors.toList()));
+    }
+
+    public static boolean loadIntellijModels(Project project) {
+        if (!isIntellijProject(project)) return false;
+        if (ModelManager.getInstance().containsIntellijModel()) return true;
+        ProgressManager.getInstance().run(new Task.Backgroundable(project, IRenBundle.message("loading.project.model", project.getName())) {
+            @Override
+            public void run(@NotNull ProgressIndicator indicator) {
+                if (ModelBuilder.loadModels(project, indicator)) return;
+                downloadAndExtractIntellijModels(indicator);
+                ModelBuilder.loadModels(project, indicator);
+            }
+        });
+        return true;
     }
 
     public static boolean loadModels(@NotNull Project project, @NotNull ProgressIndicator indicator) {

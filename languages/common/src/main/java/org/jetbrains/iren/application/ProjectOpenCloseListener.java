@@ -19,6 +19,7 @@ public class ProjectOpenCloseListener implements ProjectManagerListener {
     public void projectOpened(@NotNull Project project) {
         LanguageSupporter.removeRenameHandlers();
         AppSettingsState settings = AppSettingsState.getInstance();
+        if (ModelBuilder.loadIntellijModels(project)) return;
         if (!settings.firstOpen && settings.automaticTraining &&
                 ModelStatsService.getInstance().needRetraining(ProjectVariableNamesContributor.class, project)) {
             ModelBuilder.trainInBackground(project);
