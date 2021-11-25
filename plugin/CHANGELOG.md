@@ -1,6 +1,10 @@
 <!-- Keep a Changelog guide -> https://keepachangelog.com -->
 
 # IRen Changelog
+## [0.0.8]
+### Added
+- Loading models for `intellij` repository from the server
+
 ## [0.0.7]
 ### Changed
 - IRen settings UI
