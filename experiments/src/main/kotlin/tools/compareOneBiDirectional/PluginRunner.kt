@@ -1,4 +1,4 @@
-package tools.modelsEvaluatorApi
+package tools.compareOneBiDirectional
 
 import com.intellij.ide.impl.ProjectUtil
 import com.intellij.lang.java.JavaLanguage
@@ -36,9 +36,9 @@ open class PluginRunner : ApplicationStarter {
     protected open val javaSmallTest =
         listOf("libgdx", "hadoop")
 
-    protected open val projectList: List<String>? = listOf("libgdx")
+    protected open val projectList: List<String>? = null
 
-    override fun getCommandName(): String = "modelsEvaluator"
+    override fun getCommandName(): String = "compareOneBiDirectional"
 
     override fun main(args: Array<out String>) {
         try {
@@ -67,6 +67,23 @@ open class PluginRunner : ApplicationStarter {
         return VarNamer(saveDir, supporter, ngramType)
     }
 
+//    private fun trainGlobalNGramModelOn(dataset: File, projectList: List<String>) {
+//        println("Training global NGram model...")
+//        var projectToClose: Project? = null
+//        for (projectDir in projectList) {
+//            val projectPath = dataset.resolve(projectDir)
+//            println("Opening project $projectDir...")
+//            val project = ProjectUtil.openOrImport(projectPath.path, projectToClose, true) ?: continue
+//
+//            ModelBuilder.trainGlobalNGramModel(project, null, false)
+//
+//            projectToClose = project
+//        }
+//        if (projectToClose != null) {
+//            ProjectManager.getInstance().closeAndDispose(projectToClose)
+//        }
+//    }
+
     private fun evaluate() {
         println("Evaluating models...")
         var projectToClose: Project? = null
@@ -87,8 +104,18 @@ open class PluginRunner : ApplicationStarter {
             }
 
             try {
-                val modelRunner = trainModelRunner(project, timeSpentFile)
-                val start = Instant.now()
+                var start = Instant.now()
+                val settings = AppSettingsState.getInstance()
+                settings.maxTrainingTime = 10000
+                settings.vocabularyCutOff = 0
+                val modelRunner = NGramModelRunner(true, 6)
+                ModelBuilder(project, supporter, null).trainModelRunner(modelRunner)
+                val trainingTime = Duration.between(start, Instant.now())
+                FileOutputStream(timeSpentFile, true).bufferedWriter().use {
+                    it.write("${project.name},$trainingTime,")
+                }
+
+                start = Instant.now()
                 if (varNamer.predict(modelRunner, project)) {
                     val evaluationTime = Duration.between(start, Instant.now())
 
@@ -106,22 +133,5 @@ open class PluginRunner : ApplicationStarter {
         if (projectToClose != null) {
             ProjectManager.getInstance().closeAndDispose(projectToClose)
         }
-    }
-
-    private fun trainModelRunner(
-        project: Project,
-        timeSpentFile: File
-    ): NGramModelRunner {
-        val start = Instant.now()
-        val settings = AppSettingsState.getInstance()
-        settings.maxTrainingTime = 10000
-        settings.vocabularyCutOff = 0
-        val modelRunner = NGramModelRunner(true, 6)
-        ModelBuilder(project, supporter, null).trainModelRunner(modelRunner)
-        val trainingTime = Duration.between(start, Instant.now())
-        FileOutputStream(timeSpentFile, true).bufferedWriter().use {
-            it.write("${project.name},$trainingTime,")
-        }
-        return modelRunner
     }
 }

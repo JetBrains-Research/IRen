@@ -26,6 +26,8 @@
         <appStarter implementation="tools.transformerEvaluator.TransformerPluginRunner"/>
         <appStarter implementation="tools.nGramTrainingTime.PluginRunner"/>
         <appStarter implementation="tools.modelsEvaluatorApi.PluginRunner"/>
+        <appStarter implementation="tools.compareWithRAM.RamPluginRunner"/>
+        <appStarter implementation="tools.compareWithDefault.DefaultPluginRunner"/>
         <appStarter implementation="tools.countNGrams.PluginRunner"/>
         <!-- End of headless running part-->
         <applicationService serviceImplementation="org.jetbrains.iren.services.ModelManager"/>
