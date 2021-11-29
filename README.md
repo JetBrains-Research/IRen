@@ -28,7 +28,7 @@ IRen inspection helps with maintenance of the code and marks all variables which
 
 ## Features
 
-- Enhanced in-place refactoring via `Shift+F6`. IRen suggestions are shown with probabilities, default ones – without.
+- Enhanced in-place refactoring via `Shift+F6`.  In contrast to the default ones, IRen suggestions have probabilities on the right.
 
 <img src="pictures/Refactoring.gif" alt="Refactoring" width="50%" style='border:1px solid #000000'/>
 
@@ -37,13 +37,15 @@ IRen inspection helps with maintenance of the code and marks all variables which
 <img src="pictures/Inspection.gif" alt="Inspection" width="50%" style='border:1px solid #000000'/>
 
 - After installing the plugin it asks whether you want IRen to learn naming patterns from your projects automatically
-- Also, there is an action that trains models `Refactor` > `Train IRen model` (`Ctrl+Alt+Shift+Z`)
+- Also, there is an action that trains models `Refactor` > `Train IRen Model` (`Ctrl+Alt+Shift+Z`)
 
 <img src="pictures/Training.gif" alt="Training" width="50%" style='border:1px solid #000000'/>
 
 - You can tweak some parameters in `Settings` > `Tools` > `IRen`
 
 <img src="pictures/Settings.png" alt="Settings" width="50%" style='border:1px solid #000000'/>
+
+- If you are working with the `IntelliJ` repository, the plugin will download the models from the server. You don’t have to train anything!
 
 ## Structure
 
