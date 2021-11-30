@@ -14,10 +14,7 @@ import org.jetbrains.annotations.Nullable;
 import org.jetbrains.iren.IRenBundle;
 import org.jetbrains.iren.api.LanguageSupporter;
 import org.jetbrains.iren.inspections.variable.RenameVariableQuickFix;
-import org.jetbrains.iren.services.ConsistencyChecker;
-import org.jetbrains.iren.services.IRenSuggestingService;
-import org.jetbrains.iren.services.ModelManager;
-import org.jetbrains.iren.services.ModelStatsService;
+import org.jetbrains.iren.services.*;
 
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -32,7 +29,7 @@ public class RenameUtils {
      * @param holder   registers the problem
      */
     public static void visitVariable(PsiNameIdentifierOwner variable, ProblemsHolder holder) {
-        if (!ModelStatsService.getInstance().isUsable(ModelManager.getName(variable.getProject(), variable.getLanguage())))
+        if (!ModelsUsabilityService.getInstance().isUsable(ModelManager.getName(variable.getProject(), variable.getLanguage())))
             return;
         if (ConsistencyChecker.getInstance().isInconsistent(variable)) {
             @Nullable PsiElement identifier = variable.getNameIdentifier();
@@ -61,7 +58,7 @@ public class RenameUtils {
         } catch (NoSuchElementException ignore) {
             return;
         }
-        if (ModelStatsService.getInstance().isUsable(
+        if (ModelsUsabilityService.getInstance().isUsable(
                 ModelManager.getName(elementToRename.getProject(), elementToRename.getLanguage())) && supporter.isVariable(elementToRename)) {
             LinkedHashMap<String, Double> nameProbs = IRenSuggestingService.getInstance().suggestVariableName((PsiNameIdentifierOwner) elementToRename);
             double unknownNameProb = nameProbs.getOrDefault(Vocabulary.unknownCharacter, 0.);

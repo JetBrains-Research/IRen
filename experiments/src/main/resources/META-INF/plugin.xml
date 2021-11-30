@@ -31,7 +31,8 @@
         <appStarter implementation="tools.countNGrams.PluginRunner"/>
         <!-- End of headless running part-->
         <applicationService serviceImplementation="org.jetbrains.iren.services.ModelManager"/>
-        <applicationService serviceImplementation="org.jetbrains.iren.services.ModelStatsService"/>
+        <applicationService serviceImplementation="org.jetbrains.iren.services.ModelsSaveTime"/>
+        <applicationService serviceImplementation="org.jetbrains.iren.services.ModelsUsabilityService"/>
         <applicationService serviceImplementation="org.jetbrains.iren.services.IRenSuggestingService"/>
     </extensions>
     <extensions defaultExtensionNs="org.jetbrains.iren">

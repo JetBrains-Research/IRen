@@ -6,7 +6,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.iren.api.AbstractTrainModelAction;
 import org.jetbrains.iren.api.LanguageSupporter;
 import org.jetbrains.iren.ngram.ModelBuilder;
-import org.jetbrains.iren.services.ModelStatsService;
+import org.jetbrains.iren.services.ModelsUsabilityService;
 
 public class TrainProjectNGramModelAction extends AbstractTrainModelAction {
     @Override
@@ -18,7 +18,7 @@ public class TrainProjectNGramModelAction extends AbstractTrainModelAction {
 
     @Override
     protected boolean canBePerformed(@NotNull AnActionEvent e) {
-        return e.getProject() != null && !ModelStatsService.getInstance().isTraining() &&
+        return e.getProject() != null && !ModelsUsabilityService.getInstance().isTraining() &&
                 LanguageSupporter.hasSupportedFiles(e.getProject());
     }
 }

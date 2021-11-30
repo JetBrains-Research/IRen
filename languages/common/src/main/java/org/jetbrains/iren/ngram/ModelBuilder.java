@@ -22,10 +22,10 @@ import org.jetbrains.annotations.Nullable;
 import org.jetbrains.iren.IRenBundle;
 import org.jetbrains.iren.api.LanguageSupporter;
 import org.jetbrains.iren.api.ModelRunner;
-import org.jetbrains.iren.contributors.ProjectVariableNamesContributor;
 import org.jetbrains.iren.services.ConsistencyChecker;
 import org.jetbrains.iren.services.ModelManager;
-import org.jetbrains.iren.services.ModelStatsService;
+import org.jetbrains.iren.services.ModelsSaveTime;
+import org.jetbrains.iren.services.ModelsUsabilityService;
 import org.jetbrains.iren.settings.AppSettingsState;
 import org.jetbrains.iren.storages.StringCounter;
 import org.jetbrains.iren.utils.NotificationsUtil;
@@ -48,6 +48,14 @@ public class ModelBuilder {
     private final int vocabularyCutOff = AppSettingsState.getInstance().vocabularyCutOff;
     private final int maxTrainingTime = AppSettingsState.getInstance().maxTrainingTime;
 
+    public ModelBuilder(@NotNull Project project,
+                        @NotNull LanguageSupporter supporter,
+                        @Nullable ProgressIndicator progressIndicator) {
+        myProject = project;
+        mySupporter = supporter;
+        myProgressIndicator = progressIndicator;
+    }
+
     public static void trainModelsForAllProjectsInBackground() {
         ProgressManager.getInstance().run(new Task.Backgroundable(null, IRenBundle.message("training.task.title")) {
             @Override
@@ -59,55 +67,38 @@ public class ModelBuilder {
         });
     }
 
-    public static void trainInBackground(Project project) {
-        if (loadIntellijModels(project)) return;
-        ProgressManager.getInstance().run(new Task.Backgroundable(project, IRenBundle.message("training.task.title")) {
-            @Override
-            public void run(@NotNull ProgressIndicator indicator) {
-                trainModelsForAllLanguages(project, indicator, true);
-            }
-        });
-    }
-
-    public static void trainModelsForAllLanguages(@NotNull Project project,
-                                                  @Nullable ProgressIndicator progressIndicator,
-                                                  boolean save) {
-        if (isIntellijProject(project)) return;
-        if (progressIndicator != null) {
-            progressIndicator.setText(IRenBundle.message("training.progress.indexing"));
-//            Waits until indexes are prepared
-            DumbService.getInstance(project).waitForSmartMode();
+    private static void trainModelsForAllLanguages(@NotNull Project project,
+                                                   @NotNull ProgressIndicator progressIndicator,
+                                                   boolean save) {
+        if (isIntellijProject(project)) {
+            loadModelsOrIntellij(project, progressIndicator);
+            return;
         }
-        @NotNull ModelStatsService modelStats = ModelStatsService.getInstance();
-        if (modelStats.isTraining()) return;
-        modelStats.setTraining(true);
+        progressIndicator.setText(IRenBundle.message("training.progress.indexing"));
+//            Waits until indexes are prepared
+        DumbService.getInstance(project).waitForSmartMode();
+        @NotNull ModelsUsabilityService usabilityService = ModelsUsabilityService.getInstance();
+        if (usabilityService.isTraining()) return;
+        usabilityService.setTraining(true);
         try {
             for (LanguageSupporter supporter : LanguageSupporter.INSTANCE.getExtensionList()) {
                 trainWithSupporter(project, supporter, progressIndicator, save);
-                if (progressIndicator != null && progressIndicator.isCanceled()) break;
+                if (progressIndicator.isCanceled()) break;
             }
-            modelStats.setTrainedTime(ProjectVariableNamesContributor.class, project);
+            ModelsSaveTime.getInstance().setTrainedTime(project);
         } finally {
-            modelStats.setTraining(false);
+            usabilityService.setTraining(false);
             ConsistencyChecker.getInstance().dispose();
         }
     }
 
-    public static void trainWithSupporter(Project project, LanguageSupporter supporter, ProgressIndicator progressIndicator, boolean save) {
+    private static void trainWithSupporter(Project project, LanguageSupporter supporter, ProgressIndicator progressIndicator, boolean save) {
         new ModelBuilder(project, supporter, progressIndicator).train(save);
-    }
-
-    public ModelBuilder(@NotNull Project project,
-                        @NotNull LanguageSupporter supporter,
-                        @Nullable ProgressIndicator progressIndicator) {
-        myProject = project;
-        mySupporter = supporter;
-        myProgressIndicator = progressIndicator;
     }
 
     private void train(boolean save) {
         String name = ModelManager.getName(myProject, mySupporter.getLanguage());
-        ModelStatsService.getInstance().setUsable(name, false);
+        ModelsUsabilityService.getInstance().setUsable(name, false);
         ModelManager.getInstance().removeModelRunner(name);
         if (myProgressIndicator != null)
             myProgressIndicator.setText(IRenBundle.message("training.progress.indicator.text",
@@ -118,9 +109,8 @@ public class ModelBuilder {
         if (!trainModelRunner(modelRunner)) return;
         String saveStats = null;
         if (save) {
-            if (myProgressIndicator != null) myProgressIndicator.setText(IRenBundle.message("saving.project.model",
-                    String.format("%s; %s", myProject.getName(), mySupporter.getLanguage())));
-
+            if (myProgressIndicator != null)
+                myProgressIndicator.setText(IRenBundle.message("saving.text", myProject.getName(), mySupporter.getLanguage().getDisplayName()));
             final Path modelPath = ModelManager.getPath(name);
             modelRunner = new PersistentNGramModelRunner(modelRunner);
             double size = modelRunner.save(modelPath, myProgressIndicator);
@@ -137,11 +127,11 @@ public class ModelBuilder {
                         mySupporter.getLanguage().getDisplayName(),
                         Duration.between(start, Instant.now()).toSeconds(),
                         modelRunner.getVocabulary().size())
-                + "\n" + saveStats,
+                        + "\n" + saveStats,
                 saveStats != null ? ModelManager.getPath(name) : null
         );
         ModelManager.getInstance().putModelRunner(name, modelRunner);
-        ModelStatsService.getInstance().setUsable(name, true);
+        ModelsUsabilityService.getInstance().setUsable(name, true);
     }
 
     public boolean trainModelRunner(@NotNull ModelRunner modelRunner) {
@@ -174,8 +164,7 @@ public class ModelBuilder {
         System.out.println("Training vocabulary...");
         StringCounter counter = new StringCounter();
         Collection<VirtualFile> viewedFiles = new ConcurrentLinkedQueue<>();
-        files.parallelStream().filter(x -> trainingIsNotCanceled(myProgressIndicator,
-                        trainingStart,
+        files.parallelStream().filter(x -> trainingIsNotCanceled(trainingStart,
                         maxTrainingTime / 2))
                 .forEach(file -> {
                     @Nullable PsiFile psiFile = ReadAction.compute(() -> PsiManager.getInstance(myProject).findFile(file));
@@ -191,8 +180,8 @@ public class ModelBuilder {
         System.out.printf("Done in %s\n", Duration.between(trainingStart, Instant.now()));
     }
 
-    private static boolean trainingIsNotCanceled(ProgressIndicator progressIndicator, Instant trainingStart, int maxTrainingTime) {
-        return (progressIndicator == null || !progressIndicator.isCanceled()) &&
+    private boolean trainingIsNotCanceled(Instant trainingStart, int maxTrainingTime) {
+        return !myProject.isDisposed() && (myProgressIndicator == null || !myProgressIndicator.isCanceled()) &&
                 (maxTrainingTime <= 0 || Duration.between(trainingStart, Instant.now())
                         .minusSeconds(maxTrainingTime).isNegative());
     }
@@ -204,13 +193,13 @@ public class ModelBuilder {
         System.out.println("Training NGram model...");
         progressBar.clear(files.size());
         Instant finalStart = Instant.now();
-        files.parallelStream().filter(x -> trainingIsNotCanceled(myProgressIndicator, trainingStart, maxTrainingTime))
+        files.parallelStream().filter(x -> trainingIsNotCanceled(trainingStart, maxTrainingTime))
                 .forEach(file -> {
                     try {
                         ReadAction.run(() -> ObjectUtils.consumeIfNotNull(PsiManager.getInstance(myProject).findFile(file), modelRunner::learnPsiFile));
                     } catch (Exception e) {
+                        System.out.printf("Failed to train on: %s\n", file);
                         e.printStackTrace();
-                        System.out.println(file);
                     } finally {
                         progressBar.trainingStep(file);
                     }
@@ -231,24 +220,19 @@ public class ModelBuilder {
                 .collect(Collectors.toList()));
     }
 
-    public static boolean loadIntellijModels(Project project) {
-        if (!isIntellijProject(project)) return false;
-        if (ModelManager.getInstance().containsIntellijModel()) return true;
-        ProgressManager.getInstance().run(new Task.Backgroundable(project, IRenBundle.message("loading.project.model", project.getName())) {
+    public static void trainInBackground(Project project) {
+        ProgressManager.getInstance().run(new Task.Backgroundable(project, IRenBundle.message("training.task.title")) {
             @Override
             public void run(@NotNull ProgressIndicator indicator) {
-                if (ModelBuilder.loadModels(project, indicator)) return;
-                downloadAndExtractIntellijModels(indicator);
-                ModelBuilder.loadModels(project, indicator);
+                trainModelsForAllLanguages(project, indicator, true);
             }
         });
-        return true;
     }
 
-    public static boolean loadModels(@NotNull Project project, @NotNull ProgressIndicator indicator) {
+    private static boolean loadModels(@NotNull Project project, @NotNull ProgressIndicator indicator) {
         boolean isSmthngLoaded = false;
         for (LanguageSupporter supporter : LanguageSupporter.INSTANCE.getExtensionList()) {
-            indicator.setText(IRenBundle.message("language", supporter.getLanguage().getDisplayName()));
+            indicator.setText(IRenBundle.message("loading.text", project.getName(), supporter.getLanguage().getDisplayName()));
             String name = ModelManager.getName(project, supporter.getLanguage());
             ModelRunner modelRunner = new PersistentNGramModelRunner();
             Instant start = Instant.now();
@@ -258,7 +242,7 @@ public class ModelBuilder {
             if (isLoaded) {
                 modelRunner.getVocabulary().close();
                 ModelManager.getInstance().putModelRunner(name, modelRunner);
-                ModelStatsService.getInstance().setUsable(name, true);
+                ModelsUsabilityService.getInstance().setUsable(name, true);
                 NotificationsUtil.notificationAboutModel(project,
                         IRenBundle.message("model.loaded"),
                         IRenBundle.message("model.loading.statistics",
@@ -272,6 +256,29 @@ public class ModelBuilder {
         }
         return isSmthngLoaded;
     }
+
+    public static void prepareIRenModels(@NotNull Project project) {
+        ProgressManager.getInstance().run(new Task.Backgroundable(project, IRenBundle.message("prepare.models.title", project.getName())) {
+            @Override
+            public void run(@NotNull ProgressIndicator indicator) {
+                AppSettingsState settings = AppSettingsState.getInstance();
+                if ((ModelsSaveTime.getInstance().needRetraining(project) ||
+                        !loadModelsOrIntellij(project, indicator)) && !settings.firstOpen && settings.automaticTraining) {
+                    trainModelsForAllLanguages(project, indicator, true);
+                }
+            }
+        });
+    }
+
+    private static boolean loadModelsOrIntellij(@NotNull Project project, @NotNull ProgressIndicator indicator) {
+        if (isIntellijProject(project)) {
+            if (ModelManager.getInstance().containsIntellijModel() || loadModels(project, indicator))
+                return true;
+            final AppSettingsState settings = AppSettingsState.getInstance();
+            if (!settings.firstOpen && settings.automaticTraining) downloadAndExtractIntellijModels(indicator);
+        }
+        return loadModels(project, indicator);
+    }
 }
 
 class ProgressBar {
@@ -281,7 +288,7 @@ class ProgressBar {
     int total;
     boolean wasVocabTrained = false;
 
-    public ProgressBar(int total, ProgressIndicator progressIndicator, @Nullable String projectPath) {
+    public ProgressBar(int total, @Nullable ProgressIndicator progressIndicator, @Nullable String projectPath) {
         this.total = total;
         this.progressIndicator = progressIndicator;
         this.projectPath = projectPath;
@@ -297,10 +304,6 @@ class ProgressBar {
         step(file, fraction -> fraction / 2);
     }
 
-    public synchronized void trainingStep(VirtualFile file) {
-        step(file, fraction -> wasVocabTrained ? 0.5 + fraction / 2 : fraction);
-    }
-
     public synchronized void step(VirtualFile file, DoubleFunction<Double> modifyFraction) {
         double fraction = ++progress / (double) total;
         if (total < 10 || progress % (total / 10) == 0) {
@@ -310,5 +313,9 @@ class ProgressBar {
             progressIndicator.setText2(projectPath != null ? Paths.relativeIfUnder(file.getPath(), projectPath) : file.getPath());
             progressIndicator.setFraction(modifyFraction.apply(fraction));
         }
+    }
+
+    public synchronized void trainingStep(VirtualFile file) {
+        step(file, fraction -> wasVocabTrained ? 0.5 + fraction / 2 : fraction);
     }
 }

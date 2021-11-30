@@ -31,10 +31,10 @@ public class ModelManager implements Disposable {
     }
 
     public static @NotNull String getName(@NotNull Project project,
-                                          @NotNull Language language) {
+                                          @Nullable Language language) {
         return project.getName() +
                 "_" + (isIntellijProject(project) ? INTELLIJ_MODEL_VERSION : project.getLocationHash()) +
-                "_" + language.getID();
+                (language == null ? "" : "_" + language.getID());
     }
 
     public static boolean isIntellijProject(@NotNull Project project) {

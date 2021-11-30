@@ -5,7 +5,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.iren.api.ModelRunner;
 import org.jetbrains.iren.services.ModelManager;
-import org.jetbrains.iren.services.ModelStatsService;
+import org.jetbrains.iren.services.ModelsUsabilityService;
 
 public class ProjectVariableNamesContributor extends NGramVariableNamesContributor {
     @Override
@@ -21,7 +21,7 @@ public class ProjectVariableNamesContributor extends NGramVariableNamesContribut
     @Override
     public @Nullable ModelRunner getModelRunnerToContribute(@NotNull PsiNameIdentifierOwner variable) {
         String name = ModelManager.getName(variable.getProject(), variable.getLanguage());
-        if (ModelStatsService.getInstance().isUsable(name)) {
+        if (ModelsUsabilityService.getInstance().isUsable(name)) {
             return ModelManager.getInstance().getModelRunner(name);
         }
         return null;
