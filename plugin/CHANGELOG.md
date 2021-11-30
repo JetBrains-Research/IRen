@@ -1,9 +1,14 @@
 <!-- Keep a Changelog guide -> https://keepachangelog.com -->
 
 # IRen Changelog
+## [0.1.0]
+### Fixed
+- Minor bugs
+- Text in notifications and progress indicators
+
 ## [0.0.8]
 ### Added
-- Loading models for `intellij` repository from the server
+- Loading models for `IntelliJ` repository from the server
 
 ## [0.0.7]
 ### Changed
