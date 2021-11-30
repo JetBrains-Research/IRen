@@ -9,6 +9,7 @@ import com.intellij.completion.ngram.slp.modeling.mix.BiDirectionalModel;
 import com.intellij.completion.ngram.slp.modeling.ngram.NGramModel;
 import com.intellij.completion.ngram.slp.translating.Vocabulary;
 import com.intellij.openapi.progress.ProgressIndicator;
+import com.intellij.psi.PsiFile;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.iren.IRenBundle;
@@ -16,6 +17,7 @@ import org.jetbrains.iren.IRenBundle;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
+import java.util.List;
 import java.util.Set;
 
 public class PersistentNGramModelRunner extends NGramModelRunner {
@@ -117,5 +119,14 @@ public class PersistentNGramModelRunner extends NGramModelRunner {
             progressIndicator.setText2(IRenBundle.message("loading.file", counterFile.getName()));
         }
         return PersistentCounterManager.deserialize(counterFile.getAbsolutePath());
+    }
+
+    /**
+     * Its counters cannot learn anything.
+     * Just clear counterToForget of {@link com.intellij.completion.ngram.slp.counting.trie.persistent.CounterWithForgetting}
+     */
+    @Override
+    public void learnPsiFile(@NotNull PsiFile file) {
+        learnLexed(List.of());
     }
 }

@@ -117,7 +117,7 @@ public class NGramModelRunner implements ModelRunner {
         if (forgetContext) {
 //            I don't try to relearn context after refactoring because forgetting
 //            context makes sense only for models that trained on a single file.
-//            It means that this model will be discarded and relearning things is a waste of the time.
+//            It means that this model will be discarded and relearning things is waste of the time.
             forgetContext(intContext);
         }
         return intContext;
@@ -232,7 +232,7 @@ public class NGramModelRunner implements ModelRunner {
         };
     }
 
-    private synchronized void learnLexed(List<String> lexed) {
+    protected synchronized void learnLexed(List<String> lexed) {
         List<Integer> indices = myVocabulary.toIndices(lexed);
         if (myVocabulary.getWordIndices().size() != myVocabulary.getWords().size()) {
             throw new AssertionError("Something went wrong with vocabulary!");
