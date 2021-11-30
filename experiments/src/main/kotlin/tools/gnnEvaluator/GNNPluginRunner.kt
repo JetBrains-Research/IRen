@@ -14,7 +14,6 @@ class GNNPluginRunner : PluginRunner() {
 
     override fun getCommandName(): String = "GNNEvaluator"
 
-    override fun createVarNamer(): VarNamer {
-        return GNNVarNamer(saveDir, supporter, ngramType)
-    }
+    override val varNamer: VarNamer
+        get() = GNNVarNamer(saveDir, supporter, ngramType)
 }

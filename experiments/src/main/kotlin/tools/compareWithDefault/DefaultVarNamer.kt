@@ -1,8 +1,7 @@
 package tools.compareWithDefault
 
-import com.intellij.openapi.command.WriteCommandAction
+import com.intellij.openapi.application.ReadAction
 import com.intellij.psi.PsiNameIdentifierOwner
-import com.intellij.refactoring.rename.NameSuggestionProvider
 import org.jetbrains.iren.api.LanguageSupporter
 import tools.ModelPrediction
 import tools.modelsEvaluatorApi.VarNamer
@@ -13,22 +12,15 @@ open class DefaultVarNamer(
     supporter: LanguageSupporter,
     ngramType: String
 ) : VarNamer(saveDir, supporter, ngramType) {
-    override var runParallel = false
+    override var runParallel = true
 
     override fun predictWithNN(variable: PsiNameIdentifierOwner, thread: Int): Any {
         val names = LinkedHashSet<String>()
-        val oldName = variable.name!!
         try {
-            WriteCommandAction.runWriteCommandAction(variable.project) {
-                variable.setName("_") as PsiNameIdentifierOwner
-            }
-            NameSuggestionProvider.suggestNames(variable, variable, names)
-            WriteCommandAction.runWriteCommandAction(variable.project) {
-                variable.setName(oldName)
-            }
+            ReadAction.run<Exception> { MyJavaNameSuggestionProvider().getSuggestedNames(variable, variable, names) }
         } catch (e: Exception) {
             e.printStackTrace()
         }
-        return names.filter { it != "_" && it != "" }.map { x: String -> ModelPrediction(x, 0.0) }
+        return names.map { x: String -> ModelPrediction(x, 0.0) }
     }
 }

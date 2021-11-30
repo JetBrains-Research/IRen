@@ -4,11 +4,10 @@ import tools.modelsEvaluatorApi.PluginRunner
 import tools.modelsEvaluatorApi.VarNamer
 
 class DefaultPluginRunner : PluginRunner() {
-    override val projectList: List<String>? = listOf("libgdx")// listOf("intellij-community")
+    override val projectList: List<String>? = null // listOf("libgdx")// listOf("intellij-community")
 
     override fun getCommandName(): String = "compareWithDefault"
 
-    override fun createVarNamer(): VarNamer {
-        return DefaultVarNamer(saveDir, supporter, ngramType)
-    }
+    override val varNamer: VarNamer
+        get() = DefaultVarNamer(saveDir, supporter, ngramType)
 }

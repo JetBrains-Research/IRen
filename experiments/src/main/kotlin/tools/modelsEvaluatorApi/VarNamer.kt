@@ -24,7 +24,6 @@ import java.io.FileOutputStream
 import java.nio.file.Path
 import java.time.Duration
 import java.time.Instant
-import java.util.stream.IntStream
 import kotlin.concurrent.thread
 import kotlin.streams.asSequence
 
@@ -34,21 +33,20 @@ open class VarNamer(
     private val ngramType: String
 ) {
     open var runParallel = true
-    var maxNumberOfThreads = 7
+    var maxNumberOfThreads = 8
     protected lateinit var myModelRunner: NGramModelRunner
-    private val persistentModelRunners by lazy { preparePersistentRunners() }
+    private val persistentModelRunners: List<NGramModelRunner> by lazy { preparePersistentRunners() }
 
-    private fun preparePersistentRunners(): ArrayList<NGramModelRunner> {
+    private fun preparePersistentRunners(): List<NGramModelRunner> {
         val persistentModelPath = saveDir.resolve("tmp_persistent_model")
         println("Preparing persistent counters...")
-        val res = ArrayList<NGramModelRunner>()
-        IntStream.range(0, if (runParallel) maxNumberOfThreads else 1).forEach {
-            val runner = PersistentNGramModelRunner(myModelRunner)
-            if (it == 0) runner.save(persistentModelPath, null)
+        PersistentNGramModelRunner(myModelRunner).save(persistentModelPath, null)
+        return (0 until if (runParallel) maxNumberOfThreads else 1).map {
+            println("Loading ${it + 1}")
+            val runner = PersistentNGramModelRunner()
             runner.load(persistentModelPath, null)
-            res.add(runner)
+            runner
         }
-        return res
     }
 
     fun predict(modelRunner: NGramModelRunner, project: Project): Boolean {
@@ -67,7 +65,6 @@ open class VarNamer(
             "Done in %s\n",
             timeSpent
         )
-        persistentModelRunners.clear()
         return true
     }
 
@@ -192,7 +189,7 @@ open class VarNamer(
     }
 
     private fun predictWithNGram(variable: PsiNameIdentifierOwner, thread: Int): List<ModelPrediction> {
-        val runner = prepareRunner(thread, variable)
+        val runner = prepareThreadRunner(thread, variable)
         val nameSuggestions = ReadAction.compute<List<VarNamePrediction>, Exception> { runner.suggestNames(variable) }
         return nameSuggestions.map { x: VarNamePrediction -> ModelPrediction(x.name, x.probability) }
     }
@@ -200,7 +197,7 @@ open class VarNamer(
     open fun predictWithNN(variable: PsiNameIdentifierOwner, thread: Int): Any {
 //        Predict with the forward model of the BiDirectional model
         assert(ngramType == "BiDirectional")
-        val runner = prepareRunner(thread, variable)
+        val runner = prepareThreadRunner(thread, variable)
         val forwardModel = NGramModelRunner(
             (runner.model as BiDirectionalModel).forward,
             runner.vocabulary,
@@ -213,7 +210,7 @@ open class VarNamer(
         return nameSuggestions.map { x: VarNamePrediction -> ModelPrediction(x.name, x.probability) }
     }
 
-    private fun prepareRunner(
+    private fun prepareThreadRunner(
         thread: Int,
         variable: PsiNameIdentifierOwner
     ): NGramModelRunner {

@@ -25,7 +25,6 @@ open class PluginRunner : ApplicationStarter {
     protected lateinit var saveDir: Path
     protected lateinit var supporter: LanguageSupporter
     protected lateinit var ngramType: String
-    private lateinit var varNamer: VarNamer
 
     private val ngramTypes = listOf("BiDirectional", "OneDirectional")
 
@@ -54,7 +53,6 @@ open class PluginRunner : ApplicationStarter {
             )
             ngramType = args[4]
             assert(ngramTypes.contains(ngramType))
-            varNamer = createVarNamer()
             evaluate()
         } catch (e: Exception) {
             e.printStackTrace()
@@ -63,9 +61,8 @@ open class PluginRunner : ApplicationStarter {
         }
     }
 
-    open fun createVarNamer(): VarNamer {
-        return VarNamer(saveDir, supporter, ngramType)
-    }
+    open val varNamer: VarNamer
+        get() = VarNamer(saveDir, supporter, ngramType)
 
     private fun evaluate() {
         println("Evaluating models...")
@@ -116,7 +113,7 @@ open class PluginRunner : ApplicationStarter {
         val settings = AppSettingsState.getInstance()
         settings.maxTrainingTime = 10000
         settings.vocabularyCutOff = 0
-        val modelRunner = NGramModelRunner(true, 6)
+        val modelRunner = NGramModelRunner()
         ModelBuilder(project, supporter, null).trainModelRunner(modelRunner)
         val trainingTime = Duration.between(start, Instant.now())
         FileOutputStream(timeSpentFile, true).bufferedWriter().use {

@@ -14,7 +14,6 @@ class TransformerPluginRunner : PluginRunner() {
 
     override fun getCommandName(): String = "TransformerEvaluator"
 
-    override fun createVarNamer(): VarNamer {
-        return TransformerVarNamer(saveDir, supporter, ngramType)
-    }
+    override val varNamer: VarNamer
+        get() = TransformerVarNamer(saveDir, supporter, ngramType)
 }
