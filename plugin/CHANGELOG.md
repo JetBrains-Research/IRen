@@ -1,6 +1,11 @@
 <!-- Keep a Changelog guide -> https://keepachangelog.com -->
 
 # IRen Changelog
+## [0.1.1]
+### Fixed
+- Proper detection of idea projects
+- Ideas compatibility bug
+
 ## [0.1.0]
 ### Fixed
 - Minor bugs
