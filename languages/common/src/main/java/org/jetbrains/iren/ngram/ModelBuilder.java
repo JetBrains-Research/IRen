@@ -39,7 +39,7 @@ import java.util.function.DoubleFunction;
 import java.util.stream.Collectors;
 
 import static org.jetbrains.iren.ModelLoaderKt.downloadAndExtractIntellijModels;
-import static org.jetbrains.iren.services.ModelManager.isIntellijProject;
+import static org.jetbrains.iren.utils.PsiUtil.isIdeaProject;
 
 public class ModelBuilder {
     private final Project myProject;
@@ -70,7 +70,7 @@ public class ModelBuilder {
     private static void trainModelsForAllLanguages(@NotNull Project project,
                                                    @NotNull ProgressIndicator progressIndicator,
                                                    boolean save) {
-        if (isIntellijProject(project)) {
+        if (isIdeaProject(project)) {
             loadModelsOrIntellij(project, progressIndicator);
             return;
         }
@@ -271,7 +271,7 @@ public class ModelBuilder {
     }
 
     private static boolean loadModelsOrIntellij(@NotNull Project project, @NotNull ProgressIndicator indicator) {
-        if (isIntellijProject(project)) {
+        if (isIdeaProject(project)) {
             if (ModelManager.getInstance().containsIntellijModel() || loadModels(project, indicator))
                 return true;
             final AppSettingsState settings = AppSettingsState.getInstance();

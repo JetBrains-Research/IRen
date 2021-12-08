@@ -37,8 +37,7 @@ public abstract class NGramVariableNamesContributor implements VariableNamesCont
         if (forgetFile()) {
             ModelManager.getInstance().forgetFileIfNeeded(modelRunner, variable.getContainingFile());
         }
-        @NotNull Pair<Double, Integer> prob = modelRunner.getProbability(variable, forgetContext());
-        return prob;
+        return modelRunner.getProbability(variable, forgetContext());
     }
 
     protected abstract boolean forgetFile();

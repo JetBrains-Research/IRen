@@ -17,7 +17,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import static org.jetbrains.iren.services.ModelManager.getName;
-import static org.jetbrains.iren.services.ModelManager.isIntellijProject;
+import static org.jetbrains.iren.utils.PsiUtil.isIdeaProject;
 
 @State(name = "ModelsSaveTime",
         storages = {@Storage("IRenModelsSaveTime.xml")})
@@ -44,7 +44,7 @@ public class ModelsSaveTime implements PersistentStateComponent<ModelsSaveTime> 
     }
 
     public boolean needRetraining(@NotNull Project project) {
-        if (isIntellijProject(project)) return false;
+        if (isIdeaProject(project)) return false;
         @Nullable Instant saveTime = whenTrained(project);
         AppSettingsState settings = AppSettingsState.getInstance();
         Duration modelsLifetime = Duration.of(settings.modelsLifetime, settings.modelsLifetimeUnit);

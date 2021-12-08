@@ -15,10 +15,12 @@ import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.Map;
 
+import static org.jetbrains.iren.utils.PsiUtil.isIdeaProject;
+
 public class ModelManager implements Disposable {
     public static final Path MODELS_DIRECTORY = Paths.get(PathManager.getSystemPath(), "models");
     public static final String INTELLIJ_NAME = "intellij";
-    public static final int INTELLIJ_MODEL_VERSION = 1;
+    public static final String INTELLIJ_MODEL_VERSION = "1";
 
     private final Map<String, ModelRunner> myModelRunners = new HashMap<>();
 
@@ -32,13 +34,10 @@ public class ModelManager implements Disposable {
 
     public static @NotNull String getName(@NotNull Project project,
                                           @Nullable Language language) {
-        return project.getName() +
-                "_" + (isIntellijProject(project) ? INTELLIJ_MODEL_VERSION : project.getLocationHash()) +
-                (language == null ? "" : "_" + language.getID());
-    }
-
-    public static boolean isIntellijProject(@NotNull Project project) {
-        return project.getName().equals(INTELLIJ_NAME);
+        return (isIdeaProject(project) ?
+                String.join("_", INTELLIJ_NAME, INTELLIJ_MODEL_VERSION) :
+                String.join("_", project.getName(), project.getLocationHash())
+        ) + (language == null ? "" : "_" + language.getID());
     }
 
     public @Nullable ModelRunner getModelRunner(@NotNull String name) {
