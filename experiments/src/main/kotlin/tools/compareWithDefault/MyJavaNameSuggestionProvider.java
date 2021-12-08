@@ -25,6 +25,7 @@ public class MyJavaNameSuggestionProvider implements NameSuggestionProvider {
   /**
    * Commented lines added initial name of the element to result.
    */
+  @SuppressWarnings("CommentedOutCode")
   @Override
   @Nullable
   public SuggestedNameInfo getSuggestedNames(final PsiElement element, final PsiElement nameSuggestionContext, Set<String> result) {

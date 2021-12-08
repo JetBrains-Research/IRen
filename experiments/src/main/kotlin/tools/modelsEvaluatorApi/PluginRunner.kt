@@ -67,11 +67,11 @@ open class PluginRunner : ApplicationStarter {
     private fun evaluate() {
         println("Evaluating models...")
         var projectToClose: Project? = null
-        val timeSpentFile: File = saveDir.resolve("timeSpent.csv").toFile()
-        timeSpentFile.parentFile.mkdirs()
-        if (timeSpentFile.createNewFile()) {
-            FileOutputStream(timeSpentFile, true).bufferedWriter()
-                .use { it.write("Project,TrainingTime,EvaluationTime\n") }
+        val statsFile: File = saveDir.resolve("timeSpent.csv").toFile()
+        statsFile.parentFile.mkdirs()
+        if (statsFile.createNewFile()) {
+            FileOutputStream(statsFile, true).bufferedWriter()
+                .use { it.write("Project,TrainingTime,VocabularySize,EvaluationTime\n") }
         }
         for (projectDir in projectList
             ?: listOf(*dataset.list { file, name -> file.isDirectory && !name.startsWith(".") } ?: return)) {
@@ -84,17 +84,17 @@ open class PluginRunner : ApplicationStarter {
             }
 
             try {
-                val modelRunner = trainModelRunner(project, timeSpentFile)
+                val modelRunner = trainModelRunner(project, statsFile)
                 val start = Instant.now()
                 if (varNamer.predict(modelRunner, project)) {
                     val evaluationTime = Duration.between(start, Instant.now())
 
-                    FileOutputStream(timeSpentFile, true).bufferedWriter().use {
+                    FileOutputStream(statsFile, true).bufferedWriter().use {
                         it.write("$evaluationTime")
                     }
                 }
             } finally {
-                FileOutputStream(timeSpentFile, true).bufferedWriter().use {
+                FileOutputStream(statsFile, true).bufferedWriter().use {
                     it.write("\n")
                 }
                 projectToClose = project
@@ -107,7 +107,7 @@ open class PluginRunner : ApplicationStarter {
 
     private fun trainModelRunner(
         project: Project,
-        timeSpentFile: File
+        statsFile: File
     ): NGramModelRunner {
         val start = Instant.now()
         val settings = AppSettingsState.getInstance()
@@ -116,8 +116,8 @@ open class PluginRunner : ApplicationStarter {
         val modelRunner = NGramModelRunner()
         ModelBuilder(project, supporter, null).trainModelRunner(modelRunner)
         val trainingTime = Duration.between(start, Instant.now())
-        FileOutputStream(timeSpentFile, true).bufferedWriter().use {
-            it.write("${project.name},$trainingTime,")
+        FileOutputStream(statsFile, true).bufferedWriter().use {
+            it.write("${project.name},$trainingTime,${modelRunner.vocabulary.size()}")
         }
         return modelRunner
     }

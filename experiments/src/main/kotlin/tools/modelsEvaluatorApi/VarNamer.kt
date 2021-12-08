@@ -132,11 +132,10 @@ open class VarNamer(
                 }
             }.filterNotNull()
             .toHashSet()
-        val files = FileTypeIndex.getFiles(
+        return FileTypeIndex.getFiles(
             supporter.fileType,
             GlobalSearchScope.projectScope(project)
         ).filter { file -> file.path !in predictedFilePaths }
-        return files
     }
 
     protected open fun predictPsiFile(file: PsiFile, thread: Int): Collection<VarNamePredictions>? {
