@@ -63,7 +63,7 @@ public class RenameUtils {
             LinkedHashMap<String, Double> nameProbs = IRenSuggestingService.getInstance().suggestVariableName((PsiNameIdentifierOwner) elementToRename);
             double unknownNameProb = nameProbs.getOrDefault(Vocabulary.unknownCharacter, 0.);
             double varNameProb = nameProbs.getOrDefault(elementToRename.getText(), 0.) - 1e-4;
-            double threshold = Math.max(0.001, Math.max(unknownNameProb, varNameProb));
+            double threshold = Math.max(0.02, Math.max(unknownNameProb, varNameProb));
             for (Map.Entry<String, Double> e : nameProbs.entrySet()) {
                 if (e.getValue() > threshold) {
                     nameProbabilities.put(e.getKey(), e.getValue());
