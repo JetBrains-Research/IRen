@@ -30,7 +30,7 @@ import kotlin.streams.asSequence
 open class VarNamer(
     val saveDir: Path,
     private val supporter: LanguageSupporter,
-    private val ngramType: String
+    private val ngramType: String,
 ) {
     open var runParallel = true
     var maxNumberOfThreads = 8
@@ -72,7 +72,7 @@ open class VarNamer(
         files: List<VirtualFile>,
         project: Project,
         predictionsFile: File,
-        mapper: ObjectMapper
+        mapper: ObjectMapper,
     ) {
         val total = files.size
         val psiManager = PsiManager.getInstance(project)
@@ -93,7 +93,7 @@ open class VarNamer(
         psiManager: PsiManager,
         predictionsFile: File,
         mapper: ObjectMapper,
-        progressBar: ProgressBar
+        progressBar: ProgressBar,
     ) {
         println("Launching ${thread + 1}-th thread")
         fs.forEach forEach2@{ file ->
@@ -121,7 +121,7 @@ open class VarNamer(
     private fun collectNotPredictedFiles(
         predictionsFile: File,
         mapper: ObjectMapper,
-        project: Project
+        project: Project,
     ): List<VirtualFile> {
         val predictedFilePaths = predictionsFile.bufferedReader().lines().asSequence()
             .map { line ->
@@ -160,7 +160,7 @@ open class VarNamer(
 
     private fun predictVarName(
         variable: PsiNameIdentifierOwner,
-        thread: Int
+        thread: Int,
     ): VarNamePredictions? {
         val nameIdentifier = variable.nameIdentifier
         if (nameIdentifier === null || nameIdentifier.text == "") return null
@@ -211,7 +211,7 @@ open class VarNamer(
 
     private fun prepareThreadRunner(
         thread: Int,
-        variable: PsiNameIdentifierOwner
+        variable: PsiNameIdentifierOwner,
     ): NGramModelRunner {
         val runner = persistentModelRunners[thread]
         ReadAction.run<Exception> { ModelManager.getInstance().forgetFileIfNeeded(runner, variable.containingFile) }

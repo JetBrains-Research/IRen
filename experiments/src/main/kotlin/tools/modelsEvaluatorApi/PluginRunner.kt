@@ -35,7 +35,7 @@ open class PluginRunner : ApplicationStarter {
     protected open val javaSmallTest =
         listOf("libgdx", "hadoop")
 
-    protected open val projectList: List<String>? = listOf("libgdx")
+    protected open val projectList: List<String>? = null
 
     override fun getCommandName(): String = "modelsEvaluator"
 
@@ -117,7 +117,7 @@ open class PluginRunner : ApplicationStarter {
         ModelBuilder(project, supporter, null).trainModelRunner(modelRunner)
         val trainingTime = Duration.between(start, Instant.now())
         FileOutputStream(statsFile, true).bufferedWriter().use {
-            it.write("${project.name},$trainingTime,${modelRunner.vocabulary.size()}")
+            it.write("${project.name},$trainingTime,${modelRunner.vocabulary.size()},")
         }
         return modelRunner
     }
