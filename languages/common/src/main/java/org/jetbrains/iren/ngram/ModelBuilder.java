@@ -39,7 +39,7 @@ import java.util.function.DoubleFunction;
 import java.util.stream.Collectors;
 
 import static org.jetbrains.iren.ModelLoaderKt.downloadAndExtractIntellijModels;
-import static org.jetbrains.iren.utils.PsiUtil.isIdeaProject;
+import static org.jetbrains.iren.utils.IdeaUtil.isIdeaProject;
 
 public class ModelBuilder {
     private final Project myProject;

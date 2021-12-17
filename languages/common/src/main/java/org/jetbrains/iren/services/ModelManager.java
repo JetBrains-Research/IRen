@@ -15,7 +15,7 @@ import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.Map;
 
-import static org.jetbrains.iren.utils.PsiUtil.isIdeaProject;
+import static org.jetbrains.iren.utils.IdeaUtil.isIdeaProject;
 
 public class ModelManager implements Disposable {
     public static final Path MODELS_DIRECTORY = Paths.get(PathManager.getSystemPath(), "models");

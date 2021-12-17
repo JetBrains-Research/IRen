@@ -17,7 +17,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import static org.jetbrains.iren.services.ModelManager.getName;
-import static org.jetbrains.iren.utils.PsiUtil.isIdeaProject;
+import static org.jetbrains.iren.utils.IdeaUtil.isIdeaProject;
 
 @State(name = "ModelsSaveTime",
         storages = {@Storage("IRenModelsSaveTime.xml")})

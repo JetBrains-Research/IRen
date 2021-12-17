@@ -16,9 +16,9 @@ import org.jetbrains.annotations.NotNull;
 import java.util.List;
 
 /**
-* Copied necessary from org.jetbrains.idea.devkit.util.PsiUtil
-*/
-public class PsiUtil {
+ * Copied necessary from org.jetbrains.idea.devkit.util.PsiUtil
+ */
+public class IdeaUtil {
     private static final Key<Boolean> IDEA_PROJECT = Key.create("idea.internal.inspections.enabled");
     private static final List<String> IDEA_PROJECT_MARKER_MODULE_NAMES =
             ContainerUtil.immutableList("intellij.idea.community.main", "intellij.platform.commercial");
@@ -30,7 +30,6 @@ public class PsiUtil {
             flag = checkIdeaProject(project);
             project.putUserData(IDEA_PROJECT, flag);
         }
-
         return flag;
     }
 
