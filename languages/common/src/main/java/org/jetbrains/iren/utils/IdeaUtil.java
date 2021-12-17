@@ -44,9 +44,11 @@ public class PsiUtil {
         }
         if (!foundMarkerModule) return false;
 
-        return DumbService.getInstance(project).computeWithAlternativeResolveEnabled(() -> {
-            GlobalSearchScope scope = GlobalSearchScopesCore.projectProductionScope(project);
-            return ReadAction.compute(() -> JavaPsiFacade.getInstance(project).findClass(IDE_PROJECT_MARKER_CLASS, scope)) != null;
-        });
+        return ReadAction.nonBlocking(() ->
+                DumbService.getInstance(project).computeWithAlternativeResolveEnabled(() -> {
+                    GlobalSearchScope scope = GlobalSearchScopesCore.projectProductionScope(project);
+                    return JavaPsiFacade.getInstance(project).findClass(IDE_PROJECT_MARKER_CLASS, scope) != null;
+                })
+        ).executeSynchronously();
     }
 }
