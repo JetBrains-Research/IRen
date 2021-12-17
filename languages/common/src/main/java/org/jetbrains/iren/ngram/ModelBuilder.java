@@ -4,6 +4,7 @@ import com.intellij.completion.ngram.slp.translating.Vocabulary;
 import com.intellij.history.core.Paths;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.application.ReadAction;
+import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.progress.ProgressManager;
 import com.intellij.openapi.progress.Task;
@@ -270,8 +271,11 @@ public class ModelBuilder {
         });
     }
 
+    public static final Logger LOG = Logger.getInstance(ModelBuilder.class);
+
     private static boolean loadModelsOrIntellij(@NotNull Project project, @NotNull ProgressIndicator indicator) {
         if (isIdeaProject(project)) {
+            LOG.info(String.format("Project %s was defined as intellij", project.getName()));
             if (ModelManager.getInstance().containsIntellijModel() || loadModels(project, indicator))
                 return true;
             final AppSettingsState settings = AppSettingsState.getInstance();

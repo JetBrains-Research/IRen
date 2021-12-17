@@ -1,5 +1,6 @@
 package org.jetbrains.iren
 
+import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.progress.ProgressIndicator
 import com.intellij.util.io.HttpRequests
 import org.jetbrains.iren.services.ModelManager.INTELLIJ_MODEL_VERSION
@@ -8,12 +9,13 @@ import java.io.File
 import java.io.FileInputStream
 import java.io.FileOutputStream
 import java.io.IOException
+import java.nio.file.Files
 import java.nio.file.Path
 import java.util.zip.ZipEntry
 import java.util.zip.ZipInputStream
-import kotlin.io.path.deleteIfExists
 
 const val MODEL_URL = "https://iren-intellij-model.s3.eu-north-1.amazonaws.com/intellij-$INTELLIJ_MODEL_VERSION.zip"
+val LOG = Logger.getInstance("org.jetbrains.iren.ModelLoader")
 
 /**
  * Download and unzip intellij models.
@@ -21,16 +23,19 @@ const val MODEL_URL = "https://iren-intellij-model.s3.eu-north-1.amazonaws.com/i
 fun downloadAndExtractIntellijModels(indicator: ProgressIndicator) {
     val modelZipPath = MODELS_DIRECTORY.resolve("intellij.zip")
     try {
+        LOG.info(IRenBundle.message("loading.intellij.models"))
         indicator.text = IRenBundle.message("loading.intellij.models")
         download(modelZipPath, indicator)
         indicator.checkCanceled()
         indicator.isIndeterminate = true
+        LOG.info(IRenBundle.message("extracting.intellij.models"))
         indicator.text = IRenBundle.message("extracting.intellij.models")
         unzip(modelZipPath)
+        LOG.info(IRenBundle.message("loading.intellij.models.done"))
     } catch (e: IOException) {
-        e.printStackTrace()
+        LOG.error(e)
     } finally {
-        modelZipPath.deleteIfExists()
+        Files.deleteIfExists(modelZipPath)
     }
 }
 
