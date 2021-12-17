@@ -1,6 +1,12 @@
 <!-- Keep a Changelog guide -> https://keepachangelog.com -->
 
 # IRen Changelog
+## [0.1.2]
+### Added
+- History of variables' renaming. The plugin remembers variables that you've already renamed 
+and the inspection doesn't suggest you to rename them anymore. This information is saved between IDE sessions.
+- Heuristics for the inspection. It won't suggest you to rename parameters of the overridden methods anymore.
+
 ## [0.1.1]
 ### Fixed
 - Proper detection of idea projects
