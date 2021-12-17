@@ -8,7 +8,7 @@ import com.intellij.refactoring.rename.inplace.MemberInplaceRenamer;
 import com.intellij.refactoring.rename.inplace.MyLookupExpression;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.jetbrains.iren.services.ConsistencyChecker;
+import org.jetbrains.iren.services.RenameHistory;
 
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -19,7 +19,7 @@ import static org.jetbrains.iren.utils.RenameUtils.notTypoRename;
 
 public class IRenMemberInplaceRenamer extends MemberInplaceRenamer {
     private final LinkedHashMap<String, Double> myNameProbabilities = new LinkedHashMap<>();
-    private PsiElement myElementToStoreNames;
+    private @Nullable String variableHash = null;
 
     public IRenMemberInplaceRenamer(@NotNull PsiNamedElement elementToRename, @NotNull Editor editor) {
         this(elementToRename, null, editor);
@@ -41,7 +41,7 @@ public class IRenMemberInplaceRenamer extends MemberInplaceRenamer {
     public boolean performInplaceRefactoring(@Nullable LinkedHashSet<String> nameSuggestions) {
         if (nameSuggestions == null) nameSuggestions = new LinkedHashSet<>();
         if (notTypoRename()) addIRenPredictionsIfPossible(nameSuggestions, myElementToRename, myNameProbabilities);
-        myElementToStoreNames = ConsistencyChecker.getElementToStoreNames(myElementToRename);
+        variableHash = RenameHistory.getInstance(myProject).getVariableHash(myElementToRename, false);
         return super.performInplaceRefactoring(nameSuggestions);
     }
 
@@ -59,6 +59,6 @@ public class IRenMemberInplaceRenamer extends MemberInplaceRenamer {
 
     @Override
     public void afterTemplateStart() {
-        rememberNameAfterRefactoring(myEditor, myElementToStoreNames);
+        rememberNameAfterRefactoring(myProject, myEditor, variableHash);
     }
 }

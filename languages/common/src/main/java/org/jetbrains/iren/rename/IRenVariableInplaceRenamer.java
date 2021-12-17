@@ -14,7 +14,7 @@ import com.intellij.refactoring.rename.inplace.MyLookupExpression;
 import com.intellij.refactoring.rename.inplace.VariableInplaceRenamer;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.jetbrains.iren.services.ConsistencyChecker;
+import org.jetbrains.iren.services.RenameHistory;
 
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -24,7 +24,7 @@ import static org.jetbrains.iren.utils.RenameUtils.notTypoRename;
 
 public class IRenVariableInplaceRenamer extends VariableInplaceRenamer {
     private final LinkedHashMap<String, Double> myNameProbabilities = new LinkedHashMap<>();
-    private PsiElement myElementToStoreNames;
+    private @Nullable String variableHash = null;
 
     public IRenVariableInplaceRenamer(@NotNull PsiNamedElement elementToRename, @NotNull Editor editor) {
         super(elementToRename, editor);
@@ -42,7 +42,7 @@ public class IRenVariableInplaceRenamer extends VariableInplaceRenamer {
     public boolean performInplaceRefactoring(@Nullable LinkedHashSet<String> nameSuggestions) {
         if (nameSuggestions == null) nameSuggestions = new LinkedHashSet<>();
         if (notTypoRename()) addIRenPredictionsIfPossible(nameSuggestions, myElementToRename, myNameProbabilities);
-        myElementToStoreNames = ConsistencyChecker.getElementToStoreNames(myElementToRename);
+        variableHash = RenameHistory.getInstance(myProject).getVariableHash(myElementToRename, false);
         return super.performInplaceRefactoring(nameSuggestions);
     }
 
@@ -60,10 +60,13 @@ public class IRenVariableInplaceRenamer extends VariableInplaceRenamer {
 
     @Override
     protected void afterTemplateStart() {
-        rememberNameAfterRefactoring(myEditor, myElementToStoreNames);
+        rememberNameAfterRefactoring(myProject, myEditor, variableHash);
     }
 
-    public static void rememberNameAfterRefactoring(Editor editor, PsiElement elementToStoreNames) {
+    public static void rememberNameAfterRefactoring(@NotNull Project project,
+                                                    @Nullable Editor editor,
+                                                    @Nullable String scopeHash) {
+        if (editor == null || scopeHash == null) return;
         TemplateState state = TemplateManagerImpl.getTemplateState(editor);
         if (state != null) state.addTemplateStateListener(new TemplateEditingAdapter() {
             @Override
@@ -71,7 +74,7 @@ public class IRenVariableInplaceRenamer extends VariableInplaceRenamer {
                 final TextResult value = state.getVariableValue(PRIMARY_VARIABLE_NAME);
                 String insertedName = value != null ? value.toString().trim() : null;
                 if (insertedName == null) return;
-                ConsistencyChecker.rememberVariableName(elementToStoreNames, insertedName);
+                RenameHistory.getInstance(project).rememberVariableName(scopeHash, insertedName);
             }
         });
     }

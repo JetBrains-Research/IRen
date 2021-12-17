@@ -19,6 +19,7 @@ import org.jetbrains.iren.inspections.variable.JavaVariableVisitor;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.Set;
 
 import static org.jetbrains.iren.utils.StringUtils.*;
 
@@ -74,6 +75,11 @@ public class JavaLanguageSupporter extends LanguageSupporterBase {
     }
 
     @Override
+    protected Collection<Class<? extends PsiNameIdentifierOwner>> getHashClasses() {
+        return Set.of(PsiMethod.class, PsiClass.class);
+    }
+
+    @Override
     protected PsiElement resolveReference(@NotNull PsiElement element) {
         return element instanceof PsiReference ? ((PsiReference) element).resolve() : null;
     }
@@ -87,4 +93,18 @@ public class JavaLanguageSupporter extends LanguageSupporterBase {
     public @NotNull PsiElementVisitor createVariableVisitor(@NotNull ProblemsHolder holder) {
         return new JavaVariableVisitor(holder);
     }
+
+    @Override
+    public boolean excludeFromInspection(@NotNull PsiNameIdentifierOwner variable) {
+        if (variable instanceof PsiParameter) {
+            final PsiParameter parameter = (PsiParameter) variable;
+            final PsiElement declaration = parameter.getDeclarationScope();
+            if (declaration instanceof PsiMethod) {
+                PsiMethod method = (PsiMethod) declaration;
+                return method.hasAnnotation("java.lang.Override");
+            }
+        }
+        return false;
+    }
+
 }

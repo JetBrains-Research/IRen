@@ -21,9 +21,7 @@ import org.jetbrains.kotlin.idea.refactoring.rename.KotlinRenameDispatcherHandle
 import org.jetbrains.kotlin.idea.refactoring.rename.KotlinVariableInplaceRenameHandler;
 import org.jetbrains.kotlin.idea.references.ReferenceUtilsKt;
 import org.jetbrains.kotlin.lexer.KtTokens;
-import org.jetbrains.kotlin.psi.KtNameReferenceExpression;
-import org.jetbrains.kotlin.psi.KtParameter;
-import org.jetbrains.kotlin.psi.KtProperty;
+import org.jetbrains.kotlin.psi.*;
 
 import java.util.Collection;
 import java.util.List;
@@ -78,6 +76,11 @@ public class KotlinLanguageSupporter extends LanguageSupporterBase {
     }
 
     @Override
+    protected Collection<Class<? extends PsiNameIdentifierOwner>> getHashClasses() {
+        return List.of(KtFunction.class, KtClassOrObject.class);
+    }
+
+    @Override
     protected PsiElement resolveReference(@NotNull PsiElement element) {
         KtNameReferenceExpression refExpr = element instanceof KtNameReferenceExpression ? (KtNameReferenceExpression) element : null;
         if (refExpr == null) return null;
@@ -97,5 +100,25 @@ public class KotlinLanguageSupporter extends LanguageSupporterBase {
     @Override
     public @NotNull PsiElementVisitor createVariableVisitor(@NotNull ProblemsHolder holder) {
         return new KotlinVariableVisitor(holder);
+    }
+
+    @Override
+    public boolean excludeFromInspection(@NotNull PsiNameIdentifierOwner variable) {
+        if (isOverridden(variable)) {
+            return true;
+        }
+        if (variable instanceof KtParameter) {
+            final KtParameter parameter = (KtParameter) variable;
+            final PsiElement declaration = parameter.getOwnerFunction();
+            return isOverridden(declaration);
+        }
+        return false;
+    }
+
+    private boolean isOverridden(PsiElement element) {
+        if (element instanceof KtModifierListOwner) {
+            return ((KtModifierListOwner) element).hasModifier(KtTokens.OVERRIDE_KEYWORD);
+        }
+        return false;
     }
 }

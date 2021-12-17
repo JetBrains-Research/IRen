@@ -6,14 +6,14 @@ import com.intellij.openapi.fileTypes.FileType;
 import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiElementVisitor;
 import com.intellij.psi.PsiNameIdentifierOwner;
+import com.intellij.psi.PsiNamedElement;
 import com.intellij.psi.tree.IElementType;
 import com.intellij.refactoring.rename.RenameHandler;
 import com.intellij.refactoring.rename.inplace.VariableInplaceRenameHandler;
 import com.jetbrains.python.PythonFileType;
 import com.jetbrains.python.PythonLanguage;
-import com.jetbrains.python.psi.PyNamedParameter;
-import com.jetbrains.python.psi.PyReferenceExpression;
-import com.jetbrains.python.psi.PyTargetExpression;
+import com.jetbrains.python.psi.*;
+import com.jetbrains.python.refactoring.PyRefactoringProvider;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.iren.contributors.NGramVariableNamesContributor;
@@ -71,6 +71,11 @@ public class PyLanguageSupporter extends LanguageSupporterBase {
     }
 
     @Override
+    protected Collection<Class<? extends PsiNameIdentifierOwner>> getHashClasses() {
+        return List.of(PyFunction.class, PyClass.class);
+    }
+
+    @Override
     protected PsiElement resolveReference(@NotNull PsiElement element) {
         return element instanceof PyReferenceExpression ? ((PyReferenceExpression) element).getReference().resolve() : null;
     }
@@ -88,5 +93,10 @@ public class PyLanguageSupporter extends LanguageSupporterBase {
     @Override
     public boolean isStopName(@NotNull String name) {
         return stopNames.contains(name);
+    }
+
+    @Override
+    public boolean isInplaceRenameAvailable(PsiNamedElement elementToRename) {
+        return new PyRefactoringProvider().isInplaceRenameAvailable(elementToRename, null);
     }
 }

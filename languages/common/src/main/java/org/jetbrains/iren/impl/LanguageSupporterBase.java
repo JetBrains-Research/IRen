@@ -182,6 +182,13 @@ public abstract class LanguageSupporterBase implements LanguageSupporter {
     }
 
     @Override
+    public boolean shouldAddToHash(@NotNull PsiNameIdentifierOwner element) {
+        return getHashClasses().stream().anyMatch(clz -> clz.isInstance(element));
+    }
+
+    protected abstract Collection<Class<? extends PsiNameIdentifierOwner>> getHashClasses();
+
+    @Override
     public void printAvgTime() {
         System.out.printf("%s\t%s\ttotal: %d%n", this.getClass().getSimpleName(), total > 0 ? Duration.ofNanos(time / total).toString() : "0", total);
         time = 0;

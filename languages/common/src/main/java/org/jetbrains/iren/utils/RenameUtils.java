@@ -29,9 +29,8 @@ public class RenameUtils {
      * @param holder   registers the problem
      */
     public static void visitVariable(PsiNameIdentifierOwner variable, ProblemsHolder holder) {
-        if (!ModelsUsabilityService.getInstance().isUsable(ModelManager.getName(variable.getProject(), variable.getLanguage())))
-            return;
-        if (ConsistencyChecker.getInstance().isInconsistent(variable)) {
+        if (ModelsUsabilityService.getInstance().isUsable(ModelManager.getName(variable.getProject(), variable.getLanguage()))
+                && ConsistencyChecker.getInstance().isInconsistent(variable)) {
             @Nullable PsiElement identifier = variable.getNameIdentifier();
             if (identifier == null) return;
             holder.registerProblem(identifier,
@@ -59,7 +58,9 @@ public class RenameUtils {
             return;
         }
         if (ModelsUsabilityService.getInstance().isUsable(
-                ModelManager.getName(elementToRename.getProject(), elementToRename.getLanguage())) && supporter.isVariable(elementToRename)) {
+                ModelManager.getName(elementToRename.getProject(), elementToRename.getLanguage()))
+                && supporter.isVariable(elementToRename)
+                && supporter.isInplaceRenameAvailable(elementToRename)) {
             LinkedHashMap<String, Double> nameProbs = IRenSuggestingService.getInstance().suggestVariableName((PsiNameIdentifierOwner) elementToRename);
             double unknownNameProb = nameProbs.getOrDefault(Vocabulary.unknownCharacter, 0.);
             double varNameProb = nameProbs.getOrDefault(elementToRename.getText(), 0.) - 1e-4;

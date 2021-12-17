@@ -5,10 +5,7 @@ import com.intellij.lang.Language;
 import com.intellij.openapi.extensions.ExtensionPointName;
 import com.intellij.openapi.fileTypes.FileType;
 import com.intellij.openapi.project.Project;
-import com.intellij.psi.PsiElement;
-import com.intellij.psi.PsiElementVisitor;
-import com.intellij.psi.PsiFile;
-import com.intellij.psi.PsiNameIdentifierOwner;
+import com.intellij.psi.*;
 import com.intellij.psi.search.FileTypeIndex;
 import com.intellij.psi.search.GlobalSearchScope;
 import com.intellij.psi.tree.IElementType;
@@ -96,4 +93,14 @@ public interface LanguageSupporter {
     boolean isStopName(@NotNull String name);
 
     boolean elementIsVariableDeclaration(@Nullable PsiElement element);
+
+    default boolean excludeFromInspection(@NotNull PsiNameIdentifierOwner variable) {
+        return false;
+    }
+
+    default boolean isInplaceRenameAvailable(PsiNamedElement elementToRename) {
+        return true;
+    }
+
+    boolean shouldAddToHash(PsiNameIdentifierOwner element);
 }
