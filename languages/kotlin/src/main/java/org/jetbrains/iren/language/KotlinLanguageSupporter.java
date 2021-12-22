@@ -8,6 +8,7 @@ import com.intellij.psi.PsiElementVisitor;
 import com.intellij.psi.PsiNameIdentifierOwner;
 import com.intellij.psi.tree.IElementType;
 import com.intellij.psi.tree.TokenSet;
+import com.intellij.psi.util.PsiUtil;
 import com.intellij.refactoring.rename.RenameHandler;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -25,6 +26,7 @@ import org.jetbrains.kotlin.psi.*;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.Objects;
 
 import static org.jetbrains.iren.utils.StringUtils.*;
 
@@ -108,6 +110,11 @@ public class KotlinLanguageSupporter extends LanguageSupporterBase {
             return true;
         }
         if (variable instanceof KtParameter) {
+            final PsiElement parent = variable.getParent();
+            if (parent != null && parent.getParent() instanceof KtCatchClause) {
+                final String name = variable.getName();
+                return PsiUtil.isIgnoredName(name) || Objects.equals(name, "_");
+            }
             final KtParameter parameter = (KtParameter) variable;
             final PsiElement declaration = parameter.getOwnerFunction();
             return isOverridden(declaration);

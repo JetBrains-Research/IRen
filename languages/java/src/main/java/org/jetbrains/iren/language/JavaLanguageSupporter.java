@@ -8,6 +8,7 @@ import com.intellij.openapi.fileTypes.FileType;
 import com.intellij.psi.*;
 import com.intellij.psi.tree.IElementType;
 import com.intellij.psi.tree.TokenSet;
+import com.intellij.psi.util.PsiUtil;
 import com.intellij.refactoring.rename.RenameHandler;
 import com.intellij.refactoring.rename.inplace.MemberInplaceRenameHandler;
 import com.intellij.refactoring.rename.inplace.VariableInplaceRenameHandler;
@@ -97,6 +98,9 @@ public class JavaLanguageSupporter extends LanguageSupporterBase {
     @Override
     public boolean excludeFromInspection(@NotNull PsiNameIdentifierOwner variable) {
         if (variable instanceof PsiParameter) {
+            if (variable.getParent() instanceof PsiCatchSection) {
+                return PsiUtil.isIgnoredName(variable.getName());
+            }
             final PsiParameter parameter = (PsiParameter) variable;
             final PsiElement declaration = parameter.getDeclarationScope();
             if (declaration instanceof PsiMethod) {
