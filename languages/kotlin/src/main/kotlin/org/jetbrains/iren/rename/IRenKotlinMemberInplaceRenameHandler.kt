@@ -18,7 +18,11 @@ class IRenKotlinMemberInplaceRenameHandler : MemberInplaceRenameHandler() {
         return this
     }
 
-    override fun createMemberRenamer(element: PsiElement, elementToRename: PsiNameIdentifierOwner, editor: Editor): MemberInplaceRenamer {
+    override fun createMemberRenamer(
+        element: PsiElement,
+        elementToRename: PsiNameIdentifierOwner,
+        editor: Editor,
+    ): MemberInplaceRenamer {
         val currentElementToRename = elementToRename.substitute() as PsiNameIdentifierOwner
         val nameIdentifier = currentElementToRename.nameIdentifier
 
@@ -36,6 +40,7 @@ class IRenKotlinMemberInplaceRenameHandler : MemberInplaceRenameHandler() {
     override fun isAvailable(element: PsiElement?, editor: Editor, file: PsiFile): Boolean {
         if (!editor.settings.isVariableInplaceRenameEnabled) return false
         val currentElement = element?.substitute() as? PsiNameIdentifierOwner ?: return false
-        return currentElement.nameIdentifier != null && !KotlinVariableInplaceRenameHandler.isInplaceRenameAvailable(currentElement)
+        return currentElement.nameIdentifier != null && !KotlinVariableInplaceRenameHandler.isInplaceRenameAvailable(
+            currentElement)
     }
 }

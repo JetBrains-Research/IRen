@@ -16,12 +16,12 @@ class IRenKotlinMemeberInplaceRenamer : IRenMemberInplaceRenamer {
         substitutedElement: PsiElement?,
         editor: Editor,
         currentName: String,
-        oldName: String
+        oldName: String,
     ) : super(elementToRename, substitutedElement, editor, currentName, oldName)
 
     constructor(
         elementToRename: PsiNamedElement,
-        editor: Editor
+        editor: Editor,
     ) : super(elementToRename, editor)
 
     override fun isIdentifier(newName: String?, language: Language?): Boolean {
@@ -43,7 +43,7 @@ class IRenKotlinMemeberInplaceRenamer : IRenMemberInplaceRenamer {
     override fun createInplaceRenamerToRestart(
         variable: PsiNamedElement,
         editor: Editor,
-        initialName: String
+        initialName: String,
     ): VariableInplaceRenamer {
         return IRenKotlinMemeberInplaceRenamer(variable, substituted, editor, initialName, myOldName)
     }
