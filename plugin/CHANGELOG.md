@@ -1,6 +1,13 @@
 <!-- Keep a Changelog guide -> https://keepachangelog.com -->
 
 # IRen Changelog
+## [0.1.3]
+### Fixed
+- Some bugs
+- Compatibility with nightly builds
+### Added
+- Heuristic: inspection doesn't suggest names for ignored exceptions in a catch block
+
 ## [0.1.2]
 ### Added
 - History of variables' renaming. The plugin remembers variables that you've already renamed 
