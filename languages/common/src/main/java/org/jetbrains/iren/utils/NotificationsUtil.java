@@ -10,16 +10,20 @@ import com.intellij.openapi.util.registry.Registry;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.iren.IRenBundle;
-import org.jetbrains.iren.ngram.ModelBuilder;
+import org.jetbrains.iren.api.LanguageSupporter;
+import org.jetbrains.iren.services.ModelManager;
 import org.jetbrains.iren.settings.AppSettingsState;
+import org.jetbrains.iren.training.ModelBuilder;
 
 import java.nio.file.Path;
+import java.time.Duration;
+import java.time.Instant;
 
 import static com.intellij.ide.actions.RevealFileAction.openDirectory;
 
 public class NotificationsUtil {
     /**
-     * Checks if intellij is in the "developer.mode" and then sends notification.
+     * Checks if "iren.verbose.inference" registry is true, then sends notification.
      */
     public static void notify(Project project, String title, String context) {
         if (isVerboseInference()) {
@@ -76,5 +80,35 @@ public class NotificationsUtil {
             });
             Notifications.Bus.notify(notification);
         }
+    }
+
+    public static void notEnoughMemoryForTraining() {
+        Notifications.Bus.notify(
+                new Notification(IRenBundle.message("name"),
+                        IRenBundle.message("out.memory.title"),
+                        IRenBundle.message("out.memory.text"),
+                        NotificationType.INFORMATION)
+        );
+    }
+
+    public static void modelTrained(Project project, LanguageSupporter supporter, boolean fullyCompleted, Instant start, int vocabularySize, double modelSize) {
+        StringBuilder text = new StringBuilder(fullyCompleted ? "" :
+                IRenBundle.message("model.training.early.stopped.explanation") + "\n");
+        text.append(IRenBundle.message("model.training.statistics",
+                project.getName(),
+                supporter.getLanguage().getDisplayName(),
+                Duration.between(start, Instant.now()).toSeconds(),
+                vocabularySize));
+        final boolean modelSaved = modelSize > 0;
+        if (modelSaved) {
+            text.append("\n");
+            text.append(IRenBundle.message("model.size", modelSize));
+        }
+        notificationAboutModel(
+                project,
+                fullyCompleted ? IRenBundle.message("model.training.completed") : IRenBundle.message("model.training.early.stopped"),
+                text.toString(),
+                modelSaved ? ModelManager.getPath(ModelManager.getName(project, supporter.getLanguage())) : null
+        );
     }
 }

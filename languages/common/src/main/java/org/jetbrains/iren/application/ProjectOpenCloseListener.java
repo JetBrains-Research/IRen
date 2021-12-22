@@ -4,7 +4,7 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.project.ProjectManagerListener;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.iren.api.LanguageSupporter;
-import org.jetbrains.iren.ngram.ModelBuilder;
+import org.jetbrains.iren.training.ModelBuilder;
 import org.jetbrains.iren.services.ModelManager;
 
 public class ProjectOpenCloseListener implements ProjectManagerListener {

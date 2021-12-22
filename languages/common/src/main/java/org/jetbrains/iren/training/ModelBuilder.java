@@ -1,10 +1,11 @@
-package org.jetbrains.iren.ngram;
+package org.jetbrains.iren.training;
 
 import com.intellij.completion.ngram.slp.translating.Vocabulary;
 import com.intellij.history.core.Paths;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.application.ReadAction;
 import com.intellij.openapi.diagnostic.Logger;
+import com.intellij.openapi.progress.ProcessCanceledException;
 import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.progress.ProgressManager;
 import com.intellij.openapi.progress.Task;
@@ -23,6 +24,9 @@ import org.jetbrains.annotations.Nullable;
 import org.jetbrains.iren.IRenBundle;
 import org.jetbrains.iren.api.LanguageSupporter;
 import org.jetbrains.iren.api.ModelRunner;
+import org.jetbrains.iren.ngram.NGramModelRunner;
+import org.jetbrains.iren.ngram.PersistentNGramModelRunner;
+import org.jetbrains.iren.ngram.VocabularyManager;
 import org.jetbrains.iren.services.ConsistencyChecker;
 import org.jetbrains.iren.services.ModelManager;
 import org.jetbrains.iren.services.ModelsSaveTime;
@@ -36,18 +40,20 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.Collection;
 import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.function.DoubleFunction;
 import java.util.stream.Collectors;
 
 import static org.jetbrains.iren.ModelLoaderKt.downloadAndExtractIntellijModels;
+import static org.jetbrains.iren.training.ModelBuilder.TrainingStatus.*;
 import static org.jetbrains.iren.utils.IdeaUtil.isIdeaProject;
 
 public class ModelBuilder {
+    private static final Logger LOG = Logger.getInstance(ModelBuilder.class);
     private final Project myProject;
     private final LanguageSupporter mySupporter;
     private final ProgressIndicator myProgressIndicator;
     private final int vocabularyCutOff = AppSettingsState.getInstance().vocabularyCutOff;
     private final int maxTrainingTime = AppSettingsState.getInstance().maxTrainingTime;
+    private final MemoryListener memoryListener = new MemoryListener();
 
     public ModelBuilder(@NotNull Project project,
                         @NotNull LanguageSupporter supporter,
@@ -107,41 +113,35 @@ public class ModelBuilder {
         System.out.printf("Project: %s\nLanguage: %s\n", myProject.getName(), mySupporter.getLanguage().getDisplayName());
         Instant start = Instant.now();
         NGramModelRunner modelRunner = new NGramModelRunner();
-        if (!trainModelRunner(modelRunner)) return;
-        String saveStats = null;
+        TrainingStatus status = trainModelRunner(modelRunner);
+        if (status == CANCELED_OR_FAILED) return;
+        double modelSize = 0;
         if (save) {
             if (myProgressIndicator != null)
                 myProgressIndicator.setText(IRenBundle.message("saving.text", myProject.getName(), mySupporter.getLanguage().getDisplayName()));
             final Path modelPath = ModelManager.getPath(name);
             modelRunner = new PersistentNGramModelRunner(modelRunner);
-            double size = modelRunner.save(modelPath, myProgressIndicator);
-            if (size <= 0 || !modelRunner.loadCounters(modelPath, myProgressIndicator)) return;
-//            saveStats = IRenBundle.message("model.size", new DecimalFormat("#.##").format(size));
-            saveStats = IRenBundle.message("model.size", size);
-            System.out.println(saveStats);
+            modelSize = modelRunner.save(modelPath, myProgressIndicator);
+            if (modelSize <= 0 || !modelRunner.loadCounters(modelPath, myProgressIndicator)) return;
+            System.out.println(IRenBundle.message("model.size", modelSize));
         }
-        NotificationsUtil.notificationAboutModel(
-                myProject,
-                IRenBundle.message("model.training.completed"),
-                IRenBundle.message("model.training.statistics",
-                        myProject.getName(),
-                        mySupporter.getLanguage().getDisplayName(),
-                        Duration.between(start, Instant.now()).toSeconds(),
-                        modelRunner.getVocabulary().size())
-                        + "\n" + saveStats,
-                saveStats != null ? ModelManager.getPath(name) : null
-        );
+        NotificationsUtil.modelTrained(myProject,
+                mySupporter,
+                status == FULLY_COMPLETED,
+                start,
+                modelRunner.getVocabulary().size(),
+                modelSize);
         ModelManager.getInstance().putModelRunner(name, modelRunner);
         ModelsUsabilityService.getInstance().setUsable(name, true);
     }
 
-    public boolean trainModelRunner(@NotNull ModelRunner modelRunner) {
+    public TrainingStatus trainModelRunner(@NotNull ModelRunner modelRunner) {
         modelRunner.train();
         if (myProgressIndicator != null) {
             myProgressIndicator.setIndeterminate(false);
         }
         final Collection<VirtualFile> files = getProjectFilesInSource();
-        if (files.size() == 0) return false;
+        if (files.size() == 0) return CANCELED_OR_FAILED;
         ProgressBar progressBar = new ProgressBar(files.size(),
                 myProgressIndicator,
                 myProject.getBasePath() != null ? Paths.getParentOf(myProject.getBasePath()) : null);
@@ -150,12 +150,12 @@ public class ModelBuilder {
             trainVocabulary(modelRunner.getVocabulary(), files, progressBar, trainingStart);
             if (myProgressIndicator != null && myProgressIndicator.isCanceled()) {
                 System.out.println("Training is canceled!");
-                return false;
+                return CANCELED_OR_FAILED;
             }
         }
-        trainNGramModel(modelRunner, files, progressBar, trainingStart);
+        TrainingStatus status = trainNGramModel(modelRunner, files, progressBar, trainingStart);
         modelRunner.eval();
-        return true;
+        return status;
     }
 
     private void trainVocabulary(Vocabulary vocabulary,
@@ -182,15 +182,15 @@ public class ModelBuilder {
     }
 
     private boolean trainingIsNotCanceled(Instant trainingStart, int maxTrainingTime) {
-        return !myProject.isDisposed() && (myProgressIndicator == null || !myProgressIndicator.isCanceled()) &&
+        return !myProject.isDisposed() && !memoryListener.shouldCancel() && (myProgressIndicator == null || !myProgressIndicator.isCanceled()) &&
                 (maxTrainingTime <= 0 || Duration.between(trainingStart, Instant.now())
                         .minusSeconds(maxTrainingTime).isNegative());
     }
 
-    private void trainNGramModel(@NotNull ModelRunner modelRunner,
-                                 @NotNull Collection<VirtualFile> files,
-                                 @NotNull ProgressBar progressBar,
-                                 Instant trainingStart) {
+    private @NotNull TrainingStatus trainNGramModel(@NotNull ModelRunner modelRunner,
+                                                    @NotNull Collection<VirtualFile> files,
+                                                    @NotNull ProgressBar progressBar,
+                                                    Instant trainingStart) {
         System.out.println("Training NGram model...");
         progressBar.clear(files.size());
         Instant finalStart = Instant.now();
@@ -198,6 +198,7 @@ public class ModelBuilder {
                 .forEach(file -> {
                     try {
                         ReadAction.run(() -> ObjectUtils.consumeIfNotNull(PsiManager.getInstance(myProject).findFile(file), modelRunner::learnPsiFile));
+                    } catch (ProcessCanceledException ignore) {
                     } catch (Exception e) {
                         System.out.printf("Failed to train on: %s\n", file);
                         e.printStackTrace();
@@ -207,6 +208,9 @@ public class ModelBuilder {
                 });
         System.out.printf("Done in %s\n", Duration.between(finalStart, Instant.now()));
         System.out.printf("Vocabulary size: %d\n", modelRunner.getVocabulary().size());
+        return trainingIsNotCanceled(trainingStart, maxTrainingTime) ?
+                TrainingStatus.FULLY_COMPLETED :
+                NON_FULLY_COMPLETED;
     }
 
     private Collection<VirtualFile> getProjectFilesInSource() {
@@ -221,13 +225,15 @@ public class ModelBuilder {
                 .collect(Collectors.toList()));
     }
 
-    public static void trainInBackground(Project project) {
-        ProgressManager.getInstance().run(new Task.Backgroundable(project, IRenBundle.message("training.task.title")) {
-            @Override
-            public void run(@NotNull ProgressIndicator indicator) {
-                trainModelsForAllLanguages(project, indicator, true);
-            }
-        });
+    private static boolean loadModelsOrIntellij(@NotNull Project project, @NotNull ProgressIndicator indicator) {
+        if (isIdeaProject(project)) {
+            LOG.info(String.format("Project %s was defined as intellij", project.getName()));
+            if (ModelManager.getInstance().containsIntellijModel() || loadModels(project, indicator))
+                return true;
+            final AppSettingsState settings = AppSettingsState.getInstance();
+            if (!settings.firstOpen && settings.automaticTraining) downloadAndExtractIntellijModels(indicator);
+        }
+        return loadModels(project, indicator);
     }
 
     private static boolean loadModels(@NotNull Project project, @NotNull ProgressIndicator indicator) {
@@ -258,6 +264,15 @@ public class ModelBuilder {
         return isSmthngLoaded;
     }
 
+    public static void trainInBackground(Project project) {
+        ProgressManager.getInstance().run(new Task.Backgroundable(project, IRenBundle.message("training.task.title")) {
+            @Override
+            public void run(@NotNull ProgressIndicator indicator) {
+                trainModelsForAllLanguages(project, indicator, true);
+            }
+        });
+    }
+
     public static void prepareIRenModels(@NotNull Project project) {
         ProgressManager.getInstance().run(new Task.Backgroundable(project, IRenBundle.message("prepare.models.title", project.getName())) {
             @Override
@@ -271,55 +286,10 @@ public class ModelBuilder {
         });
     }
 
-    public static final Logger LOG = Logger.getInstance(ModelBuilder.class);
-
-    private static boolean loadModelsOrIntellij(@NotNull Project project, @NotNull ProgressIndicator indicator) {
-        if (isIdeaProject(project)) {
-            LOG.info(String.format("Project %s was defined as intellij", project.getName()));
-            if (ModelManager.getInstance().containsIntellijModel() || loadModels(project, indicator))
-                return true;
-            final AppSettingsState settings = AppSettingsState.getInstance();
-            if (!settings.firstOpen && settings.automaticTraining) downloadAndExtractIntellijModels(indicator);
-        }
-        return loadModels(project, indicator);
+    public enum TrainingStatus {
+        CANCELED_OR_FAILED,
+        FULLY_COMPLETED,
+        NON_FULLY_COMPLETED
     }
 }
 
-class ProgressBar {
-    private final ProgressIndicator progressIndicator;
-    private final String projectPath;
-    int progress = 0;
-    int total;
-    boolean wasVocabTrained = false;
-
-    public ProgressBar(int total, @Nullable ProgressIndicator progressIndicator, @Nullable String projectPath) {
-        this.total = total;
-        this.progressIndicator = progressIndicator;
-        this.projectPath = projectPath;
-    }
-
-    public void clear(int newTotal) {
-        progress = 0;
-        total = newTotal;
-    }
-
-    public synchronized void vocabularyTrainingStep(VirtualFile file) {
-        wasVocabTrained = true;
-        step(file, fraction -> fraction / 2);
-    }
-
-    public synchronized void step(VirtualFile file, DoubleFunction<Double> modifyFraction) {
-        double fraction = ++progress / (double) total;
-        if (total < 10 || progress % (total / 10) == 0) {
-            System.out.printf("Status:\t%.0f%%\r", fraction * 100.);
-        }
-        if (progressIndicator != null) {
-            progressIndicator.setText2(projectPath != null ? Paths.relativeIfUnder(file.getPath(), projectPath) : file.getPath());
-            progressIndicator.setFraction(modifyFraction.apply(fraction));
-        }
-    }
-
-    public synchronized void trainingStep(VirtualFile file) {
-        step(file, fraction -> wasVocabTrained ? 0.5 + fraction / 2 : fraction);
-    }
-}

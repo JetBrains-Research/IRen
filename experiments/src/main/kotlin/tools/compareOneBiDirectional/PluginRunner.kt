@@ -7,7 +7,7 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.project.ProjectManager
 import com.jetbrains.python.PythonLanguage
 import org.jetbrains.iren.api.LanguageSupporter
-import org.jetbrains.iren.ngram.ModelBuilder
+import org.jetbrains.iren.training.ModelBuilder
 import org.jetbrains.iren.ngram.NGramModelRunner
 import org.jetbrains.iren.settings.AppSettingsState
 import org.jetbrains.kotlin.idea.KotlinLanguage

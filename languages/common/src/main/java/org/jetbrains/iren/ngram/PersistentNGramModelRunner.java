@@ -89,7 +89,7 @@ public class PersistentNGramModelRunner extends NGramModelRunner {
     }
 
     @Override
-    protected boolean loadCounters(@NotNull Path modelPath, @Nullable ProgressIndicator progressIndicator) {
+    public boolean loadCounters(@NotNull Path modelPath, @Nullable ProgressIndicator progressIndicator) {
         if (biDirectional) {
             File forwardCounterFile = modelPath.resolve(FORWARD_COUNTER_FILE).toFile();
             File reverseCounterFile = modelPath.resolve(REVERSE_COUNTER_FILE).toFile();

@@ -36,6 +36,7 @@ open class VarNamer(
     var maxNumberOfThreads = 8
     protected lateinit var myModelRunner: NGramModelRunner
     private val persistentModelRunners: List<NGramModelRunner> by lazy { preparePersistentRunners() }
+    private val mapper = ObjectMapper()
 
     private fun preparePersistentRunners(): List<NGramModelRunner> {
         val persistentModelPath = saveDir.resolve("tmp_persistent_model")
@@ -51,14 +52,13 @@ open class VarNamer(
 
     fun predict(modelRunner: NGramModelRunner, project: Project): Boolean {
         myModelRunner = modelRunner
-        val mapper = ObjectMapper()
         val predictionsFile: File = saveDir.resolve("${project.name}_${ngramType}_predictions.jsonl").toFile()
         predictionsFile.parentFile.mkdirs()
         predictionsFile.createNewFile()
-        val files = collectNotPredictedFiles(predictionsFile, mapper, project)
+        val files = collectNotPredictedFiles(predictionsFile, project)
         if (files.isEmpty()) return false
         val start = Instant.now()
-        predictParallel(files, project, predictionsFile, mapper)
+        predictParallel(files, project, predictionsFile)
         val end = Instant.now()
         val timeSpent = Duration.between(start, end)
         System.out.printf(
@@ -72,7 +72,6 @@ open class VarNamer(
         files: List<VirtualFile>,
         project: Project,
         predictionsFile: File,
-        mapper: ObjectMapper,
     ) {
         val total = files.size
         val psiManager = PsiManager.getInstance(project)
@@ -80,10 +79,10 @@ open class VarNamer(
         println("Number of files to parse: $total")
         if (runParallel) files.withIndex().groupBy { it.index % persistentModelRunners.size }.map { (thread, fs) ->
             thread {
-                launchThread(thread, fs.map { it.value }, psiManager, predictionsFile, mapper, progressBar)
+                launchThread(thread, fs.map { it.value }, psiManager, predictionsFile, progressBar)
             }
         }.forEach { it.join() }
-        else launchThread(0, files, psiManager, predictionsFile, mapper, progressBar)
+        else launchThread(0, files, psiManager, predictionsFile, progressBar)
         progressBar.close()
     }
 
@@ -92,7 +91,6 @@ open class VarNamer(
         fs: List<VirtualFile>,
         psiManager: PsiManager,
         predictionsFile: File,
-        mapper: ObjectMapper,
         progressBar: ProgressBar,
     ) {
         println("Launching ${thread + 1}-th thread")
@@ -120,7 +118,6 @@ open class VarNamer(
 
     private fun collectNotPredictedFiles(
         predictionsFile: File,
-        mapper: ObjectMapper,
         project: Project,
     ): List<VirtualFile> {
         val predictedFilePaths = predictionsFile.bufferedReader().lines().asSequence()
