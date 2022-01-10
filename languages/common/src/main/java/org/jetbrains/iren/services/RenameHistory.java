@@ -2,6 +2,7 @@ package org.jetbrains.iren.services;
 
 import com.intellij.openapi.components.PersistentStateComponent;
 import com.intellij.openapi.components.State;
+import com.intellij.openapi.components.Storage;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.psi.PsiElement;
@@ -18,7 +19,7 @@ import java.util.Collections;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
-@State(name = "IRenRenameHistory")
+@State(name = "IRenRenameHistory", storages = @Storage("IRenRenameHistory.xml"))
 public class RenameHistory implements PersistentStateComponent<RenameHistory> {
     public BlockingQueue<String> rememberedNames = new LinkedBlockingQueue<>(100);
     private final String delimiter = "-";
@@ -65,6 +66,6 @@ public class RenameHistory implements PersistentStateComponent<RenameHistory> {
 
     @Override
     public void loadState(@NotNull RenameHistory state) {
-            XmlSerializerUtil.copyBean(state, this);
+        XmlSerializerUtil.copyBean(state, this);
     }
 }
