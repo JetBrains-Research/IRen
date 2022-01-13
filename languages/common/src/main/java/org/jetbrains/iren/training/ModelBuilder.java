@@ -193,7 +193,7 @@ public class ModelBuilder {
                                                     Instant trainingStart) {
         System.out.println("Training NGram model...");
         progressBar.clear(files.size());
-        Instant finalStart = Instant.now();
+        Instant start = Instant.now();
         files.parallelStream().filter(x -> trainingIsNotCanceled(trainingStart, maxTrainingTime))
                 .forEach(file -> {
                     try {
@@ -206,7 +206,7 @@ public class ModelBuilder {
                         progressBar.trainingStep(file);
                     }
                 });
-        System.out.printf("Done in %s\n", Duration.between(finalStart, Instant.now()));
+        System.out.printf("Done in %s\n", Duration.between(start, Instant.now()));
         System.out.printf("Vocabulary size: %d\n", modelRunner.getVocabulary().size());
         return trainingIsNotCanceled(trainingStart, maxTrainingTime) ?
                 TrainingStatus.FULLY_COMPLETED :
