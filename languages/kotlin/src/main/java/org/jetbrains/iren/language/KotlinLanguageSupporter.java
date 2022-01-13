@@ -8,6 +8,7 @@ import com.intellij.psi.PsiElementVisitor;
 import com.intellij.psi.PsiNameIdentifierOwner;
 import com.intellij.psi.tree.IElementType;
 import com.intellij.psi.tree.TokenSet;
+import com.intellij.psi.util.PsiTreeUtil;
 import com.intellij.psi.util.PsiUtil;
 import com.intellij.refactoring.rename.RenameHandler;
 import org.jetbrains.annotations.NotNull;
@@ -127,5 +128,22 @@ public class KotlinLanguageSupporter extends LanguageSupporterBase {
             return ((KtModifierListOwner) element).hasModifier(KtTokens.OVERRIDE_KEYWORD);
         }
         return false;
+    }
+
+    @Override
+    public boolean isColliding(@NotNull PsiElement element, @NotNull String newName) {
+        return super.isColliding(element, newName) || isCollidingWithParameter(element, newName);
+    }
+
+    /**
+     * Checks if enclosing {@link KtCallableDeclaration} has a parameter with newName.
+     * Fix <a href="https://jetbrains.team/p/suggesting-identifier-names/issues/30">issue #30</a>.
+     */
+    private boolean isCollidingWithParameter(@NotNull PsiElement element, @NotNull String newName) {
+        final KtCallableDeclaration parent = PsiTreeUtil.getParentOfType(element, KtCallableDeclaration.class);
+        return parent != null && parent.getValueParameters().stream().anyMatch(parameter -> {
+            final PsiElement nameIdentifier = parameter.getNameIdentifier();
+            return nameIdentifier != null && newName.equals(nameIdentifier.getText());
+        });
     }
 }

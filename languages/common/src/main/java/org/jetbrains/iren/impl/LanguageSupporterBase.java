@@ -12,6 +12,7 @@ import com.intellij.psi.*;
 import com.intellij.psi.search.GlobalSearchScope;
 import com.intellij.psi.util.PsiTreeUtil;
 import com.intellij.refactoring.rename.RenamePsiElementProcessor;
+import com.intellij.refactoring.rename.UnresolvableCollisionUsageInfo;
 import com.intellij.usageView.UsageInfo;
 import com.intellij.util.SmartList;
 import org.apache.commons.lang3.StringUtils;
@@ -38,7 +39,7 @@ public abstract class LanguageSupporterBase implements LanguageSupporter {
     public boolean isColliding(@NotNull PsiElement element, @NotNull String newName) {
         List<UsageInfo> info = new SmartList<>();
         RenamePsiElementProcessor.forElement(element).findCollisions(element, newName, new HashMap<>(), info);
-        return !info.isEmpty();
+        return info.stream().anyMatch(usageInfo -> usageInfo instanceof UnresolvableCollisionUsageInfo);
     }
 
     @Override

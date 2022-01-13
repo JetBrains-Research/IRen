@@ -20,6 +20,7 @@ import org.jetbrains.iren.contributors.NGramVariableNamesContributor;
 import org.jetbrains.iren.impl.LanguageSupporterBase;
 import org.jetbrains.iren.inspections.variable.PyVariableVisitor;
 
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 
@@ -98,5 +99,22 @@ public class PyLanguageSupporter extends LanguageSupporterBase {
     @Override
     public boolean isInplaceRenameAvailable(PsiNamedElement elementToRename) {
         return new PyRefactoringProvider().isInplaceRenameAvailable(elementToRename, null);
+    }
+
+    @Override
+    public boolean isColliding(@NotNull PsiElement element, @NotNull String newName) {
+        return super.isColliding(element, newName) ||
+                element instanceof PyParameter && isCollidingWithParameter((PyParameter) element, newName);
+    }
+
+    /**
+     * Checks if a parameter with the newName already exists
+     */
+    private boolean isCollidingWithParameter(@NotNull PyParameter element, @NotNull String newName) {
+        final PsiElement parent = element.getParent();
+        return parent instanceof PyParameterList && Arrays.stream(((PyParameterList) parent).getParameters()).anyMatch(parameter -> {
+            final PyNamedParameter namedParameter = parameter.getAsNamed();
+            return namedParameter != null && newName.equals(namedParameter.getName());
+        });
     }
 }
