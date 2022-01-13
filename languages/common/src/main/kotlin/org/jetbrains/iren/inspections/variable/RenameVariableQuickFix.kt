@@ -3,7 +3,7 @@ package org.jetbrains.iren.inspections.variable
 import com.intellij.codeInspection.LocalQuickFix
 import com.intellij.codeInspection.ProblemDescriptor
 import com.intellij.ide.DataManager
-import com.intellij.openapi.fileEditor.FileEditorManager
+import com.intellij.openapi.actionSystem.CommonDataKeys
 import com.intellij.openapi.project.Project
 import com.intellij.psi.PsiNameIdentifierOwner
 import com.intellij.psi.SmartPsiElementPointer
@@ -14,8 +14,8 @@ class RenameVariableQuickFix(
     private var variable: SmartPsiElementPointer<PsiNameIdentifierOwner>
 ) : LocalQuickFix {
     override fun applyFix(project: Project, descriptor: ProblemDescriptor) {
-        val editor = FileEditorManager.getInstance(project).selectedTextEditor!!
         val dataContext = DataManager.getInstance().dataContextFromFocusAsync.blockingGet(1) ?: return
+        val editor = dataContext.getData(CommonDataKeys.EDITOR)
 
         RenameHandlerRegistry.getInstance()
             .getRenameHandler(dataContext)
