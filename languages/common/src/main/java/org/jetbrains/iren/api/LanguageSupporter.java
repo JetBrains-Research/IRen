@@ -102,5 +102,5 @@ public interface LanguageSupporter {
         return true;
     }
 
-    boolean shouldAddToHash(PsiNameIdentifierOwner element);
+    boolean isFunctionOrClass(PsiNameIdentifierOwner element);
 }

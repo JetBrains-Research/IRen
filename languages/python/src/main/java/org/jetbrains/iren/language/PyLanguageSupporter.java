@@ -71,7 +71,7 @@ public class PyLanguageSupporter extends LanguageSupporterBase {
     }
 
     @Override
-    protected Collection<Class<? extends PsiNameIdentifierOwner>> getHashClasses() {
+    protected Collection<Class<? extends PsiNameIdentifierOwner>> getFunctionAndClassPsi() {
         return List.of(PyFunction.class, PyClass.class);
     }
 

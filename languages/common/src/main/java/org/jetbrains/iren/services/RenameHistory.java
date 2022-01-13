@@ -48,7 +48,7 @@ public class RenameHistory implements PersistentStateComponent<RenameHistory> {
         LanguageSupporter supporter = LanguageSupporter.getInstance(variable.getLanguage());
         PsiElement parent = variable.getParent();
         while (parent != null && !(parent instanceof PsiFile)) {
-            if (parent instanceof PsiNameIdentifierOwner && supporter.shouldAddToHash((PsiNameIdentifierOwner) parent)) {
+            if (parent instanceof PsiNameIdentifierOwner && supporter.isFunctionOrClass((PsiNameIdentifierOwner) parent)) {
                 nameList.add(((PsiNameIdentifierOwner) parent).getName());
             }
             parent = parent.getParent();

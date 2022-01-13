@@ -78,7 +78,7 @@ public class KotlinLanguageSupporter extends LanguageSupporterBase {
     }
 
     @Override
-    protected Collection<Class<? extends PsiNameIdentifierOwner>> getHashClasses() {
+    protected Collection<Class<? extends PsiNameIdentifierOwner>> getFunctionAndClassPsi() {
         return List.of(KtFunction.class, KtClassOrObject.class);
     }
 

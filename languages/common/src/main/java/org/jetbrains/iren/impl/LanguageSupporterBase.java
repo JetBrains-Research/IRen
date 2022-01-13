@@ -113,10 +113,11 @@ public abstract class LanguageSupporterBase implements LanguageSupporter {
         return element == null ? null : element.getPsi();
     }
 
-    private @NotNull PsiElement findRoot(@NotNull PsiNameIdentifierOwner variable, @NotNull Collection<PsiElement> usages) {
-        if (usages.size() < 2) return variable.getParent().getParent();
-        @Nullable PsiElement result = PsiTreeUtil.findCommonParent(usages.toArray(new PsiElement[]{}));
-        return result != null ? result : variable.getParent().getParent();
+    protected @Nullable PsiElement findRoot(@NotNull PsiNameIdentifierOwner variable, @NotNull Collection<PsiElement> usages) {
+        final PsiElement result = usages.size() < 2 ? variable.getParent() : PsiTreeUtil.findCommonParent(usages.toArray(new PsiElement[]{}));
+        return result == null ||
+                result instanceof PsiNameIdentifierOwner && isFunctionOrClass((PsiNameIdentifierOwner) result) ?
+                result : result.getParent();
     }
 
     public boolean shouldLex(@NotNull PsiElement element) {
@@ -183,11 +184,11 @@ public abstract class LanguageSupporterBase implements LanguageSupporter {
     }
 
     @Override
-    public boolean shouldAddToHash(@NotNull PsiNameIdentifierOwner element) {
-        return getHashClasses().stream().anyMatch(clz -> clz.isInstance(element));
+    public boolean isFunctionOrClass(@NotNull PsiNameIdentifierOwner element) {
+        return getFunctionAndClassPsi().stream().anyMatch(clz -> clz.isInstance(element));
     }
 
-    protected abstract Collection<Class<? extends PsiNameIdentifierOwner>> getHashClasses();
+    protected abstract Collection<Class<? extends PsiNameIdentifierOwner>> getFunctionAndClassPsi();
 
     @Override
     public void printAvgTime() {

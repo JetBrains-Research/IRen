@@ -76,7 +76,7 @@ public class JavaLanguageSupporter extends LanguageSupporterBase {
     }
 
     @Override
-    protected Collection<Class<? extends PsiNameIdentifierOwner>> getHashClasses() {
+    protected Collection<Class<? extends PsiNameIdentifierOwner>> getFunctionAndClassPsi() {
         return Set.of(PsiMethod.class, PsiClass.class);
     }
 
