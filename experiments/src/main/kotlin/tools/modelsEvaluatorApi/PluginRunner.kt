@@ -7,9 +7,9 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.project.ProjectManager
 import com.jetbrains.python.PythonLanguage
 import org.jetbrains.iren.api.LanguageSupporter
-import org.jetbrains.iren.training.ModelBuilder
 import org.jetbrains.iren.ngram.NGramModelRunner
 import org.jetbrains.iren.settings.AppSettingsState
+import org.jetbrains.iren.training.ModelBuilder
 import org.jetbrains.kotlin.idea.KotlinLanguage
 import java.io.File
 import java.io.FileOutputStream
@@ -107,7 +107,7 @@ open class PluginRunner : ApplicationStarter {
 
     private fun trainModelRunner(
         project: Project,
-        statsFile: File
+        statsFile: File,
     ): NGramModelRunner {
         val start = Instant.now()
         val settings = AppSettingsState.getInstance()

@@ -191,8 +191,16 @@ open class VarNamer(
     }
 
     open fun predictWithNN(variable: PsiNameIdentifierOwner, thread: Int): Any {
+        if (!runParallel) {
+//            Predict with RAM version model
+            ModelManager.getInstance().forgetFileIfNeeded(myModelRunner, variable.containingFile)
+            return myModelRunner.suggestNames(variable)
+                .map { x: VarNamePrediction -> ModelPrediction(x.name, x.probability) }
+        }
+        if (ngramType != "BiDirectional") {
+            return listOf<VarNamePrediction>()
+        }
 //        Predict with the forward model of the BiDirectional model
-        assert(ngramType == "BiDirectional")
         val runner = prepareThreadRunner(thread, variable)
         val forwardModel = NGramModelRunner(
             (runner.model as BiDirectionalModel).forward,

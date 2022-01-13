@@ -1,0 +1,23 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="modelsEvaluator" type="GradleRunConfiguration" factoryName="Gradle">
+    <ExternalSystemSettings>
+      <option name="executionName" />
+      <option name="externalProjectPath" value="$PROJECT_DIR$/experiments" />
+      <option name="externalSystemIdString" value="GRADLE" />
+      <option name="scriptParameters" value="-PevaluatorToUse=&quot;modelsEvaluator&quot; -Pdataset=&quot;C:\Users\Igor.Davidenko\PycharmProjects\dataset\python&quot; -PsaveDir=&quot;C:\Users\Igor.Davidenko\PycharmProjects\compare_predictions\top100_predictions\python&quot; -Planguage=&quot;python&quot; -PngramType=&quot;BiDirectional&quot;" />
+      <option name="taskDescriptions">
+        <list />
+      </option>
+      <option name="taskNames">
+        <list>
+          <option value="runIde" />
+        </list>
+      </option>
+      <option name="vmOptions" />
+    </ExternalSystemSettings>
+    <ExternalSystemDebugServerProcess>true</ExternalSystemDebugServerProcess>
+    <ExternalSystemReattachDebugProcess>true</ExternalSystemReattachDebugProcess>
+    <DebugAllEnabled>false</DebugAllEnabled>
+    <method v="2" />
+  </configuration>
+</component>
