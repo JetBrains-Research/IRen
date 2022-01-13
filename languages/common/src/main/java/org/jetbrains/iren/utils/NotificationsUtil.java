@@ -111,4 +111,12 @@ public class NotificationsUtil {
                 modelSaved ? ModelManager.getPath(ModelManager.getName(project, supporter.getLanguage())) : null
         );
     }
+
+    public static void oldModelsDeleted() {
+        Notifications.Bus.notify(
+                new Notification(IRenBundle.message("name"),
+                        IRenBundle.message("delete.old.models.notification"),
+                        NotificationType.INFORMATION)
+        );
+    }
 }

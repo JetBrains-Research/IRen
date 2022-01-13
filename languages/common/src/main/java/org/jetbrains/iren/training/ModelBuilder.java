@@ -277,6 +277,8 @@ public class ModelBuilder {
         ProgressManager.getInstance().run(new Task.Backgroundable(project, IRenBundle.message("prepare.models.title", project.getName())) {
             @Override
             public void run(@NotNull ProgressIndicator indicator) {
+                indicator.setText(IRenBundle.message("delete.old.models.process"));
+                if (ModelManager.deleteOldModels()) NotificationsUtil.oldModelsDeleted();
                 AppSettingsState settings = AppSettingsState.getInstance();
                 if ((ModelsSaveTime.getInstance().needRetraining(project) ||
                         !loadModelsOrIntellij(project, indicator)) && !settings.firstOpen && settings.automaticTraining) {

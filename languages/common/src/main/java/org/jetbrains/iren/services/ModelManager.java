@@ -6,14 +6,19 @@ import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.application.PathManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.psi.PsiFile;
+import org.apache.commons.io.FileUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.iren.api.ModelRunner;
 
+import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.stream.Stream;
 
 import static org.jetbrains.iren.utils.IdeaUtil.isIdeaProject;
 
@@ -77,5 +82,30 @@ public class ModelManager implements Disposable {
         return myModelRunners.keySet().stream().anyMatch(name ->
                 name.startsWith(INTELLIJ_NAME)
         );
+    }
+
+    public static boolean deleteOldModels() {
+        AtomicBoolean res = new AtomicBoolean(false);
+        try (Stream<Path> paths = Files.list(MODELS_DIRECTORY)) {
+            paths
+                    .filter(Files::isDirectory)
+                    .filter(ModelManager::isNotCurrentVersion)
+                    .map(Path::toFile)
+                    .forEach(file -> {
+                        try {
+                            FileUtils.deleteDirectory(file);
+                            res.set(true);
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        }
+                    });
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return res.get();
+    }
+
+    private static boolean isNotCurrentVersion(Path path) {
+        return !path.toString().endsWith(CURRENT_MODEL_VERSION);
     }
 }
