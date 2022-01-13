@@ -1,0 +1,2 @@
+fun foo ( args : Array < String > ) { if ( args . isNotEmpty ( ) ) { val s = args [ 0 ] } }
+3 13 23

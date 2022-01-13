@@ -1,10 +1,15 @@
 package org.jetbrains.iren.storages;
 
 import com.intellij.completion.ngram.slp.translating.Vocabulary;
+import com.intellij.openapi.util.text.Strings;
 import org.jetbrains.annotations.NotNull;
 
+import java.io.BufferedReader;
+import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * Context is a snippet of code separated on tokens that contains all references of some variable.
@@ -38,5 +43,23 @@ public class Context<T> {
 
     public static @NotNull Context<Integer> fromStringToInt(@NotNull Context<String> context, @NotNull Vocabulary vocabulary) {
         return new Context<>(vocabulary.toIndices(context.getTokens()), context.getVarIdxs());
+    }
+
+    // --------------------------- For tests ---------------------------
+    public String serialize() {
+        return Strings.join(tokens, " ") + "\n" + Strings.join(varIdxs, " ");
+    }
+
+    public static Context<String> deserialize(BufferedReader reader) throws IOException {
+        final List<String> tokens = List.of(reader.readLine().split(" "));
+        final List<Integer> varIdxs = Arrays.stream(reader.readLine().split(" ")).map(Integer::parseInt).collect(Collectors.toList());
+        return new Context<>(tokens, varIdxs);
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        return obj instanceof Context
+                && varIdxs.equals(((Context<?>) obj).varIdxs)
+                && tokens.equals(((Context<?>) obj).tokens);
     }
 }

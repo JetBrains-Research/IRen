@@ -2,6 +2,7 @@ package org.jetbrains.iren.impl;
 
 import com.intellij.completion.ngram.slp.translating.Vocabulary;
 import com.intellij.lang.ASTNode;
+import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.progress.ProcessCanceledException;
 import com.intellij.openapi.progress.ProgressManager;
 import com.intellij.openapi.progress.StandardProgressIndicator;
@@ -85,9 +86,10 @@ public abstract class LanguageSupporterBase implements LanguageSupporter {
     }
 
     public @Nullable Collection<PsiReference> findReferences(@NotNull PsiNameIdentifierOwner identifierOwner, @NotNull PsiFile file) {
-//        Unknown problems when using GlobalSearchScope.projectScope. Most likely there are too many fields and searching breaks.
-        return runForSomeTime(100, () -> RenamePsiElementProcessor.forElement(identifierOwner)
-                .findReferences(identifierOwner, GlobalSearchScope.fileScope(file), false));
+        final Computable<Collection<PsiReference>> computable = () -> RenamePsiElementProcessor.forElement(identifierOwner)
+                .findReferences(identifierOwner, GlobalSearchScope.fileScope(file), false);
+        return ApplicationManager.getApplication().isUnitTestMode() ?
+                computable.compute() : runForSomeTime(100, computable);
     }
 
     public static <T> @Nullable T runForSomeTime(long runningTimeMs, @NotNull Computable<T> process) {

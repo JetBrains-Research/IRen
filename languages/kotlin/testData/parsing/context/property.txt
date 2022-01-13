@@ -1,0 +1,2 @@
+class MyClass { var myField = 0 fun setField ( field : Int ) { this . myField = field } companion object { @ JvmStatic fun main ( args : Array < String > ) { val instance = MyClass ( ) instance . myField = 1 } } }
+4 17 45

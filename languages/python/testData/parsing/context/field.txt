@@ -1,0 +1,2 @@
+class Foo : def __init__ ( self , v : int ) : self . my_field = v def print_field ( self ) : print ( self . my_field ) if __name__ == <str> : foo = Foo ( <num> ) foo . my_field = <num> foo . print_field ( )
+15 28 43

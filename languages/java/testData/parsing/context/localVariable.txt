@@ -1,0 +1,2 @@
+public static void main ( String [ ] args ) { int i = <num> ; i = i + <num> ; }
+12 16 18

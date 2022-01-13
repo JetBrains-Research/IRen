@@ -1,0 +1,1 @@
+package parsing . code class Parameter { fun foo ( args : Array < String > ) { if ( args . isNotEmpty ( ) ) { val s = args [ 0 ] } } }

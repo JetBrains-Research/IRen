@@ -10,5 +10,5 @@ dependencies {
     implementation("net.razorvine", "pyrolite", "4.19")
     implementation("org.eclipse.mylyn.github", "org.eclipse.egit.github.core", "2.1.5")
 
-    testImplementation(project(":plugin").dependencyProject.sourceSets["test"].output)
+    testImplementation(project(":languages:common").dependencyProject.sourceSets["test"].output)
 }
