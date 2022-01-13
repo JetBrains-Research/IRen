@@ -1,6 +1,14 @@
 <!-- Keep a Changelog guide -> https://keepachangelog.com -->
 
 # IRen Changelog
+## [0.1.4]
+### Fixed
+- Bug with suggestion of shadowed names
+- Inspection bug in git diff editor
+- Remove IRen rename history from misc.xml
+### Added
+- New version of n-gram model
+
 ## [0.1.3]
 ### Fixed
 - Some bugs
