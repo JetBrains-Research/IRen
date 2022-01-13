@@ -165,6 +165,7 @@ public abstract class LanguageSupporterBase implements LanguageSupporter {
                 .collect(Collectors.toList());
     }
 
+    @Contract("null -> false")
     public boolean isVariable(@Nullable PsiElement token) {
         if (token == null) return false;
         if (token instanceof PsiNameIdentifierOwner) {
@@ -203,7 +204,7 @@ public abstract class LanguageSupporterBase implements LanguageSupporter {
     }
 
     private boolean isVariableClass(@NotNull PsiElement token) {
-        return getVariableClasses().stream().anyMatch(cls -> cls.isAssignableFrom(token.getClass()));
+        return getVariableClasses().stream().anyMatch(cls -> cls.isInstance(token));
     }
 
     public boolean isVariableOrReference(@NotNull PsiNameIdentifierOwner variable, @Nullable PsiElement token) {
