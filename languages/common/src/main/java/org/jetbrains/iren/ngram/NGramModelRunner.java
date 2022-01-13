@@ -102,7 +102,8 @@ public class NGramModelRunner implements ModelRunner {
 
     @Override
     public @NotNull List<VarNamePrediction> suggestNames(@NotNull PsiNameIdentifierOwner variable, boolean forgetContext) {
-        @NotNull Context<Integer> intContext = prepareContext(variable, forgetContext);
+        @Nullable Context<Integer> intContext = prepareContext(variable, forgetContext);
+        if (intContext == null) return List.of();
         Context<Integer> unknownContext = intContext.with(0);
         Set<Integer> candidates = new HashSet<>();
         for (int idx : intContext.getVarIdxs()) {
@@ -111,9 +112,11 @@ public class NGramModelRunner implements ModelRunner {
         return rankCandidates(candidates, unknownContext);
     }
 
-    @NotNull
+    @Nullable
     private Context<Integer> prepareContext(@NotNull PsiNameIdentifierOwner variable, boolean forgetContext) {
-        @NotNull Context<Integer> intContext = Context.fromStringToInt(getSupporter(variable).getContext(variable, false), myVocabulary);
+        final Context<String> context = getSupporter(variable).getContext(variable, false);
+        if (context == null) return null;
+        Context<Integer> intContext = Context.fromStringToInt(context, myVocabulary);
         if (forgetContext) {
 //            I don't try to relearn context after refactoring because forgetting
 //            context makes sense only for models that trained on a single file.
@@ -206,8 +209,8 @@ public class NGramModelRunner implements ModelRunner {
 
     @Override
     public @NotNull Pair<Double, Integer> getProbability(PsiNameIdentifierOwner variable, boolean forgetContext) {
-        @NotNull Context<Integer> intContext = prepareContext(variable, forgetContext);
-        return new Pair<>(getLogProb(intContext), getModelPriority());
+        @Nullable Context<Integer> intContext = prepareContext(variable, forgetContext);
+        return intContext == null ? new Pair<>(0., 0) : new Pair<>(getLogProb(intContext), getModelPriority());
     }
 
     public void learnContext(@NotNull Context<Integer> context) {

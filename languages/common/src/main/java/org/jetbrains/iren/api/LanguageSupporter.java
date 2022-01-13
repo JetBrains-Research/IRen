@@ -62,7 +62,7 @@ public interface LanguageSupporter {
      *                        about ground truth name of the {@code variable}.
      * @return context of the variable.
      */
-    @NotNull Context<String> getContext(@NotNull PsiNameIdentifierOwner variable, boolean changeToUnknown);
+    @Nullable Context<String> getContext(@NotNull PsiNameIdentifierOwner variable, boolean changeToUnknown);
 
     @NotNull List<String> lexPsiFile(@NotNull PsiFile file);
 

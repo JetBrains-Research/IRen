@@ -42,10 +42,11 @@ public abstract class LanguageSupporterBase implements LanguageSupporter {
     }
 
     @Override
-    public @NotNull Context<String> getContext(@NotNull PsiNameIdentifierOwner variable, boolean changeToUnknown) {
+    public @Nullable Context<String> getContext(@NotNull PsiNameIdentifierOwner variable, boolean changeToUnknown) {
         PsiFile file = variable.getContainingFile();
         Collection<PsiElement> usages = findUsages(variable, file);
         PsiElement root = findRoot(variable, usages);
+        if (root == null) return null;
         List<Integer> varIdxs = new ArrayList<>();
         List<PsiElement> elements = getLeafElementsFromRoot(root);
         List<String> tokens = new ArrayList<>();
