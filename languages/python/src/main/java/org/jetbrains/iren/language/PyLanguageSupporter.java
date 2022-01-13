@@ -64,7 +64,7 @@ public class PyLanguageSupporter extends LanguageSupporterBase {
     protected String processLiteral(@NotNull PsiElement token, @NotNull String text) {
         @NotNull IElementType tokenType = token.getNode().getElementType();
         if (STRING_NODES.contains(tokenType) || FSTRING_TEXT_TOKENS.contains(tokenType)) {
-            return text.length() > 10 ? STRING_TOKEN : text;
+            return STRING_TOKEN;
         } else if (NUMERIC_LITERALS.contains(tokenType)) {
             return IntegersToLeave.contains(text) ? text : NUMBER_TOKEN;
         }

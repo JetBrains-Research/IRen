@@ -3,7 +3,7 @@ package org.jetbrains.iren
 import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.progress.ProgressIndicator
 import com.intellij.util.io.HttpRequests
-import org.jetbrains.iren.services.ModelManager.INTELLIJ_MODEL_VERSION
+import org.jetbrains.iren.services.ModelManager.CURRENT_MODEL_VERSION
 import org.jetbrains.iren.services.ModelManager.MODELS_DIRECTORY
 import java.io.File
 import java.io.FileInputStream
@@ -14,7 +14,7 @@ import java.nio.file.Path
 import java.util.zip.ZipEntry
 import java.util.zip.ZipInputStream
 
-const val MODEL_URL = "https://iren-intellij-model.s3.eu-north-1.amazonaws.com/intellij-$INTELLIJ_MODEL_VERSION.zip"
+const val MODEL_URL = "https://iren-intellij-model.s3.eu-north-1.amazonaws.com/intellij-$CURRENT_MODEL_VERSION.zip"
 val LOG = Logger.getInstance("org.jetbrains.iren.ModelLoader")
 
 /**

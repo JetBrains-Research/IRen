@@ -71,7 +71,7 @@ public class KotlinLanguageSupporter extends LanguageSupporterBase {
     protected String processLiteral(@NotNull PsiElement token, @NotNull String text) {
         @NotNull IElementType tokenType = token.getNode().getElementType();
         if (tokenType == KtTokens.REGULAR_STRING_PART) {
-            return text.length() > 10 ? STRING_TOKEN : text;
+            return STRING_TOKEN;
         } else if (NumberTypes.contains(tokenType)) {
             return IntegersToLeave.contains(text) ? text : NUMBER_TOKEN;
         }

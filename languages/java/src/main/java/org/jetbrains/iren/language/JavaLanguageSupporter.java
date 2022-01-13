@@ -66,7 +66,7 @@ public class JavaLanguageSupporter extends LanguageSupporterBase {
         if (token.getParent() instanceof PsiLiteral) {
             @NotNull IElementType literalType = token.getNode().getElementType();
             if (literalType == JavaTokenType.STRING_LITERAL) {
-                return text.length() > 10 ? STRING_TOKEN : text;
+                return STRING_TOKEN;
             }
             if (NumberTypes.contains(literalType)) {
                 return IntegersToLeave.contains(text) ? text : NUMBER_TOKEN;

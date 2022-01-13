@@ -20,7 +20,7 @@ import static org.jetbrains.iren.utils.IdeaUtil.isIdeaProject;
 public class ModelManager implements Disposable {
     public static final Path MODELS_DIRECTORY = Paths.get(PathManager.getSystemPath(), "models");
     public static final String INTELLIJ_NAME = "intellij";
-    public static final String INTELLIJ_MODEL_VERSION = "1";
+    public static final String CURRENT_MODEL_VERSION = "2";
 
     private final Map<String, ModelRunner> myModelRunners = new HashMap<>();
 
@@ -35,9 +35,8 @@ public class ModelManager implements Disposable {
     public static @NotNull String getName(@NotNull Project project,
                                           @Nullable Language language) {
         return (isIdeaProject(project) ?
-                String.join("_", INTELLIJ_NAME, INTELLIJ_MODEL_VERSION) :
-                String.join("_", project.getName(), project.getLocationHash())
-        ) + (language == null ? "" : "_" + language.getID());
+                INTELLIJ_NAME : String.join("_", project.getName(), project.getLocationHash())
+        ) + (language == null ? "" : String.join("_", "", language.getID(), CURRENT_MODEL_VERSION));
     }
 
     public @Nullable ModelRunner getModelRunner(@NotNull String name) {
@@ -76,7 +75,7 @@ public class ModelManager implements Disposable {
 
     public boolean containsIntellijModel() {
         return myModelRunners.keySet().stream().anyMatch(name ->
-                name.startsWith(INTELLIJ_NAME + "_" + INTELLIJ_MODEL_VERSION)
+                name.startsWith(INTELLIJ_NAME)
         );
     }
 }
