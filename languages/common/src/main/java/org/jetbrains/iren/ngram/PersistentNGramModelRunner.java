@@ -44,13 +44,13 @@ public class PersistentNGramModelRunner extends NGramModelRunner {
     protected long saveCounters(@NotNull Path modelPath, @Nullable ProgressIndicator progressIndicator) {
         if (biDirectional) {
             File forwardCounterFile = modelPath.resolve(FORWARD_COUNTER_FILE).toFile();
-            final Counter forwardCounter = removeCounter(((NGramModel) ((BiDirectionalModel) myModel).getForward()));
+            final Counter forwardCounter = ((NGramModel) ((BiDirectionalModel) myModel).getForward()).getCounter();
             long counterSize1 = saveCounter(forwardCounterFile,
                     forwardCounter,
                     progressIndicator);
             if (counterSize1 < 0) return counterSize1;
             File reverseCounterFile = modelPath.resolve(REVERSE_COUNTER_FILE).toFile();
-            final Counter reverseCounter = removeCounter((NGramModel) ((BiDirectionalModel) myModel).getReverse());
+            final Counter reverseCounter = ((NGramModel) ((BiDirectionalModel) myModel).getReverse()).getCounter();
             long counterSize2 = saveCounter(reverseCounterFile,
                     reverseCounter,
                     progressIndicator);
@@ -58,17 +58,11 @@ public class PersistentNGramModelRunner extends NGramModelRunner {
             return counterSize1 + counterSize2;
         } else {
             File counterFile = modelPath.resolve(COUNTER_FILE).toFile();
-            final Counter counter = removeCounter((NGramModel) myModel);
+            final Counter counter = ((NGramModel) myModel).getCounter();
             return saveCounter(counterFile,
                     counter,
                     progressIndicator);
         }
-    }
-
-    private @NotNull Counter removeCounter(@NotNull NGramModel model) {
-        final Counter res = model.getCounter();
-        model.setCounter(new MapTrieCounter());
-        return res;
     }
 
     @Override
@@ -93,22 +87,24 @@ public class PersistentNGramModelRunner extends NGramModelRunner {
         if (biDirectional) {
             File forwardCounterFile = modelPath.resolve(FORWARD_COUNTER_FILE).toFile();
             File reverseCounterFile = modelPath.resolve(REVERSE_COUNTER_FILE).toFile();
-            if (!forwardCounterFile.exists() || !reverseCounterFile.exists()) return false;
-
-            PersistentCounter counter = loadCounter(forwardCounterFile, progressIndicator);
-            if (counter == null) return false;
-            ((NGramModel) ((BiDirectionalModel) myModel).getForward()).setCounter(counter);
-
-            counter = loadCounter(reverseCounterFile, progressIndicator);
-            if (counter == null) return false;
-            ((NGramModel) ((BiDirectionalModel) myModel).getReverse()).setCounter(counter);
+            return forwardCounterFile.exists() && reverseCounterFile.exists() &&
+                    loadModelCounter((NGramModel) ((BiDirectionalModel) myModel).getForward(),
+                            forwardCounterFile,
+                            progressIndicator) &&
+                    loadModelCounter((NGramModel) ((BiDirectionalModel) myModel).getReverse(),
+                            reverseCounterFile,
+                            progressIndicator);
         } else {
             File counterFile = modelPath.resolve(COUNTER_FILE).toFile();
-            if (!counterFile.exists()) return false;
-            PersistentCounter counter = loadCounter(counterFile, progressIndicator);
-            if (counter == null) return false;
-            ((NGramModel) myModel).setCounter(counter);
+            return counterFile.exists() && loadModelCounter((NGramModel) this.myModel, counterFile, progressIndicator);
         }
+    }
+
+    private boolean loadModelCounter(NGramModel model, File counterFile, @Nullable ProgressIndicator progressIndicator) {
+        model.setCounter(new MapTrieCounter());
+        PersistentCounter counter = loadCounter(counterFile, progressIndicator);
+        if (counter == null) return false;
+        model.setCounter(counter);
         return true;
     }
 
