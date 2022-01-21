@@ -187,7 +187,7 @@ public class ModelBuilder {
                         .minusSeconds(maxTrainingTime).isNegative());
     }
 
-    private @NotNull TrainingStatus trainNGramModel(@NotNull ModelRunner modelRunner,
+    public @NotNull TrainingStatus trainNGramModel(@NotNull ModelRunner modelRunner,
                                                     @NotNull Collection<VirtualFile> files,
                                                     @NotNull ProgressBar progressBar,
                                                     Instant trainingStart) {

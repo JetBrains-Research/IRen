@@ -18,9 +18,9 @@ import org.jetbrains.iren.ngram.PersistentNGramModelRunner
 import org.jetbrains.iren.services.ModelManager
 import org.jetbrains.iren.storages.VarNamePrediction
 import tools.ModelPrediction
+import tools.ModelPredictions
 import tools.VarNamePredictions
 import java.io.File
-import java.io.FileOutputStream
 import java.nio.file.Path
 import java.time.Duration
 import java.time.Instant
@@ -37,11 +37,13 @@ open class VarNamer(
     protected lateinit var myModelRunner: NGramModelRunner
     private val persistentModelRunners: List<NGramModelRunner> by lazy { preparePersistentRunners() }
     private val mapper = ObjectMapper()
+    lateinit var myStatsFile: File
 
     private fun preparePersistentRunners(): List<NGramModelRunner> {
         val persistentModelPath = saveDir.resolve("tmp_persistent_model")
         println("Preparing persistent counters...")
-        PersistentNGramModelRunner(myModelRunner).save(persistentModelPath, null)
+        val size = PersistentNGramModelRunner(myModelRunner).save(persistentModelPath, null)
+        addText(myStatsFile, "$size,")
         return (0 until if (runParallel) maxNumberOfThreads else 1).map {
             println("Loading ${it + 1}")
             val runner = PersistentNGramModelRunner()
@@ -50,28 +52,25 @@ open class VarNamer(
         }
     }
 
-    fun predict(modelRunner: NGramModelRunner, project: Project): Boolean {
+    fun predict(
+        modelRunner: NGramModelRunner,
+        project: Project,
+        statsFile: File,
+        predictionsFile: File,
+        files: Collection<VirtualFile>? = null,
+    ): Boolean {
         myModelRunner = modelRunner
-        val predictionsFile: File = saveDir.resolve("${project.name}_${ngramType}_predictions.jsonl").toFile()
-        predictionsFile.parentFile.mkdirs()
-        predictionsFile.createNewFile()
-        val files = collectNotPredictedFiles(predictionsFile, project)
-        if (files.isEmpty()) return false
+        myStatsFile = statsFile
         val start = Instant.now()
-        predictParallel(files, project, predictionsFile)
-        val end = Instant.now()
-        val timeSpent = Duration.between(start, end)
-        System.out.printf(
-            "Done in %s\n",
-            timeSpent
-        )
+        predictParallel(project, predictionsFile, files ?: collectNotPredictedFiles(predictionsFile, project))
+        println("Done in ${Duration.between(start, Instant.now())}")
         return true
     }
 
     private fun predictParallel(
-        files: List<VirtualFile>,
         project: Project,
         predictionsFile: File,
+        files: Collection<VirtualFile>,
     ) {
         val total = files.size
         val psiManager = PsiManager.getInstance(project)
@@ -88,7 +87,7 @@ open class VarNamer(
 
     private fun launchThread(
         thread: Int,
-        fs: List<VirtualFile>,
+        fs: Collection<VirtualFile>,
         psiManager: PsiManager,
         predictionsFile: File,
         progressBar: ProgressBar,
@@ -104,11 +103,7 @@ open class VarNamer(
                 val predictions = predictPsiFile(psiFile, thread)
                 filePredictions[filePath] = predictions ?: return@forEach2
                 synchronized(predictionsFile) {
-                    FileOutputStream(predictionsFile, true)
-                        .bufferedWriter().use {
-                            it.write(mapper.writeValueAsString(filePredictions))
-                            it.newLine()
-                        }
+                    addText(predictionsFile, "${mapper.writeValueAsString(filePredictions)}\n")
                 }
             } finally {
                 progressBar.step()
@@ -116,10 +111,10 @@ open class VarNamer(
         }
     }
 
-    private fun collectNotPredictedFiles(
+    protected fun collectNotPredictedFiles(
         predictionsFile: File,
         project: Project,
-    ): List<VirtualFile> {
+    ): Collection<VirtualFile> {
         val predictedFilePaths = predictionsFile.bufferedReader().lines().asSequence()
             .map { line ->
                 try {
@@ -162,20 +157,13 @@ open class VarNamer(
         val nameIdentifier = variable.nameIdentifier
         if (nameIdentifier === null || nameIdentifier.text == "") return null
 
-        var startTime = System.nanoTime()
         val nGramPredictions = predictWithNGram(variable, thread)
-        val nGramEvaluationTime = (System.nanoTime() - startTime) / 1.0e9
-
-        startTime = System.nanoTime()
         val nnPredictions = predictWithNN(variable, thread)
-        val nnEvaluationTime = (System.nanoTime() - startTime) / 1.0e9
 
         return VarNamePredictions(
             nameIdentifier.text,
             nGramPredictions,
-            nGramEvaluationTime,
             nnPredictions,
-            nnEvaluationTime,
             variable.javaClass.interfaces[0].simpleName,
             ReadAction.compute<Boolean, Exception> {
                 LanguageRefactoringSupport.INSTANCE.forContext(variable)
@@ -184,34 +172,54 @@ open class VarNamer(
         )
     }
 
-    private fun predictWithNGram(variable: PsiNameIdentifierOwner, thread: Int): List<ModelPrediction> {
+    private fun predictWithNGram(variable: PsiNameIdentifierOwner, thread: Int): ModelPredictions {
+        val startTime = System.nanoTime()
         val runner = prepareThreadRunner(thread, variable)
-        val nameSuggestions = ReadAction.compute<List<VarNamePrediction>, Exception> { runner.suggestNames(variable) }
-        return nameSuggestions.map { x: VarNamePrediction -> ModelPrediction(x.name, x.probability) }
+        val nameSuggestions = ReadAction.compute<VarNamePrediction.List, Exception> { runner.suggestNames(variable) }
+        val gtProbability = ReadAction.compute<Double, Exception> { runner.getProbability(variable, false).first }
+        val time = (System.nanoTime() - startTime) / 1.0e9
+        return NGramPredictions(
+            nameSuggestions.map { x: VarNamePrediction -> ModelPrediction(x.name, x.probability) },
+            time,
+            nameSuggestions.usageNumber,
+            nameSuggestions.countsSum,
+            gtProbability
+        )
     }
 
     open fun predictWithNN(variable: PsiNameIdentifierOwner, thread: Int): Any {
+        val startTime = System.nanoTime()
+        val nameSuggestions: VarNamePrediction.List
+        var gtProbability = 0.0
         if (!runParallel) {
 //            Predict with RAM version model
             ModelManager.getInstance().forgetFileIfNeeded(myModelRunner, variable.containingFile)
-            return myModelRunner.suggestNames(variable)
-                .map { x: VarNamePrediction -> ModelPrediction(x.name, x.probability) }
-        }
-        if (ngramType != "BiDirectional") {
-            return listOf<VarNamePrediction>()
-        }
+            nameSuggestions = myModelRunner.suggestNames(variable)
+            gtProbability = myModelRunner.getProbability(variable, false).first
+        } else if (ngramType != "BiDirectional") {
+            nameSuggestions = VarNamePrediction.List()
+        } else {
 //        Predict with the forward model of the BiDirectional model
-        val runner = prepareThreadRunner(thread, variable)
-        val forwardModel = NGramModelRunner(
-            (runner.model as BiDirectionalModel).forward,
-            runner.vocabulary,
-            runner.rememberedIdentifiers,
-            false,
-            runner.order
+            val runner = prepareThreadRunner(thread, variable)
+            val forwardModel = NGramModelRunner(
+                (runner.model as BiDirectionalModel).forward,
+                runner.vocabulary,
+                runner.rememberedIdentifiers,
+                false,
+                runner.order
+            )
+            nameSuggestions =
+                ReadAction.compute<VarNamePrediction.List, Exception> { forwardModel.suggestNames(variable) }
+            gtProbability = ReadAction.compute<Double, Exception> { forwardModel.getProbability(variable, false).first }
+        }
+        val time = (System.nanoTime() - startTime) / 1.0e9
+        return NGramPredictions(
+            nameSuggestions.map { x: VarNamePrediction -> ModelPrediction(x.name, x.probability) },
+            time,
+            nameSuggestions.usageNumber,
+            nameSuggestions.countsSum,
+            gtProbability
         )
-        val nameSuggestions =
-            ReadAction.compute<List<VarNamePrediction>, Exception> { forwardModel.suggestNames(variable) }
-        return nameSuggestions.map { x: VarNamePrediction -> ModelPrediction(x.name, x.probability) }
     }
 
     private fun prepareThreadRunner(
@@ -223,3 +231,12 @@ open class VarNamer(
         return runner
     }
 }
+
+class NGramPredictions(
+    predictions: Any,
+    time: Double,
+    val usageNumber: Int,
+    val countsSum: Int,
+    val gtProbability: Double = 0.0,
+) :
+    ModelPredictions(predictions, time)

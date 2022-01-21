@@ -4,6 +4,7 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.stream.JsonReader;
 import com.intellij.completion.ngram.slp.counting.Counter;
+import com.intellij.completion.ngram.slp.counting.trie.MapTrieCounter;
 import com.intellij.completion.ngram.slp.modeling.Model;
 import com.intellij.completion.ngram.slp.modeling.mix.BiDirectionalModel;
 import com.intellij.completion.ngram.slp.modeling.ngram.JMModel;
@@ -15,7 +16,6 @@ import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiFile;
 import com.intellij.psi.PsiNameIdentifierOwner;
 import kotlin.Pair;
-import com.intellij.completion.ngram.slp.counting.trie.MapTrieCounter;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.iren.IRenBundle;
@@ -96,20 +96,36 @@ public class NGramModelRunner implements ModelRunner {
     }
 
     @Override
-    public @NotNull List<VarNamePrediction> suggestNames(@NotNull PsiNameIdentifierOwner variable) {
+    public @NotNull VarNamePrediction.List suggestNames(@NotNull PsiNameIdentifierOwner variable) {
         return suggestNames(variable, false);
     }
 
     @Override
-    public @NotNull List<VarNamePrediction> suggestNames(@NotNull PsiNameIdentifierOwner variable, boolean forgetContext) {
+    public @NotNull VarNamePrediction.List suggestNames(@NotNull PsiNameIdentifierOwner variable, boolean forgetContext) {
         @Nullable Context<Integer> intContext = prepareContext(variable, forgetContext);
-        if (intContext == null) return List.of();
+        if (intContext == null) return new VarNamePrediction.List();
         Context<Integer> unknownContext = intContext.with(0);
         Set<Integer> candidates = new HashSet<>();
+        int usageNumber = intContext.getVarIdxs().size();
+        int countsSum = 0;
         for (int idx : intContext.getVarIdxs()) {
             candidates.addAll(getCandidates(unknownContext.getTokens(), idx));
+            countsSum += getContextCount(unknownContext.getTokens(), idx);
         }
-        return rankCandidates(candidates, unknownContext);
+        return new VarNamePrediction.List(rankCandidates(candidates, unknownContext), usageNumber, countsSum);
+    }
+
+    private int getContextCount(List<Integer> tokens, int index) {
+        List<Integer> forward = tokens.subList(max(0, index - getOrder() + 1), index + 1);
+        if (myModel instanceof BiDirectionalModel) {
+            List<Integer> reverse = tokens.subList(index, min(index + getOrder(), tokens.size()));
+            Collections.reverse(reverse);
+            final Counter forwardCounter = ((NGramModel) ((BiDirectionalModel) myModel).getForward()).getCounter();
+            final Counter reverseCounter = ((NGramModel) ((BiDirectionalModel) myModel).getReverse()).getCounter();
+            return (int) (forwardCounter.getCounts(forward)[1] + reverseCounter.getCounts(reverse)[1]);
+        } else {
+            return (int) ((NGramModel) myModel).getCounter().getCounts(forward)[1];
+        }
     }
 
     @Nullable

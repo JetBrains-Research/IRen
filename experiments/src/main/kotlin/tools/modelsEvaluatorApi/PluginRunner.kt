@@ -21,7 +21,7 @@ import java.util.*
 import kotlin.system.exitProcess
 
 open class PluginRunner : ApplicationStarter {
-    private lateinit var dataset: File
+    protected lateinit var dataset: File
     protected lateinit var saveDir: Path
     protected lateinit var supporter: LanguageSupporter
     protected lateinit var ngramType: String
@@ -35,7 +35,7 @@ open class PluginRunner : ApplicationStarter {
     protected open val javaSmallTest =
         listOf("libgdx", "hadoop")
 
-    protected open val projectList: List<String>? = null
+    protected open val projectList: List<String>? = listOf("libgdx")
 
     override fun getCommandName(): String = "modelsEvaluator"
 
@@ -64,39 +64,42 @@ open class PluginRunner : ApplicationStarter {
     open val varNamer: VarNamer
         get() = VarNamer(saveDir, supporter, ngramType)
 
-    private fun evaluate() {
+    protected open fun evaluate() {
         println("Evaluating models...")
+        if (ngramType == "OneDirectional") {
+            NGramModelRunner.DEFAULT_BIDIRECTIONAL = false
+        }
         var projectToClose: Project? = null
-        val statsFile: File = saveDir.resolve("timeSpent.csv").toFile()
+        val statsFile: File = saveDir.resolve("modelsStats.csv").toFile()
         statsFile.parentFile.mkdirs()
         if (statsFile.createNewFile()) {
-            FileOutputStream(statsFile, true).bufferedWriter()
-                .use { it.write("Project,TrainingTime,VocabularySize,EvaluationTime\n") }
+            addText(statsFile, "Project,TrainingTime,VocabularySize,ModelSize,EvaluationTime\n")
         }
-        for (projectDir in projectList
-            ?: listOf(*dataset.list { file, name -> file.isDirectory && !name.startsWith(".") } ?: return)) {
+        val files = (projectList ?: (dataset.list { file, name ->
+            file.isDirectory && !name.startsWith(".")
+        } ?: return)
+            .asSequence()
+            .shuffled()
+            .toList())
+        for (projectDir in files) {
             val projectPath = dataset.resolve(projectDir)
+
+            val predictionsFile: File = saveDir.resolve("${projectDir}_$ngramType.jsonl").toFile()
+            predictionsFile.parentFile.mkdirs()
+            if (!predictionsFile.createNewFile()) continue
             println("Opening project $projectDir...")
             val project = ProjectUtil.openOrImport(projectPath.path, projectToClose, true) ?: continue
-
-            if (ngramType == "OneDirectional") {
-                NGramModelRunner.DEFAULT_BIDIRECTIONAL = false
-            }
-
+            addText(statsFile, "${project.name},")
             try {
                 val modelRunner = trainModelRunner(project, statsFile)
                 val start = Instant.now()
-                if (varNamer.predict(modelRunner, project)) {
-                    val evaluationTime = Duration.between(start, Instant.now())
-
-                    FileOutputStream(statsFile, true).bufferedWriter().use {
-                        it.write("$evaluationTime")
-                    }
+                if (varNamer.predict(modelRunner, project, statsFile, predictionsFile)) {
+                    addText(statsFile, "${Duration.between(start, Instant.now())}")
                 }
+            } catch (e: Exception) {
+                e.printStackTrace()
             } finally {
-                FileOutputStream(statsFile, true).bufferedWriter().use {
-                    it.write("\n")
-                }
+                addText(statsFile, "\n")
                 projectToClose = project
             }
         }
@@ -109,16 +112,19 @@ open class PluginRunner : ApplicationStarter {
         project: Project,
         statsFile: File,
     ): NGramModelRunner {
-        val start = Instant.now()
         val settings = AppSettingsState.getInstance()
         settings.maxTrainingTime = 10000
         settings.vocabularyCutOff = 0
+        val start = Instant.now()
         val modelRunner = NGramModelRunner()
         ModelBuilder(project, supporter, null).trainModelRunner(modelRunner)
         val trainingTime = Duration.between(start, Instant.now())
-        FileOutputStream(statsFile, true).bufferedWriter().use {
-            it.write("${project.name},$trainingTime,${modelRunner.vocabulary.size()},")
-        }
+        addText(statsFile, "$trainingTime,${modelRunner.vocabulary.size()},")
         return modelRunner
     }
+}
+
+fun addText(statsFile: File, text: String) {
+    FileOutputStream(statsFile, true).bufferedWriter()
+        .use { it.write(text) }
 }

@@ -22,10 +22,11 @@
                      defaultValue="False" restartRequired="false"/>
         <applicationService serviceImplementation="org.jetbrains.iren.settings.AppSettingsState"/>
         <!-- Headless running part-->
+        <appStarter implementation="tools.modelsEvaluatorApi.PluginRunner"/>
         <appStarter implementation="tools.gnnEvaluator.GNNPluginRunner"/>
         <appStarter implementation="tools.transformerEvaluator.TransformerPluginRunner"/>
         <appStarter implementation="tools.nGramTrainingTime.PluginRunner"/>
-        <appStarter implementation="tools.modelsEvaluatorApi.PluginRunner"/>
+        <appStarter implementation="tools.differentProjectSizes.SizePluginRunner"/>
         <appStarter implementation="tools.compareWithRAM.RamPluginRunner"/>
         <appStarter implementation="tools.compareWithDefault.DefaultPluginRunner"/>
         <appStarter implementation="tools.countNGrams.PluginRunner"/>
