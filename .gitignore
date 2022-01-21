@@ -50,3 +50,5 @@ out/
 /model*
 
 updatePlugins.xml
+/**/build/*
+/buildSrc/.gradle/
