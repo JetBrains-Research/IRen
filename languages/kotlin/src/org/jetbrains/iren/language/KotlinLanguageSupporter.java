@@ -36,10 +36,6 @@ public class KotlinLanguageSupporter extends LanguageSupporterBase {
     private static final Collection<Class<? extends PsiNameIdentifierOwner>> variableClasses = List.of(KtProperty.class, KtParameter.class);
     private static final Collection<String> stopNames = List.of("it");
 
-    static {
-        NGramVariableNamesContributor.SUPPORTED_TYPES.addAll(variableClasses);
-    }
-
     @Override
     public @NotNull Language getLanguage() {
         return KotlinLanguage.INSTANCE;

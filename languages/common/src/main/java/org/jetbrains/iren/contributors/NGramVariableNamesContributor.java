@@ -4,21 +4,19 @@ import com.intellij.psi.PsiNameIdentifierOwner;
 import kotlin.Pair;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.iren.api.LanguageSupporter;
 import org.jetbrains.iren.api.ModelRunner;
 import org.jetbrains.iren.api.VariableNamesContributor;
 import org.jetbrains.iren.services.ModelManager;
 import org.jetbrains.iren.storages.VarNamePrediction;
 
-import java.util.ArrayList;
 import java.util.List;
 
 public abstract class NGramVariableNamesContributor implements VariableNamesContributor {
-    public static final List<Class<? extends PsiNameIdentifierOwner>> SUPPORTED_TYPES = new ArrayList<>();
-
     @Override
     public synchronized int contribute(@NotNull PsiNameIdentifierOwner variable, @NotNull List<VarNamePrediction> predictionList) {
         ModelRunner modelRunner = getModelRunnerToContribute(variable);
-        if (modelRunner == null || !isSupported(variable)) {
+        if (modelRunner == null || notSupported(variable)) {
             return 0;
         }
         if (forgetFile()) {
@@ -31,7 +29,7 @@ public abstract class NGramVariableNamesContributor implements VariableNamesCont
     @Override
     public synchronized @NotNull Pair<Double, Integer> getProbability(@NotNull PsiNameIdentifierOwner variable) {
         ModelRunner modelRunner = getModelRunnerToContribute(variable);
-        if (modelRunner == null || !isSupported(variable)) {
+        if (modelRunner == null || notSupported(variable)) {
             return new Pair<>(0.0, 0);
         }
         if (forgetFile()) {
@@ -46,7 +44,7 @@ public abstract class NGramVariableNamesContributor implements VariableNamesCont
 
     public abstract @Nullable ModelRunner getModelRunnerToContribute(@NotNull PsiNameIdentifierOwner variable);
 
-    private static boolean isSupported(@NotNull PsiNameIdentifierOwner identifierOwner) {
-        return SUPPORTED_TYPES.stream().anyMatch(type -> type.isInstance(identifierOwner));
+    private static boolean notSupported(@NotNull PsiNameIdentifierOwner identifierOwner) {
+        return !LanguageSupporter.getInstance(identifierOwner.getLanguage()).isVariableDeclaration(identifierOwner);
     }
 }

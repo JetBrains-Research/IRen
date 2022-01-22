@@ -14,7 +14,7 @@ public abstract class CollisionTest extends LanguageSupporterTest {
         configureByFile(getTestFileName());
         final LanguageSupporter supporter = getLanguageSupporter();
         final PsiElement variable = getTargetElementAtCaret();
-        assertTrue(supporter.isVariable(variable));
+        assertTrue(supporter.isVariableDeclarationOrReference(variable));
         assertEquals(isColliding, supporter.isColliding(variable, name));
     }
 }

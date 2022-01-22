@@ -15,7 +15,7 @@ import java.util.LinkedHashMap;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 
-import static org.jetbrains.iren.impl.LanguageSupporterBase.runForSomeTime;
+import static org.jetbrains.iren.utils.LimitedTimeRunner.runForSomeTime;
 
 
 public class ConsistencyChecker implements Disposable {

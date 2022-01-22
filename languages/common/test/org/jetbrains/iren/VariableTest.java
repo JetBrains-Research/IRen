@@ -16,7 +16,7 @@ public abstract class VariableTest extends LanguageSupporterTest {
         final LanguageSupporter supporter = getLanguageSupporter();
         Caret caret = getEditor().getCaretModel().getAllCarets().get(index);
         final PsiElement element = getTargetElementAtCaret(caret);
-        assertFalse(supporter.isVariable(element));
+        assertFalse(supporter.isVariableDeclarationOrReference(element));
     }
 
     protected void doTestVariableDeclaration(int index, boolean b) {

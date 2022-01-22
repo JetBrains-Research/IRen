@@ -31,10 +31,6 @@ public class JavaLanguageSupporter extends LanguageSupporterBase {
             JavaTokenType.DOUBLE_LITERAL);
     private static final List<Class<? extends PsiNameIdentifierOwner>> variableClasses = List.of(PsiVariable.class);
 
-    static {
-        NGramVariableNamesContributor.SUPPORTED_TYPES.addAll(variableClasses);
-    }
-
     @Override
     public @NotNull Language getLanguage() {
         return JavaLanguage.INSTANCE;

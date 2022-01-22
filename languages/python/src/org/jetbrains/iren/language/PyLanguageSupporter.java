@@ -16,7 +16,6 @@ import com.jetbrains.python.psi.*;
 import com.jetbrains.python.refactoring.PyRefactoringProvider;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.jetbrains.iren.contributors.NGramVariableNamesContributor;
 import org.jetbrains.iren.impl.LanguageSupporterBase;
 import org.jetbrains.iren.inspections.variable.PyVariableVisitor;
 
@@ -30,11 +29,6 @@ import static org.jetbrains.iren.utils.StringUtils.*;
 public class PyLanguageSupporter extends LanguageSupporterBase {
     private static final List<Class<? extends PsiNameIdentifierOwner>> variableClasses = List.of(PyNamedParameter.class, PyTargetExpression.class);
     private static final Collection<String> stopNames = List.of("self");
-
-    static {
-        NGramVariableNamesContributor.SUPPORTED_TYPES.addAll(variableClasses);
-    }
-
     @Override
     public @NotNull Language getLanguage() {
         return PythonLanguage.INSTANCE;

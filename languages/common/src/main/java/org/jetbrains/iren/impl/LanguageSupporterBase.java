@@ -30,6 +30,7 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static org.jetbrains.iren.utils.LimitedTimeRunner.runForSomeTime;
 import static org.jetbrains.iren.utils.StringUtils.STRING_TOKEN;
 
 public abstract class LanguageSupporterBase implements LanguageSupporter {
@@ -90,15 +91,6 @@ public abstract class LanguageSupporterBase implements LanguageSupporter {
                 .findReferences(identifierOwner, GlobalSearchScope.fileScope(file), false);
         return ApplicationManager.getApplication().isUnitTestMode() ?
                 computable.compute() : runForSomeTime(100, computable);
-    }
-
-    public static <T> @Nullable T runForSomeTime(long runningTimeMs, @NotNull Computable<T> process) {
-        try {
-            return ProgressManager.getInstance().runProcess(process, new LimitedRunningTimeIndicator(runningTimeMs));
-        } catch (ProcessCanceledException e) {
-//            System.out.println("Canceled");
-            return null;
-        }
     }
 
     private @Nullable PsiElement getIdentifier(Object element) {
@@ -168,22 +160,21 @@ public abstract class LanguageSupporterBase implements LanguageSupporter {
                 .collect(Collectors.toList());
     }
 
+    @Override
     @Contract("null -> false")
-    public boolean isVariable(@Nullable PsiElement token) {
-        if (token == null) return false;
-        if (token instanceof PsiNameIdentifierOwner) {
-            return isVariableClass(token);
-        }
-        return elementIsVariableDeclaration(findDeclaration(token));
+    public boolean isVariableDeclarationOrReference(@Nullable PsiElement token) {
+        return token != null && (isVariableDeclaration(token) || isVariableDeclaration(findDeclaration(token)));
     }
 
+    @Override
     @Contract("null -> false")
     public boolean identifierIsVariableDeclaration(@Nullable PsiElement token) {
-        return isIdentifier(token) && elementIsVariableDeclaration(token.getParent());
+        return isIdentifier(token) && isVariableDeclaration(token.getParent());
     }
 
+    @Override
     @Contract("null -> false")
-    public boolean elementIsVariableDeclaration(@Nullable PsiElement element) {
+    public boolean isVariableDeclaration(@Nullable PsiElement element) {
         return element instanceof PsiNameIdentifierOwner && isVariableClass(element);
     }
 
@@ -210,12 +201,6 @@ public abstract class LanguageSupporterBase implements LanguageSupporter {
         return getVariableClasses().stream().anyMatch(cls -> cls.isInstance(token));
     }
 
-    public boolean isVariableOrReference(@NotNull PsiNameIdentifierOwner variable, @Nullable PsiElement token) {
-        if (token == null) return false;
-        return PsiManager.getInstance(variable.getProject())
-                .areElementsEquivalent(variable, findDeclaration(token));
-    }
-
     public @Nullable PsiNameIdentifierOwner findDeclaration(@NotNull PsiElement token) {
         if (isIdentifier(token)) {
             PsiElement parent = token.getParent();
@@ -234,7 +219,7 @@ public abstract class LanguageSupporterBase implements LanguageSupporter {
         return SyntaxTraverser.psiTraverser()
                 .withRoot(node)
                 .forceIgnore(n -> n instanceof PsiComment)
-                .filter(this::isVariable)
+                .filter(this::isVariableDeclarationOrReference)
                 .toList();
     }
 
@@ -256,22 +241,5 @@ public abstract class LanguageSupporterBase implements LanguageSupporter {
                 total += 1;
             }
         }
-    }
-}
-
-class LimitedRunningTimeIndicator extends AbstractProgressIndicatorBase implements StandardProgressIndicator {
-    final long startTime = System.currentTimeMillis();
-    private final long runningTimeMs;
-
-    public LimitedRunningTimeIndicator(long runningTimeMs) {
-        this.runningTimeMs = runningTimeMs;
-    }
-
-    @Override
-    public boolean isCanceled() {
-        if (super.isCanceled()) {
-            return true;
-        }
-        return (System.currentTimeMillis() - startTime) > runningTimeMs;
     }
 }

@@ -68,7 +68,7 @@ public interface LanguageSupporter {
 
     @NotNull List<String> lexPsiFile(@NotNull PsiFile file, @Nullable Consumer<PsiElement> consumer);
 
-    boolean isVariable(@Nullable PsiElement token);
+    boolean isVariableDeclarationOrReference(@Nullable PsiElement token);
 
     boolean identifierIsVariableDeclaration(@Nullable PsiElement identifier);
 
@@ -92,7 +92,7 @@ public interface LanguageSupporter {
 
     boolean isStopName(@NotNull String name);
 
-    boolean elementIsVariableDeclaration(@Nullable PsiElement element);
+    boolean isVariableDeclaration(@Nullable PsiElement element);
 
     default boolean excludeFromInspection(@NotNull PsiNameIdentifierOwner variable) {
         return false;

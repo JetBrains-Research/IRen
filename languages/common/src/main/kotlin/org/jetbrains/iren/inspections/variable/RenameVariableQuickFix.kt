@@ -8,7 +8,7 @@ import com.intellij.openapi.project.Project
 import com.intellij.psi.PsiNameIdentifierOwner
 import com.intellij.psi.SmartPsiElementPointer
 import com.intellij.refactoring.rename.RenameHandlerRegistry
-import org.jetbrains.iren.IRenBundle
+import org.jetbrains.iren.RenameBundle
 
 class RenameVariableQuickFix(
     private var variable: SmartPsiElementPointer<PsiNameIdentifierOwner>
@@ -23,6 +23,6 @@ class RenameVariableQuickFix(
     }
 
     override fun getFamilyName(): String {
-        return IRenBundle.message("inspection.family.name")
+        return RenameBundle.message("inspection.family.name")
     }
 }

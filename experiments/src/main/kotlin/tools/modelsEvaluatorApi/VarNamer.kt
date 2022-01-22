@@ -136,7 +136,7 @@ open class VarNamer(
                 SyntaxTraverser.psiTraverser()
                     .withRoot(file)
                     .onRange(TextRange(0, 64 * 1024)) // first 128 KB of chars
-                    .filter(supporter::elementIsVariableDeclaration)
+                    .filter(supporter::isVariableDeclaration)
                     .toList()
             }
             variables.asSequence()

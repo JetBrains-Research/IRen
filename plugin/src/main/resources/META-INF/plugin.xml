@@ -57,7 +57,7 @@
         <applicationService serviceImplementation="org.jetbrains.iren.services.ConsistencyChecker"/>
         <projectService serviceImplementation="org.jetbrains.iren.services.RenameHistory"/>
         <localInspection displayName="Inconsistent variable names"
-                         groupBundle="messages.IRen"
+                         groupBundle="messages.Rename"
                          groupKey="inspection.group.key"
                          shortName="VariableNamesInspection"
                          enabledByDefault="true"
