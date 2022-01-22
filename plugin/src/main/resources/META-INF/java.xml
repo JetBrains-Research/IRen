@@ -1,7 +1,7 @@
 <idea-plugin>
     <depends>com.intellij.java</depends>
     <extensions defaultExtensionNs="org.jetbrains.iren.language">
-        <supporter implementation="org.jetbrains.iren.language.JavaLanguageSupporter"/>
+        <supporter implementation="org.jetbrains.iren.JavaLanguageSupporter"/>
     </extensions>
     <extensions defaultExtensionNs="com.intellij">
         <!-- Astrid part-->

@@ -8,7 +8,7 @@ import com.intellij.openapi.project.Project
 import com.intellij.psi.PsiNameIdentifierOwner
 import com.intellij.psi.SmartPsiElementPointer
 import com.intellij.refactoring.rename.RenameHandlerRegistry
-import org.jetbrains.iren.RenameBundle
+import org.jetbrains.iren.utils.RenameBundle
 
 class RenameVariableQuickFix(
     private var variable: SmartPsiElementPointer<PsiNameIdentifierOwner>

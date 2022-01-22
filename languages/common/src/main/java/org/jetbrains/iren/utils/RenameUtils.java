@@ -11,12 +11,10 @@ import com.intellij.refactoring.rename.NameSuggestionProvider;
 import com.intellij.spellchecker.quickfixes.DictionarySuggestionProvider;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.jetbrains.iren.RenameBundle;
-import org.jetbrains.iren.api.LanguageSupporter;
+import org.jetbrains.iren.LanguageSupporter;
 import org.jetbrains.iren.inspections.variable.RenameVariableQuickFix;
 import org.jetbrains.iren.services.ConsistencyChecker;
 import org.jetbrains.iren.services.IRenSuggestingService;
-import org.jetbrains.iren.services.ModelManager;
 import org.jetbrains.iren.services.ModelsUsabilityService;
 
 import java.util.LinkedHashMap;
@@ -32,7 +30,7 @@ public class RenameUtils {
      * @param holder   registers the problem
      */
     public static void visitVariable(PsiNameIdentifierOwner variable, ProblemsHolder holder) {
-        if (ModelsUsabilityService.getInstance().isUsable(ModelManager.getName(variable.getProject(), variable.getLanguage()))
+        if (ModelsUsabilityService.getInstance().isUsable(ModelUtils.getName(variable.getProject(), variable.getLanguage()))
                 && ConsistencyChecker.getInstance().isInconsistent(variable)) {
             @Nullable PsiElement identifier = variable.getNameIdentifier();
             if (identifier == null) return;
@@ -61,7 +59,7 @@ public class RenameUtils {
             return;
         }
         if (ModelsUsabilityService.getInstance().isUsable(
-                ModelManager.getName(elementToRename.getProject(), elementToRename.getLanguage()))
+                ModelUtils.getName(elementToRename.getProject(), elementToRename.getLanguage()))
                 && supporter.isVariableDeclaration(elementToRename)
                 && supporter.isInplaceRenameAvailable(elementToRename)) {
             LinkedHashMap<String, Double> nameProbs = IRenSuggestingService.getInstance().suggestVariableName((PsiNameIdentifierOwner) elementToRename);

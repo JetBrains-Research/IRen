@@ -1,7 +1,6 @@
 package org.jetbrains.iren;
 
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.iren.api.LanguageSupporter;
 
 import java.io.BufferedReader;
 import java.io.FileReader;

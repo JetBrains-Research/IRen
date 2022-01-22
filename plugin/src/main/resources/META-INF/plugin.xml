@@ -51,11 +51,16 @@
         <!--    End of settings part    -->
         <lookup.usageDetails implementation="org.jetbrains.iren.statistics.IRenLookupUsageDescriptor"/>
         <applicationService serviceImplementation="org.jetbrains.iren.services.ModelsSaveTime"/>
-        <applicationService serviceImplementation="org.jetbrains.iren.services.ModelsUsabilityService"/>
-        <applicationService serviceImplementation="org.jetbrains.iren.services.ModelManager"/>
-        <applicationService serviceImplementation="org.jetbrains.iren.services.IRenSuggestingService"/>
-        <applicationService serviceImplementation="org.jetbrains.iren.services.ConsistencyChecker"/>
-        <projectService serviceImplementation="org.jetbrains.iren.services.RenameHistory"/>
+        <applicationService serviceInterface="org.jetbrains.iren.services.ModelsUsabilityService"
+                            serviceImplementation="org.jetbrains.iren.services.ModelsUsabilityServiceImpl"/>
+        <applicationService serviceInterface="org.jetbrains.iren.services.ModelManager"
+                            serviceImplementation="org.jetbrains.iren.services.ModelManagerImpl"/>
+        <applicationService serviceInterface="org.jetbrains.iren.services.IRenSuggestingService"
+                            serviceImplementation="org.jetbrains.iren.services.IRenSuggestingServiceImpl"/>
+        <applicationService serviceInterface="org.jetbrains.iren.services.ConsistencyChecker"
+                            serviceImplementation="org.jetbrains.iren.services.ConsistencyCheckerImpl"/>
+        <projectService serviceInterface="org.jetbrains.iren.services.RenameHistory"
+                        serviceImplementation="org.jetbrains.iren.services.RenameHistoryImpl"/>
         <localInspection displayName="Inconsistent variable names"
                          groupBundle="messages.Rename"
                          groupKey="inspection.group.key"
@@ -80,9 +85,9 @@
     </actions>
     <extensionPoints>
         <extensionPoint qualifiedName="org.jetbrains.iren.variableNamesContributor"
-                        interface="org.jetbrains.iren.api.VariableNamesContributor" dynamic="true"/>
+                        interface="org.jetbrains.iren.VariableNamesContributor" dynamic="true"/>
         <extensionPoint
-                interface="org.jetbrains.iren.api.LanguageSupporter"
+                interface="org.jetbrains.iren.LanguageSupporter"
                 dynamic="true" qualifiedName="org.jetbrains.iren.language.supporter"/>
     </extensionPoints>
     <applicationListeners>

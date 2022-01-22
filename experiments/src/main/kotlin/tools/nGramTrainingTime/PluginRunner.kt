@@ -6,7 +6,7 @@ import com.intellij.lang.java.JavaLanguage
 import com.intellij.openapi.application.ApplicationStarter
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.project.ProjectManager
-import org.jetbrains.iren.api.LanguageSupporter
+import org.jetbrains.iren.LanguageSupporter
 import org.jetbrains.iren.training.ModelBuilder
 import org.jetbrains.iren.ngram.NGramModelRunner
 import java.io.File

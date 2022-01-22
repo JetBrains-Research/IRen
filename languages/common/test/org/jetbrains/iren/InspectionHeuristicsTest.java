@@ -4,7 +4,6 @@ import com.intellij.openapi.editor.Caret;
 import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiNameIdentifierOwner;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.iren.api.LanguageSupporter;
 
 public abstract class InspectionHeuristicsTest extends LanguageSupporterTest {
     @Override

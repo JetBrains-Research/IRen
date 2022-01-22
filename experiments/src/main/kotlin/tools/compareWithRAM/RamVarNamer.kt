@@ -2,9 +2,10 @@ package tools.compareWithRAM
 
 import com.intellij.openapi.application.ReadAction
 import com.intellij.psi.PsiNameIdentifierOwner
-import org.jetbrains.iren.api.LanguageSupporter
+import org.jetbrains.iren.LanguageSupporter
 import org.jetbrains.iren.ngram.NGramModelRunner
 import org.jetbrains.iren.services.ModelManager
+import org.jetbrains.iren.services.ModelManagerImpl
 import org.jetbrains.iren.storages.VarNamePrediction
 import tools.ModelPrediction
 import tools.modelsEvaluatorApi.VarNamer

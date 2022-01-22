@@ -4,8 +4,6 @@ import com.jetbrains.python.PythonFileType;
 import junitparams.JUnitParamsRunner;
 import junitparams.Parameters;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.iren.api.LanguageSupporter;
-import org.jetbrains.iren.language.PyLanguageSupporter;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 

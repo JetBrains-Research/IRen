@@ -1,7 +1,7 @@
 <idea-plugin>
     <depends>org.jetbrains.kotlin</depends>
     <extensions defaultExtensionNs="org.jetbrains.iren.language">
-        <supporter implementation="org.jetbrains.iren.language.KotlinLanguageSupporter"/>
+        <supporter implementation="org.jetbrains.iren.KotlinLanguageSupporter"/>
     </extensions>
     <extensions defaultExtensionNs="com.intellij">
         <renameHandler implementation="org.jetbrains.iren.rename.IRenKotlinVariableInplaceRenameHandler"/>

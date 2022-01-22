@@ -3,7 +3,6 @@ package org.jetbrains.iren;
 import com.intellij.openapi.editor.Caret;
 import com.intellij.psi.PsiElement;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.iren.api.LanguageSupporter;
 
 public abstract class VariableTest extends LanguageSupporterTest {
     @Override

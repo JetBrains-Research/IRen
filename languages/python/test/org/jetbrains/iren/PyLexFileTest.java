@@ -2,8 +2,6 @@ package org.jetbrains.iren;
 
 import com.jetbrains.python.PythonFileType;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.iren.api.LanguageSupporter;
-import org.jetbrains.iren.language.PyLanguageSupporter;
 
 public class PyLexFileTest extends LexFileTest {
     @Override

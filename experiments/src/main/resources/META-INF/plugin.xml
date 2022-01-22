@@ -31,10 +31,10 @@
         <appStarter implementation="tools.compareWithDefault.DefaultPluginRunner"/>
         <appStarter implementation="tools.countNGrams.PluginRunner"/>
         <!-- End of headless running part-->
-        <applicationService serviceImplementation="org.jetbrains.iren.services.ModelManager"/>
+        <applicationService serviceImplementation="org.jetbrains.iren.services.ModelManagerImpl"/>
         <applicationService serviceImplementation="org.jetbrains.iren.services.ModelsSaveTime"/>
-        <applicationService serviceImplementation="org.jetbrains.iren.services.ModelsUsabilityService"/>
-        <applicationService serviceImplementation="org.jetbrains.iren.services.IRenSuggestingService"/>
+        <applicationService serviceImplementation="org.jetbrains.iren.services.ModelsUsabilityServiceImpl"/>
+        <applicationService serviceImplementation="org.jetbrains.iren.services.IRenSuggestingServiceImpl"/>
     </extensions>
     <extensions defaultExtensionNs="org.jetbrains.iren">
         <variableNamesContributor
@@ -42,9 +42,9 @@
     </extensions>
     <extensionPoints>
         <extensionPoint qualifiedName="org.jetbrains.iren.variableNamesContributor"
-                        interface="org.jetbrains.iren.api.VariableNamesContributor" dynamic="true"/>
+                        interface="org.jetbrains.iren.VariableNamesContributor" dynamic="true"/>
         <extensionPoint
-                interface="org.jetbrains.iren.api.LanguageSupporter"
+                interface="org.jetbrains.iren.LanguageSupporter"
                 dynamic="true" qualifiedName="org.jetbrains.iren.language.supporter"/>
     </extensionPoints>
 </idea-plugin>

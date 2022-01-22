@@ -12,7 +12,7 @@ import com.intellij.psi.*
 import com.intellij.psi.search.FileTypeIndex
 import com.intellij.psi.search.GlobalSearchScope
 import me.tongfei.progressbar.ProgressBar
-import org.jetbrains.iren.api.LanguageSupporter
+import org.jetbrains.iren.LanguageSupporter
 import org.jetbrains.iren.ngram.NGramModelRunner
 import org.jetbrains.iren.ngram.PersistentNGramModelRunner
 import org.jetbrains.iren.services.ModelManager
@@ -42,7 +42,8 @@ open class VarNamer(
     private fun preparePersistentRunners(): List<NGramModelRunner> {
         val persistentModelPath = saveDir.resolve("tmp_persistent_model")
         println("Preparing persistent counters...")
-        val size = PersistentNGramModelRunner(myModelRunner).save(persistentModelPath, null)
+        val size = PersistentNGramModelRunner(myModelRunner)
+            .save(persistentModelPath, null)
         addText(myStatsFile, "$size,")
         return (0 until if (runParallel) maxNumberOfThreads else 1).map {
             println("Loading ${it + 1}")

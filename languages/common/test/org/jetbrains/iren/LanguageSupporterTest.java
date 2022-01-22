@@ -6,7 +6,6 @@ import com.intellij.psi.PsiElement;
 import com.intellij.testFramework.LightPlatformCodeInsightTestCase;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.jetbrains.iren.api.LanguageSupporter;
 
 public abstract class LanguageSupporterTest extends LightPlatformCodeInsightTestCase {
     public @NotNull PsiElement getTargetElementAtCaret() {

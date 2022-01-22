@@ -16,7 +16,7 @@ import com.intellij.psi.search.FileTypeIndex
 import com.intellij.psi.search.GlobalSearchScope
 import com.jetbrains.python.PythonLanguage
 import me.tongfei.progressbar.ProgressBar
-import org.jetbrains.iren.api.LanguageSupporter
+import org.jetbrains.iren.LanguageSupporter
 import org.jetbrains.kotlin.idea.KotlinLanguage
 import java.io.File
 import java.io.FileOutputStream

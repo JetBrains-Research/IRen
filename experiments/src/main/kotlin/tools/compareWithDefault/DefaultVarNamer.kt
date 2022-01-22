@@ -2,7 +2,7 @@ package tools.compareWithDefault
 
 import com.intellij.openapi.application.ReadAction
 import com.intellij.psi.PsiNameIdentifierOwner
-import org.jetbrains.iren.api.LanguageSupporter
+import org.jetbrains.iren.LanguageSupporter
 import tools.ModelPrediction
 import tools.modelsEvaluatorApi.VarNamer
 import java.nio.file.Path

@@ -3,8 +3,6 @@ package org.jetbrains.iren;
 import junitparams.JUnitParamsRunner;
 import junitparams.Parameters;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.iren.api.LanguageSupporter;
-import org.jetbrains.iren.language.KotlinLanguageSupporter;
 import org.jetbrains.kotlin.idea.KotlinFileType;
 import org.junit.Test;
 import org.junit.runner.RunWith;

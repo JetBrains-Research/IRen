@@ -2,7 +2,6 @@ package org.jetbrains.iren;
 
 import com.intellij.psi.PsiElement;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.iren.api.LanguageSupporter;
 
 public abstract class CollisionTest extends LanguageSupporterTest {
     @Override
