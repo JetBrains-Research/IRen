@@ -2,7 +2,7 @@ package org.jetbrains.iren
 
 import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.progress.ProgressIndicator
-import com.intellij.util.io.HttpRequests
+import com.intellij.util.download.DownloadableFileService
 import org.jetbrains.iren.utils.ModelUtils.CURRENT_MODEL_VERSION
 import org.jetbrains.iren.utils.ModelUtils.MODELS_DIRECTORY
 import java.io.File
@@ -14,33 +14,41 @@ import java.nio.file.Path
 import java.util.zip.ZipEntry
 import java.util.zip.ZipInputStream
 
-const val MODEL_URL = "https://iren-intellij-model.s3.eu-north-1.amazonaws.com/intellij-$CURRENT_MODEL_VERSION.zip"
-val LOG = Logger.getInstance("org.jetbrains.iren.ModelLoader")
+const val INTELLIJ_MODEL_URL =
+    "https://iren-intellij-model.s3.eu-north-1.amazonaws.com/intellij-$CURRENT_MODEL_VERSION.zip"
+const val TMP_MODEL_FILE = "intellij.zip"
+private val log = Logger.getInstance("org.jetbrains.iren.ModelLoader")
 
 /**
  * Download and unzip intellij models.
  */
 fun downloadAndExtractIntellijModels(indicator: ProgressIndicator) {
-    val modelZipPath = MODELS_DIRECTORY.resolve("intellij.zip")
+    val modelZipPath = MODELS_DIRECTORY.resolve(TMP_MODEL_FILE)
     try {
-        LOG.info(IRenBundle.message("loading.intellij.models"))
+        log.info(IRenBundle.message("loading.intellij.models"))
         indicator.text = IRenBundle.message("loading.intellij.models")
-        download(modelZipPath, indicator)
+        downloadIntellijModels()
         indicator.checkCanceled()
         indicator.isIndeterminate = true
-        LOG.info(IRenBundle.message("extracting.intellij.models"))
+        log.info(IRenBundle.message("extracting.intellij.models"))
         indicator.text = IRenBundle.message("extracting.intellij.models")
         unzip(modelZipPath)
-        LOG.info(IRenBundle.message("loading.intellij.models.done"))
+        log.info(IRenBundle.message("loading.intellij.models.done"))
     } catch (e: IOException) {
-        LOG.error(e)
+        log.error(e)
     } finally {
         Files.deleteIfExists(modelZipPath)
     }
 }
 
-private fun download(modelZipPath: Path, indicator: ProgressIndicator) {
-    HttpRequests.request(MODEL_URL).saveToFile(modelZipPath, indicator)
+private fun downloadIntellijModels() {
+    val downloadableFileService = DownloadableFileService.getInstance()
+    val targetDir = MODELS_DIRECTORY.toFile()
+    targetDir.mkdir()
+    downloadableFileService.createDownloader(
+        listOf(downloadableFileService.createFileDescription(INTELLIJ_MODEL_URL, TMP_MODEL_FILE)),
+        IRenBundle.message("loading.intellij.models")
+    ).download(targetDir)
 }
 
 
