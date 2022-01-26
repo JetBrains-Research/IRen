@@ -1,6 +1,11 @@
 <!-- Keep a Changelog guide -> https://keepachangelog.com -->
 
 # IRen Changelog
+## [0.1.5]
+### Fixed
+- Move IRenRenameHistory to workspace file
+- Improve work of the inspection
+
 ## [0.1.4]
 ### Fixed
 - Bug with suggestion of shadowed names
