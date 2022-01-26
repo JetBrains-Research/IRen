@@ -16,4 +16,7 @@ IRen inspection helps with maintenance of the code and marks all variables which
 - Java
 - Kotlin
 - Python
+
+### Issue Tracker
+You can file a bug in the [GitHub issue tracker](https://github.com/JetBrains-Research/IRen/issues).
 <!-- Plugin description end -->
