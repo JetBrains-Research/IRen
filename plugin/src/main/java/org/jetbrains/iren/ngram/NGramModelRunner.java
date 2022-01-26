@@ -51,6 +51,8 @@ public class NGramModelRunner implements ModelRunner {
     protected final int order;
     protected boolean myTraining = false;
     protected LanguageSupporter mySupporter = null;
+    private PsiNameIdentifierOwner lastVariable = null;
+    private Context<Integer> lastContext = null;
 
     public NGramModelRunner() {
         this(DEFAULT_BIDIRECTIONAL, 6);
@@ -75,14 +77,6 @@ public class NGramModelRunner implements ModelRunner {
         this.order = order;
     }
 
-    public void train() {
-        myTraining = true;
-    }
-
-    public void eval() {
-        myTraining = false;
-    }
-
     public Set<Integer> getRememberedIdentifiers() {
         return myRememberedIdentifiers;
     }
@@ -95,24 +89,42 @@ public class NGramModelRunner implements ModelRunner {
         return myVocabulary;
     }
 
+    public void train() {
+        myTraining = true;
+    }
+
+    public void eval() {
+        myTraining = false;
+    }
+
     @Override
-    public @NotNull VarNamePrediction.List suggestNames(@NotNull PsiNameIdentifierOwner variable) {
+    public @NotNull List<VarNamePrediction> suggestNames(@NotNull PsiNameIdentifierOwner variable) {
         return suggestNames(variable, false);
     }
 
     @Override
-    public @NotNull VarNamePrediction.List suggestNames(@NotNull PsiNameIdentifierOwner variable, boolean forgetContext) {
-        @Nullable Context<Integer> intContext = prepareContext(variable, forgetContext);
-        if (intContext == null) return new VarNamePrediction.List();
+    public @NotNull List<VarNamePrediction> suggestNames(@NotNull PsiNameIdentifierOwner variable, boolean forgetContext) {
+        @Nullable Context<Integer> intContext = getContext(variable, forgetContext);
+        if (intContext == null) return List.of();
         Context<Integer> unknownContext = intContext.with(0);
         Set<Integer> candidates = new HashSet<>();
+        for (int idx : intContext.getVarIdxs()) {
+            candidates.addAll(getCandidates(unknownContext.getTokens(), idx));
+        }
+        return rankCandidates(candidates, unknownContext);
+    }
+
+    @Override
+    public @NotNull Context.Statistics getContextStatistics(@NotNull PsiNameIdentifierOwner variable, boolean forgetContext) {
+        @Nullable Context<Integer> intContext = getContext(variable, forgetContext);
+        if (intContext == null) return Context.Statistics.EMPTY;
+        Context<Integer> unknownContext = intContext.with(0);
         int usageNumber = intContext.getVarIdxs().size();
         int countsSum = 0;
         for (int idx : intContext.getVarIdxs()) {
-            candidates.addAll(getCandidates(unknownContext.getTokens(), idx));
             countsSum += getContextCount(unknownContext.getTokens(), idx);
         }
-        return new VarNamePrediction.List(rankCandidates(candidates, unknownContext), usageNumber, countsSum);
+        return new Context.Statistics(usageNumber, countsSum);
     }
 
     private int getContextCount(List<Integer> tokens, int index) {
@@ -128,74 +140,10 @@ public class NGramModelRunner implements ModelRunner {
         }
     }
 
-    @Nullable
-    private Context<Integer> prepareContext(@NotNull PsiNameIdentifierOwner variable, boolean forgetContext) {
-        final Context<String> context = getSupporter(variable).getContext(variable, false);
-        if (context == null) return null;
-        Context<Integer> intContext = Context.fromStringToInt(context, myVocabulary);
-        if (forgetContext) {
-//            I don't try to relearn context after refactoring because forgetting
-//            context makes sense only for models that trained on a single file.
-//            It means that this model will be discarded and relearning things is waste of the time.
-            forgetContext(intContext);
-        }
-        return intContext;
-    }
-
-    private LanguageSupporter getSupporter(PsiElement element) {
-        if (mySupporter == null) {
-            mySupporter = LanguageSupporter.getInstance(element.getLanguage());
-        }
-        assert mySupporter.getLanguage() == element.getLanguage();
-        return mySupporter;
-    }
-
-    public void forgetContext(@NotNull Context<Integer> context) {
-        myModel.forget(context.getTokens());
-    }
-
-    private @NotNull Set<Integer> getCandidates(@NotNull List<Integer> tokenIdxs, int idx) {
-        return myModel.predictToken(tokenIdxs, idx).keySet();
-    }
-
-    private @NotNull List<VarNamePrediction> rankCandidates(@NotNull Set<Integer> candidates,
-                                                            @NotNull Context<Integer> intContext) {
-        List<Integer> cs = new ArrayList<>();
-        List<Double> logits = new ArrayList<>();
-        candidates.stream()
-                .filter(myRememberedIdentifiers::contains)
-                .forEach(candidate -> {
-                    cs.add(candidate);
-                    logits.add(getLogProb(intContext.with(candidate)));
-                });
-//        List<Double> probs = logits;
-        List<Double> probs = softmax(logits, 6);
-        List<VarNamePrediction> predictions = new ArrayList<>();
-        for (int i = 0; i < cs.size(); i++) {
-            String name = myVocabulary.toWord(cs.get(i));
-            if (mySupporter.isStopName(name)) continue;
-            predictions.add(new VarNamePrediction(name,
-                    probs.get(i),
-                    getModelPriority()));
-        }
-        predictions.sort((a, b) -> -Double.compare(a.getProbability(), b.getProbability()));
-        return predictions.subList(0, Math.min(predictions.size(), IRenSuggestingService.PREDICTION_CUTOFF));
-    }
-
-    private double getLogProb(@NotNull Context<Integer> intContext) {
-        double logProb = 0.;
-        int leftIdx;
-        int rightIdx = 0;
-        List<Integer> tokens = intContext.getTokens();
-        final int maxIdx = tokens.size();
-        for (int idx : intContext.getVarIdxs()) {
-            leftIdx = max(biDirectional ? idx - getOrder() + 1 : idx, rightIdx);
-            rightIdx = min(idx + getOrder(), maxIdx);
-            for (int i = leftIdx; i < rightIdx; i++) {
-                logProb += log(toProb(myModel.modelToken(tokens, i)));
-            }
-        }
-        return logProb;
+    @Override
+    public @NotNull Pair<Double, Integer> getProbability(PsiNameIdentifierOwner variable, boolean forgetContext) {
+        @Nullable Context<Integer> intContext = getContext(variable, forgetContext);
+        return intContext == null ? new Pair<>(0., 0) : new Pair<>(getLogProb(intContext), getModelPriority());
     }
 
     @Override
@@ -203,34 +151,9 @@ public class NGramModelRunner implements ModelRunner {
         return order;
     }
 
-    private double toProb(@NotNull Pair<Double, Double> probConf) {
-        double prob = probConf.getFirst();
-        double conf = probConf.getSecond();
-        return prob * conf + (1 - conf) / myVocabulary.size();
-    }
-
-    private static @NotNull List<Double> softmax(@NotNull List<Double> logits, double temperature) {
-        if (logits.isEmpty()) return logits;
-        List<Double> logits_t = logits.stream().map(l -> l / temperature).collect(Collectors.toList());
-        Double maxLogit = Collections.max(logits_t);
-        List<Double> probs = logits_t.stream().map(logit -> exp(logit - maxLogit)).collect(Collectors.toList());
-        double sumProbs = probs.stream().mapToDouble(Double::doubleValue).sum();
-        return probs.stream().map(p -> p / sumProbs).collect(Collectors.toList());
-    }
-
     @Override
     public int getModelPriority() {
         return myVocabulary.size();
-    }
-
-    @Override
-    public @NotNull Pair<Double, Integer> getProbability(PsiNameIdentifierOwner variable, boolean forgetContext) {
-        @Nullable Context<Integer> intContext = prepareContext(variable, forgetContext);
-        return intContext == null ? new Pair<>(0., 0) : new Pair<>(getLogProb(intContext), getModelPriority());
-    }
-
-    public void learnContext(@NotNull Context<Integer> context) {
-        myModel.learn(context.getTokens());
     }
 
     @Override
@@ -261,7 +184,9 @@ public class NGramModelRunner implements ModelRunner {
 
     @Override
     public void forgetPsiFile(@NotNull PsiFile file) {
-        myModel.forget(myVocabulary.toIndices(getSupporter(file).lexPsiFile(file)));
+        final LanguageSupporter supporter = getSupporter(file);
+        if (supporter == null) return;
+        myModel.forget(myVocabulary.toIndices(supporter.lexPsiFile(file)));
     }
 
     @Override
@@ -427,5 +352,103 @@ public class NGramModelRunner implements ModelRunner {
         for (Double id : fromJson) {
             myRememberedIdentifiers.add(id.intValue());
         }
+    }
+
+    @Nullable
+    synchronized private Context<Integer> getContext(@NotNull PsiNameIdentifierOwner variable, boolean forgetContext) {
+        if (lastVariable == null || !lastVariable.equals(variable)) {
+            lastVariable = variable;
+            lastContext = prepareContext(variable, forgetContext);
+        }
+        return lastContext;
+    }
+
+    private @Nullable Context<Integer> prepareContext(PsiNameIdentifierOwner variable, boolean forgetContext) {
+        final LanguageSupporter supporter = getSupporter(variable);
+        if (supporter == null) return null;
+        final Context<String> context = supporter.getContext(variable, false);
+        if (context == null) return null;
+        Context<Integer> intContext = Context.fromStringToInt(context, myVocabulary);
+        if (forgetContext) {
+//            I don't try to relearn context after refactoring because forgetting
+//            context makes sense only for models that trained on a single file.
+//            It means that this model will be discarded and relearning things is waste of the time.
+            forgetContext(intContext);
+        }
+        return intContext;
+    }
+
+    private @Nullable LanguageSupporter getSupporter(PsiElement element) {
+        if (mySupporter == null) {
+            mySupporter = LanguageSupporter.getInstance(element.getLanguage());
+        }
+        return mySupporter.getLanguage().equals(element.getLanguage()) ? mySupporter : null;
+    }
+
+    public void forgetContext(@NotNull Context<Integer> context) {
+        myModel.forget(context.getTokens());
+    }
+
+    private @NotNull Set<Integer> getCandidates(@NotNull List<Integer> tokenIdxs, int idx) {
+        return myModel.predictToken(tokenIdxs, idx).keySet();
+    }
+
+    private @NotNull List<VarNamePrediction> rankCandidates(@NotNull Set<Integer> candidates,
+                                                            @NotNull Context<Integer> intContext) {
+        List<Integer> cs = new ArrayList<>();
+        List<Double> logits = new ArrayList<>();
+        candidates.stream()
+                .filter(myRememberedIdentifiers::contains)
+                .forEach(candidate -> {
+                    cs.add(candidate);
+                    logits.add(getLogProb(intContext.with(candidate)));
+                });
+//        List<Double> probs = logits;
+        List<Double> probs = softmax(logits, 6);
+        List<VarNamePrediction> predictions = new ArrayList<>();
+        for (int i = 0; i < cs.size(); i++) {
+            String name = myVocabulary.toWord(cs.get(i));
+            if (mySupporter.isStopName(name)) continue;
+            predictions.add(new VarNamePrediction(name,
+                    probs.get(i),
+                    getModelPriority()));
+        }
+        predictions.sort((a, b) -> -Double.compare(a.getProbability(), b.getProbability()));
+        return predictions.subList(0, Math.min(predictions.size(), IRenSuggestingService.PREDICTION_CUTOFF));
+    }
+
+    private double getLogProb(@NotNull Context<Integer> intContext) {
+        double logProb = 0.;
+        int leftIdx;
+        int rightIdx = 0;
+        List<Integer> tokens = intContext.getTokens();
+        final int maxIdx = tokens.size();
+        for (int idx : intContext.getVarIdxs()) {
+            leftIdx = max(biDirectional ? idx - getOrder() + 1 : idx, rightIdx);
+            rightIdx = min(idx + getOrder(), maxIdx);
+            for (int i = leftIdx; i < rightIdx; i++) {
+                logProb += log(toProb(myModel.modelToken(tokens, i)));
+            }
+        }
+        return logProb;
+    }
+
+    private double toProb(@NotNull Pair<Double, Double> probConf) {
+        double prob = probConf.getFirst();
+        double conf = probConf.getSecond();
+        return prob * conf + (1 - conf) / myVocabulary.size();
+    }
+
+    private static @NotNull List<Double> softmax(@NotNull List<Double> logits, double temperature) {
+        if (logits.isEmpty()) return logits;
+        List<Double> logits_t = logits.stream().map(l -> l / temperature).collect(Collectors.toList());
+        Double maxLogit = Collections.max(logits_t);
+        List<Double> probs = logits_t.stream().map(logit -> exp(logit - maxLogit)).collect(Collectors.toList());
+        double sumProbs = probs.stream().mapToDouble(Double::doubleValue).sum();
+        return probs.stream().map(p -> p / sumProbs).collect(Collectors.toList());
+    }
+
+    public void learnContext(@NotNull Context<Integer> context) {
+        myModel.learn(context.getTokens());
     }
 }

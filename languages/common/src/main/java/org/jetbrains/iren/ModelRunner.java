@@ -8,6 +8,7 @@ import com.intellij.psi.PsiNameIdentifierOwner;
 import kotlin.Pair;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.iren.storages.Context;
 import org.jetbrains.iren.storages.VarNamePrediction;
 
 import java.nio.file.Path;
@@ -26,11 +27,13 @@ public interface ModelRunner {
 
     @NotNull List<VarNamePrediction> suggestNames(@NotNull PsiNameIdentifierOwner variable, boolean forgetContext);
 
+    @NotNull Context.Statistics getContextStatistics(@NotNull PsiNameIdentifierOwner variable, boolean forgetContext);
+
+    @NotNull Pair<Double, Integer> getProbability(PsiNameIdentifierOwner variable, boolean forgetContext);
+
     int getOrder();
 
     int getModelPriority();
-
-    @NotNull Pair<Double, Integer> getProbability(PsiNameIdentifierOwner variable, boolean forgetContext);
 
     void learnPsiFile(@NotNull PsiFile file);
 

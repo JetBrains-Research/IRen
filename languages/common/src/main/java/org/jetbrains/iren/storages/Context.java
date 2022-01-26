@@ -45,6 +45,21 @@ public class Context<T> {
         return new Context<>(vocabulary.toIndices(context.getTokens()), context.getVarIdxs());
     }
 
+    public static class Statistics {
+        public static final Statistics EMPTY = new Statistics(0, 0);
+        public int usageNumber;
+        public int countsSum;
+
+        public Statistics(int usageNumber, int countsSum) {
+            this.usageNumber = usageNumber;
+            this.countsSum = countsSum;
+        }
+
+        public double countsMean() {
+            return usageNumber > 0 ? countsSum / (double) usageNumber : 0.;
+        }
+    }
+
     // --------------------------- For tests ---------------------------
     public String serialize() {
         return Strings.join(tokens, " ") + "\n" + Strings.join(varIdxs, " ");

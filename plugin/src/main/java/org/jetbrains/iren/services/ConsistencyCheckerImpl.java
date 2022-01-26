@@ -7,6 +7,7 @@ import com.intellij.completion.ngram.slp.translating.Vocabulary;
 import com.intellij.psi.PsiNameIdentifierOwner;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.iren.LanguageSupporter;
+import org.jetbrains.iren.storages.Context;
 
 import java.util.LinkedHashMap;
 import java.util.concurrent.TimeUnit;
@@ -22,7 +23,7 @@ public class ConsistencyCheckerImpl implements ConsistencyChecker {
                     .build(new CacheLoader<>() {
                                @Override
                                public Boolean load(@NotNull PsiNameIdentifierOwner variable) {
-                                   return isBetterNamesSuggested(variable);
+                                   return highlightByInspection(variable);
                                }
                            }
                     );
@@ -42,7 +43,9 @@ public class ConsistencyCheckerImpl implements ConsistencyChecker {
         return res != null && res;
     }
 
-    static boolean isBetterNamesSuggested(@NotNull PsiNameIdentifierOwner variable) {
+    static synchronized boolean highlightByInspection(@NotNull PsiNameIdentifierOwner variable) {
+        final Context.Statistics contextStatistics = IRenSuggestingService.getInstance().getVariableContextStatistics(variable);
+        if (contextStatistics.countsMean() < 1.) return false;
         @NotNull LinkedHashMap<String, Double> predictions = IRenSuggestingService.getInstance().suggestVariableName(variable);
         final Double firstProbability = predictions.values().stream().findFirst().orElse(0.);
         final String firstName = predictions.keySet().stream().findFirst().orElse(null);

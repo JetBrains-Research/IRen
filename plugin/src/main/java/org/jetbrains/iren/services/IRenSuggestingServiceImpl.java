@@ -7,6 +7,8 @@ import kotlin.Pair;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.iren.LanguageSupporter;
 import org.jetbrains.iren.VariableNamesContributor;
+import org.jetbrains.iren.contributors.ProjectVariableNamesContributor;
+import org.jetbrains.iren.storages.Context;
 import org.jetbrains.iren.storages.VarNamePrediction;
 import org.jetbrains.iren.utils.NotificationsUtil;
 
@@ -16,8 +18,8 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 public class IRenSuggestingServiceImpl implements IRenSuggestingService {
-
-    @Override public @NotNull LinkedHashMap<String, Double> suggestVariableName(@NotNull PsiNameIdentifierOwner variable) {
+    @Override
+    public @NotNull LinkedHashMap<String, Double> suggestVariableName(@NotNull PsiNameIdentifierOwner variable) {
         Instant timerStart = Instant.now();
         List<VarNamePrediction> nameSuggestions = new ArrayList<>();
         boolean verboseInference = NotificationsUtil.isVerboseInference();
@@ -33,7 +35,7 @@ public class IRenSuggestingServiceImpl implements IRenSuggestingService {
             Instant start = Instant.now();
             prioritiesSum += modelContributor.contribute(variable, nameSuggestions);
             stats.put(String.format("%s (ms)",
-                    modelContributor.getClass().getSimpleName()),
+                            modelContributor.getClass().getSimpleName()),
                     Duration.between(start, Instant.now()).toNanos() / 1_000_000.);
         }
 
@@ -55,7 +57,8 @@ public class IRenSuggestingServiceImpl implements IRenSuggestingService {
                 notifications.toString());
     }
 
-    @Override public @NotNull Double getVariableNameProbability(@NotNull PsiNameIdentifierOwner variable) {
+    @Override
+    public @NotNull Double getVariableNameProbability(@NotNull PsiNameIdentifierOwner variable) {
         double nameProbability = 0.0;
         int prioritiesSum = 0;
         for (final VariableNamesContributor modelContributor : VariableNamesContributor.EP_NAME.getExtensions()) {
@@ -66,6 +69,12 @@ public class IRenSuggestingServiceImpl implements IRenSuggestingService {
         if (prioritiesSum != 0) {
             return nameProbability / prioritiesSum;
         } else return 0.0;
+    }
+
+    @Override
+    public @NotNull Context.Statistics getVariableContextStatistics(@NotNull PsiNameIdentifierOwner variable) {
+        final ProjectVariableNamesContributor contributor = VariableNamesContributor.EP_NAME.findExtension(ProjectVariableNamesContributor.class);
+        return contributor == null ? Context.Statistics.EMPTY : contributor.getContextStatistics(variable);
     }
 
     private @NotNull LinkedHashMap<String, Double> rankSuggestions(@NotNull PsiElement variable, @NotNull List<VarNamePrediction> nameSuggestions, int prioritiesSum) {

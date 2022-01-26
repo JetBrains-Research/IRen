@@ -1,10 +1,5 @@
 package org.jetbrains.iren.storages;
 
-import org.jetbrains.annotations.NotNull;
-
-import java.util.ArrayList;
-import java.util.Collection;
-
 public class VarNamePrediction {
     private final String myName;
     private final double myProbability;
@@ -45,24 +40,5 @@ public class VarNamePrediction {
     @Override
     public String toString() {
         return myName + ':' + myProbability;
-    }
-
-    public static class List extends ArrayList<VarNamePrediction> {
-        public Integer usageNumber;
-        public Integer countsSum;
-
-        public List() {
-            super();
-        }
-
-        public List(@NotNull Collection<? extends VarNamePrediction> c, int usageNumber, int countsSum) {
-            super(c);
-            this.usageNumber = usageNumber;
-            this.countsSum = countsSum;
-        }
-
-        public List(@NotNull Collection<? extends VarNamePrediction> c) {
-            super(c);
-        }
     }
 }

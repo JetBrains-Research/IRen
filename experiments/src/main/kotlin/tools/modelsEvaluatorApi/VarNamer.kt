@@ -16,6 +16,7 @@ import org.jetbrains.iren.LanguageSupporter
 import org.jetbrains.iren.ngram.NGramModelRunner
 import org.jetbrains.iren.ngram.PersistentNGramModelRunner
 import org.jetbrains.iren.services.ModelManager
+import org.jetbrains.iren.storages.Context
 import org.jetbrains.iren.storages.VarNamePrediction
 import tools.ModelPrediction
 import tools.ModelPredictions
@@ -176,29 +177,34 @@ open class VarNamer(
     private fun predictWithNGram(variable: PsiNameIdentifierOwner, thread: Int): ModelPredictions {
         val startTime = System.nanoTime()
         val runner = prepareThreadRunner(thread, variable)
-        val nameSuggestions = ReadAction.compute<VarNamePrediction.List, Exception> { runner.suggestNames(variable) }
+        val nameSuggestions =
+            ReadAction.compute<List<VarNamePrediction>, Exception> { runner.suggestNames(variable, false) }
+        val contextStatistics =
+            ReadAction.compute<Context.Statistics, Exception> { runner.getContextStatistics(variable, false) }
         val gtProbability = ReadAction.compute<Double, Exception> { runner.getProbability(variable, false).first }
         val time = (System.nanoTime() - startTime) / 1.0e9
         return NGramPredictions(
             nameSuggestions.map { x: VarNamePrediction -> ModelPrediction(x.name, x.probability) },
             time,
-            nameSuggestions.usageNumber,
-            nameSuggestions.countsSum,
+            contextStatistics.usageNumber,
+            contextStatistics.countsSum,
             gtProbability
         )
     }
 
     open fun predictWithNN(variable: PsiNameIdentifierOwner, thread: Int): Any {
         val startTime = System.nanoTime()
-        val nameSuggestions: VarNamePrediction.List
+        val nameSuggestions: List<VarNamePrediction>
+        var contextStatistics = Context.Statistics.EMPTY
         var gtProbability = 0.0
         if (!runParallel) {
 //            Predict with RAM version model
             ModelManager.getInstance().forgetFileIfNeeded(myModelRunner, variable.containingFile)
             nameSuggestions = myModelRunner.suggestNames(variable)
+            contextStatistics = myModelRunner.getContextStatistics(variable, false)
             gtProbability = myModelRunner.getProbability(variable, false).first
         } else if (ngramType != "BiDirectional") {
-            nameSuggestions = VarNamePrediction.List()
+            nameSuggestions = listOf()
         } else {
 //        Predict with the forward model of the BiDirectional model
             val runner = prepareThreadRunner(thread, variable)
@@ -210,15 +216,17 @@ open class VarNamer(
                 runner.order
             )
             nameSuggestions =
-                ReadAction.compute<VarNamePrediction.List, Exception> { forwardModel.suggestNames(variable) }
+                ReadAction.compute<List<VarNamePrediction>, Exception> { forwardModel.suggestNames(variable) }
+            contextStatistics =
+                ReadAction.compute<Context.Statistics, Exception> { forwardModel.getContextStatistics(variable, false) }
             gtProbability = ReadAction.compute<Double, Exception> { forwardModel.getProbability(variable, false).first }
         }
         val time = (System.nanoTime() - startTime) / 1.0e9
         return NGramPredictions(
             nameSuggestions.map { x: VarNamePrediction -> ModelPrediction(x.name, x.probability) },
             time,
-            nameSuggestions.usageNumber,
-            nameSuggestions.countsSum,
+            contextStatistics.usageNumber,
+            contextStatistics.countsSum,
             gtProbability
         )
     }

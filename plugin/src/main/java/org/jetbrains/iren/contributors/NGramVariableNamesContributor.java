@@ -8,6 +8,7 @@ import org.jetbrains.iren.LanguageSupporter;
 import org.jetbrains.iren.ModelRunner;
 import org.jetbrains.iren.VariableNamesContributor;
 import org.jetbrains.iren.services.ModelManager;
+import org.jetbrains.iren.storages.Context;
 import org.jetbrains.iren.storages.VarNamePrediction;
 
 import java.util.List;
@@ -46,5 +47,16 @@ public abstract class NGramVariableNamesContributor implements VariableNamesCont
 
     private static boolean notSupported(@NotNull PsiNameIdentifierOwner identifierOwner) {
         return !LanguageSupporter.getInstance(identifierOwner.getLanguage()).isVariableDeclaration(identifierOwner);
+    }
+
+    public @NotNull Context.Statistics getContextStatistics(@NotNull PsiNameIdentifierOwner variable) {
+        ModelRunner modelRunner = getModelRunnerToContribute(variable);
+        if (modelRunner == null || notSupported(variable)) {
+            return Context.Statistics.EMPTY;
+        }
+        if (forgetFile()) {
+            ModelManager.getInstance().forgetFileIfNeeded(modelRunner, variable.getContainingFile());
+        }
+        return modelRunner.getContextStatistics(variable, forgetContext());
     }
 }
