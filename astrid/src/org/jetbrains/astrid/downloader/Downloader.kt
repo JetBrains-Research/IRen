@@ -9,12 +9,12 @@ import java.util.*
 
 object Downloader {
     private const val archiveName = "model.zip"
-    private const val dirName = "org/jetbrains/astrid/model"
+    private const val dirName = "astrid/org.jetbrains/astrid/astrid/model"
     private const val pluginName = "astrid_plugin"
-    const val modelSubDir = "/org/jetbrains/astrid/model"
+    const val modelSubDir = "/astrid/org.jetbrains/astrid/astrid/model"
     const val beamSubDirLinux = "/beam_search/_beam_search_ops.so"
     const val beamSubDirMac = "/beam_search/mac/_beam_search_ops.so"
-    const val dictSubDir = "/org/jetbrains/astrid/model/dict/targets.dict"
+    const val dictSubDir = "/astrid/org.jetbrains/astrid/model/dict/targets.dict"
     const val modelLink = "https://www.dropbox.com/s/j2ydkxq3js33d93/model.zip?dl=1"
     private val tmp: String = System.getProperty("java.io.tmpdir")
 

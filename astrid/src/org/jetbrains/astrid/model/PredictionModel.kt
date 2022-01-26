@@ -1,6 +1,6 @@
 package org.jetbrains.astrid.model
 
-//import org.jetbrains.astrid.downloader.Downloader.getPathToBeamModule
+//import Downloader.getPathToBeamModule
 
 class PredictionModel {
     companion object{
