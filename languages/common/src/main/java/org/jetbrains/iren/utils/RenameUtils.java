@@ -17,10 +17,7 @@ import org.jetbrains.iren.services.ConsistencyChecker;
 import org.jetbrains.iren.services.IRenSuggestingService;
 import org.jetbrains.iren.services.ModelsUsabilityService;
 
-import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
-import java.util.Map;
-import java.util.NoSuchElementException;
+import java.util.*;
 
 public class RenameUtils {
     /**
@@ -63,16 +60,20 @@ public class RenameUtils {
                 && supporter.isVariableDeclaration(elementToRename)
                 && supporter.isInplaceRenameAvailable(elementToRename)) {
             LinkedHashMap<String, Double> nameProbs = IRenSuggestingService.getInstance().suggestVariableName((PsiNameIdentifierOwner) elementToRename);
-            double unknownNameProb = nameProbs.getOrDefault(Vocabulary.unknownCharacter, 0.);
-            double varNameProb = nameProbs.getOrDefault(elementToRename.getText(), 0.) - 1e-4;
-            double threshold = Math.max(0.02, Math.max(unknownNameProb, varNameProb));
-            for (Map.Entry<String, Double> e : nameProbs.entrySet()) {
-                if (e.getValue() > threshold) {
-                    nameProbabilities.put(e.getKey(), e.getValue());
-                }
-            }
-            nameSuggestions.addAll(nameProbabilities.keySet());
+            filterSuggestions(nameSuggestions, elementToRename, nameProbabilities, nameProbs);
         }
+    }
+
+    private static void filterSuggestions(@NotNull LinkedHashSet<String> nameSuggestions, @NotNull PsiNamedElement elementToRename, @NotNull LinkedHashMap<String, Double> nameProbabilities, LinkedHashMap<String, Double> nameProbs) {
+        double unknownNameProb = nameProbs.getOrDefault(Vocabulary.unknownCharacter, 0.);
+        double varNameProb = nameProbs.getOrDefault(elementToRename.getText(), 0.) - 1e-4;
+        double threshold = Math.max(0.02, Math.max(unknownNameProb, varNameProb));
+        for (Map.Entry<String, Double> e : nameProbs.entrySet()) {
+            if (e.getValue() > threshold) {
+                nameProbabilities.put(e.getKey(), e.getValue());
+            }
+        }
+        nameSuggestions.addAll(nameProbabilities.keySet());
     }
 
     /**
@@ -86,7 +87,7 @@ public class RenameUtils {
     }
 
     @Nullable
-    public static DictionarySuggestionProvider findDictionarySuggestionProvider() {
+    private static DictionarySuggestionProvider findDictionarySuggestionProvider() {
         for (Object extension : NameSuggestionProvider.EP_NAME.getExtensionList()) {
             if (extension instanceof DictionarySuggestionProvider) {
                 return (DictionarySuggestionProvider) extension;
