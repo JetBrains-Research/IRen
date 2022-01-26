@@ -6,7 +6,7 @@ public class Fooo {
             System.out.println("Oh My!");
         } catch (Exception ignore) {
         } catch (Exception ignored) {
-        } catch (Exception <caret>e) {
+        } catch (Exception <caret>x) {
         }
     }
 }

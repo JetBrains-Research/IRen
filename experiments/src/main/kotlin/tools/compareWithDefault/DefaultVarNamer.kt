@@ -3,6 +3,7 @@ package tools.compareWithDefault
 import com.intellij.openapi.application.ReadAction
 import com.intellij.psi.PsiNameIdentifierOwner
 import org.jetbrains.iren.LanguageSupporter
+import org.jetbrains.iren.MyJavaNameSuggestionProvider
 import tools.ModelPrediction
 import tools.modelsEvaluatorApi.VarNamer
 import java.nio.file.Path
@@ -10,7 +11,7 @@ import java.nio.file.Path
 open class DefaultVarNamer(
     saveDir: Path,
     supporter: LanguageSupporter,
-    ngramType: String
+    ngramType: String,
 ) : VarNamer(saveDir, supporter, ngramType) {
     override var runParallel = true
 

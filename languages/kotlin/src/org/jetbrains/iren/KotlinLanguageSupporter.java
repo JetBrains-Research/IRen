@@ -10,17 +10,24 @@ import com.intellij.psi.tree.IElementType;
 import com.intellij.psi.tree.TokenSet;
 import com.intellij.psi.util.PsiTreeUtil;
 import com.intellij.psi.util.PsiUtil;
+import com.intellij.refactoring.rename.NameSuggestionProvider;
 import com.intellij.refactoring.rename.RenameHandler;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.kotlin.builtins.KotlinBuiltIns;
+import org.jetbrains.kotlin.descriptors.CallableDescriptor;
 import org.jetbrains.kotlin.idea.KotlinFileType;
 import org.jetbrains.kotlin.idea.KotlinLanguage;
+import org.jetbrains.kotlin.idea.caches.resolve.ResolutionUtils;
 import org.jetbrains.kotlin.idea.refactoring.rename.KotlinMemberInplaceRenameHandler;
 import org.jetbrains.kotlin.idea.refactoring.rename.KotlinRenameDispatcherHandler;
 import org.jetbrains.kotlin.idea.refactoring.rename.KotlinVariableInplaceRenameHandler;
 import org.jetbrains.kotlin.idea.references.ReferenceUtilsKt;
 import org.jetbrains.kotlin.lexer.KtTokens;
 import org.jetbrains.kotlin.psi.*;
+import org.jetbrains.kotlin.resolve.lazy.BodyResolveMode;
+import org.jetbrains.kotlin.types.KotlinType;
+import org.jetbrains.kotlin.types.typeUtil.TypeUtilsKt;
 
 import java.util.Collection;
 import java.util.List;
@@ -100,15 +107,18 @@ public class KotlinLanguageSupporter extends LanguageSupporterBase {
 
     @Override
     public boolean excludeFromInspection(@NotNull PsiNameIdentifierOwner variable) {
-        if (isOverridden(variable)) {
-            return true;
-        }
+        return super.excludeFromInspection(variable) || isOverridden(variable) || parseParameter(variable) || parseProperty(variable) || isSuffixOfType(variable);
+    }
+
+    private boolean parseParameter(PsiNameIdentifierOwner variable) {
         if (variable instanceof KtParameter) {
+//            "Ignored" parameter in catch clause.
             final PsiElement parent = variable.getParent();
             if (parent != null && parent.getParent() instanceof KtCatchClause) {
                 final String name = variable.getName();
                 return PsiUtil.isIgnoredName(name) || Objects.equals(name, "_");
             }
+//            Parameter of the overridden method.
             final KtParameter parameter = (KtParameter) variable;
             final PsiElement declaration = parameter.getOwnerFunction();
             return isOverridden(declaration);
@@ -116,11 +126,43 @@ public class KotlinLanguageSupporter extends LanguageSupporterBase {
         return false;
     }
 
+    private boolean parseProperty(PsiNameIdentifierOwner variable) {
+        if (variable instanceof KtProperty) {
+//            Variable name is a suffix of the reference name.
+            KtExpression initializer = ((KtProperty) variable).getInitializer();
+            if (initializer instanceof KtQualifiedExpression) {
+                initializer = ((KtQualifiedExpression) initializer).getSelectorExpression();
+                if (initializer == null) return false;
+            }
+            if (initializer instanceof KtCallExpression) {
+                initializer = ((KtCallExpression) initializer).getCalleeExpression();
+                if (initializer == null) return false;
+            }
+            if (initializer instanceof KtNameReferenceExpression) {
+                return firstIsSuffixOfSecond(variable.getName(), ((KtNameReferenceExpression) initializer).getReferencedName());
+            }
+        }
+        return false;
+    }
+
+    private boolean isSuffixOfType(@NotNull PsiNameIdentifierOwner variable) {
+        CallableDescriptor callableDescriptor = (CallableDescriptor) ResolutionUtils.unsafeResolveToDescriptor((KtDeclaration) variable, BodyResolveMode.PARTIAL);
+        KotlinType type = callableDescriptor.getReturnType();
+        return type != null && !TypeUtilsKt.isUnit(type) &&
+                !KotlinBuiltIns.isPrimitiveType(type) &&
+                firstIsSuffixOfSecond(variable.getName(), type.toString());
+    }
+
     private boolean isOverridden(PsiElement element) {
         if (element instanceof KtModifierListOwner) {
             return ((KtModifierListOwner) element).hasModifier(KtTokens.OVERRIDE_KEYWORD);
         }
         return false;
+    }
+
+    @Override
+    public @Nullable NameSuggestionProvider getNameSuggestionProvider() {
+        return new MyKotlinNameSuggestionProvider();
     }
 
     @Override
