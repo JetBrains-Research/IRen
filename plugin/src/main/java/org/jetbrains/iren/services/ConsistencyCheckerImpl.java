@@ -6,11 +6,9 @@ import com.google.common.cache.LoadingCache;
 import com.intellij.completion.ngram.slp.translating.Vocabulary;
 import com.intellij.psi.PsiNameIdentifierOwner;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import org.jetbrains.iren.LanguageSupporter;
 
 import java.util.LinkedHashMap;
-import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 
 import static org.jetbrains.iren.utils.LimitedTimeRunner.runForSomeTime;
@@ -46,20 +44,11 @@ public class ConsistencyCheckerImpl implements ConsistencyChecker {
 
     static boolean isBetterNamesSuggested(@NotNull PsiNameIdentifierOwner variable) {
         @NotNull LinkedHashMap<String, Double> predictions = IRenSuggestingService.getInstance().suggestVariableName(variable);
-        if (predictions.values().stream().findFirst().orElse(0.) < 0.5) return false;
-        int varIdx = 100;
-        int unkIdx = 100;
-        int i = 0;
-        @Nullable String varName = variable.getName();
-        for (String name : predictions.keySet()) {
-            if (Objects.equals(varName, name)) {
-                varIdx = i;
-            } else if (Objects.equals(Vocabulary.unknownCharacter, name)) {
-                unkIdx = i;
-            }
-            i++;
-        }
-        return unkIdx != 0 && varIdx > 10;
+        final Double firstProbability = predictions.values().stream().findFirst().orElse(0.);
+        final String firstName = predictions.keySet().stream().findFirst().orElse(null);
+        return firstProbability > 0.5 &&
+                !Vocabulary.unknownCharacter.equals(firstName) &&
+                !predictions.containsKey(variable.getName());
     }
 
     @Override
