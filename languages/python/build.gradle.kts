@@ -1,5 +1,5 @@
 intellij {
-    this.plugins.set(listOf(Plugins.python))
+    this.plugins.set(listOf(Plugins.java, Plugins.python))
 }
 
 dependencies {
