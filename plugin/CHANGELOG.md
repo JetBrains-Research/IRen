@@ -1,6 +1,10 @@
 <!-- Keep a Changelog guide -> https://keepachangelog.com -->
 
 # IRen Changelog
+## [0.1.6]
+### Fixed
+- Fix the bug with Jupyter Notebooks
+
 ## [0.1.5]
 ### Fixed
 - Move IRenRenameHistory to workspace file
