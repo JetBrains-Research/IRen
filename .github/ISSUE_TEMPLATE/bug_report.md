@@ -24,9 +24,9 @@ A clear and concise description of what you expected to happen.
 If applicable, add screenshots to help explain your problem.
 
 **Desktop (please complete the following information):**
- - OS [e.g. Windows]
- - IDE [e.g. IntelliJ IDEA]
- - Version [e.g. 2021.3]
+ - Language: [e.g. Kotlin]
+ - IDE: [e.g. IntelliJ IDEA]
+ - Version: [e.g. 2021.3]
 
 **Additional context**
 Add any other context about the problem here.
