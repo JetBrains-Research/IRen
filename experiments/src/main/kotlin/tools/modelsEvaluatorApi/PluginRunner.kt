@@ -91,7 +91,10 @@ open class PluginRunner : ApplicationStarter {
             val project = ProjectUtil.openOrImport(projectPath.path, projectToClose, true) ?: continue
             addText(statsFile, "${project.name},")
             try {
-                val modelRunner = trainModelRunner(project, statsFile)
+                val trainingStart = Instant.now()
+                val modelRunner = trainModelRunner(project)
+                addText(statsFile,
+                    "${Duration.between(trainingStart, Instant.now())},${modelRunner.vocabulary.size()},")
                 val start = Instant.now()
                 if (varNamer.predict(modelRunner, project, statsFile, predictionsFile)) {
                     addText(statsFile, "${Duration.between(start, Instant.now())}")
@@ -108,18 +111,14 @@ open class PluginRunner : ApplicationStarter {
         }
     }
 
-    private fun trainModelRunner(
+    open fun trainModelRunner(
         project: Project,
-        statsFile: File,
     ): NGramModelRunner {
         val settings = AppSettingsState.getInstance()
         settings.maxTrainingTime = 10000
         settings.vocabularyCutOff = 0
-        val start = Instant.now()
         val modelRunner = NGramModelRunner()
         ModelBuilder(project, supporter, null).trainModelRunner(modelRunner)
-        val trainingTime = Duration.between(start, Instant.now())
-        addText(statsFile, "$trainingTime,${modelRunner.vocabulary.size()},")
         return modelRunner
     }
 }

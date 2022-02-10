@@ -34,13 +34,13 @@ open class VarNamer(
     private val ngramType: String,
 ) {
     open var runParallel = true
-    var maxNumberOfThreads = 8
+    open val maxNumberOfThreads = 8
     protected lateinit var myModelRunner: NGramModelRunner
     private val persistentModelRunners: List<NGramModelRunner> by lazy { preparePersistentRunners() }
     private val mapper = ObjectMapper()
     lateinit var myStatsFile: File
 
-    private fun preparePersistentRunners(): List<NGramModelRunner> {
+    open fun preparePersistentRunners(): List<NGramModelRunner> {
         val persistentModelPath = saveDir.resolve("tmp_persistent_model")
         println("Preparing persistent counters...")
         val size = PersistentNGramModelRunner(myModelRunner)
@@ -174,7 +174,7 @@ open class VarNamer(
         )
     }
 
-    private fun predictWithNGram(variable: PsiNameIdentifierOwner, thread: Int): ModelPredictions {
+    open fun predictWithNGram(variable: PsiNameIdentifierOwner, thread: Int): ModelPredictions {
         val startTime = System.nanoTime()
         val runner = prepareThreadRunner(thread, variable)
         val nameSuggestions =
@@ -231,7 +231,7 @@ open class VarNamer(
         )
     }
 
-    private fun prepareThreadRunner(
+    protected open fun prepareThreadRunner(
         thread: Int,
         variable: PsiNameIdentifierOwner,
     ): NGramModelRunner {

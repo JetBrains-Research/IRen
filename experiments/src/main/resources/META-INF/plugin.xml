@@ -30,11 +30,10 @@
         <appStarter implementation="tools.compareWithRAM.RamPluginRunner"/>
         <appStarter implementation="tools.compareWithDefault.DefaultPluginRunner"/>
         <appStarter implementation="tools.countNGrams.PluginRunner"/>
+        <appStarter implementation="tools.cacheSize.CacheSizePluginRunner"/>
         <!-- End of headless running part-->
-        <applicationService serviceImplementation="org.jetbrains.iren.services.ModelManagerImpl"/>
-        <applicationService serviceImplementation="org.jetbrains.iren.services.ModelsSaveTime"/>
-        <applicationService serviceImplementation="org.jetbrains.iren.services.ModelsUsabilityServiceImpl"/>
-        <applicationService serviceImplementation="org.jetbrains.iren.services.IRenSuggestingServiceImpl"/>
+        <applicationService serviceInterface="org.jetbrains.iren.services.ModelManager"
+                            serviceImplementation="org.jetbrains.iren.services.ModelManagerImpl"/>
     </extensions>
     <extensions defaultExtensionNs="org.jetbrains.iren">
         <variableNamesContributor
