@@ -32,21 +32,23 @@ public class ModelUtils {
 
     public static boolean deleteOldModels() {
         AtomicBoolean res = new AtomicBoolean(false);
-        try (Stream<Path> paths = Files.list(ModelUtils.MODELS_DIRECTORY)) {
-            paths
-                    .filter(Files::isDirectory)
-                    .filter(ModelUtils::isNotCurrentVersion)
-                    .map(Path::toFile)
-                    .forEach(file -> {
-                        try {
-                            FileUtils.deleteDirectory(file);
-                            res.set(true);
-                        } catch (IOException e) {
-                            e.printStackTrace();
-                        }
-                    });
-        } catch (IOException e) {
-            e.printStackTrace();
+        if (Files.exists(ModelUtils.MODELS_DIRECTORY)) {
+            try (Stream<Path> paths = Files.list(ModelUtils.MODELS_DIRECTORY)) {
+                paths
+                        .filter(Files::isDirectory)
+                        .filter(ModelUtils::isNotCurrentVersion)
+                        .map(Path::toFile)
+                        .forEach(file -> {
+                            try {
+                                FileUtils.deleteDirectory(file);
+                                res.set(true);
+                            } catch (IOException e) {
+                                e.printStackTrace();
+                            }
+                        });
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
         }
         return res.get();
     }
