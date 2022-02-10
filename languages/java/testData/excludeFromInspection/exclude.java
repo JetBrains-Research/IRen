@@ -5,6 +5,7 @@ public class Foo {
         var sta<caret>te = Foo.computeSmthg();
         var compo<caret>nent = returnMy();
         var answerForTheUltima<caret>teQuestionOfLife = computeAnswerForTheUltimateQuestionOfLife();
+        var s<caret>chool = getSomeSchoolNumber();
         try {
             System.out.println("Oh My!");
         } catch (Exception igno<caret>re) {
@@ -19,6 +20,10 @@ public class Foo {
 
     private int computeAnswerForTheUltimateQuestionOfLife() {
         return 42;
+    }
+
+    private int getSomeSchoolNumber() {
+        return 239;
     }
 
     public MyComponent returnMy() {

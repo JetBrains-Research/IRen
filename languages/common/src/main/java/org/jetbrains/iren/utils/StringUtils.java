@@ -25,8 +25,6 @@ public class StringUtils {
         return List.of(type.replaceAll("(?<=\\W)(?=\\W)|(?<=\\w)(?=\\W)|(?<=\\W)(?=\\w)", " ").split("\\s+"));
     }
 
-
-
     public static boolean firstIsSuffixOfSecond(@Nullable String name1, @Nullable String name2) {
         if (name1 == null || name2 == null) return false;
         final List<String> tokens1 = toLowerCasedTokens(name1);
@@ -44,5 +42,17 @@ public class StringUtils {
     @NotNull
     public static List<String> toLowerCasedTokens(String name) {
         return Arrays.stream(NameUtilCore.splitNameIntoWords(name)).map(String::toLowerCase).collect(Collectors.toList());
+    }
+
+    public static boolean isSubstringOfSuggestions(@Nullable String name, @NotNull Collection<String> suggestions) {
+        if (name == null) return false;
+        String lcName = name.toLowerCase();
+        return lcName.length() > 1 && suggestions.stream().anyMatch(suggestion -> suggestion.toLowerCase().contains(lcName));
+    }
+
+    public static boolean isSubstringOfSuggestion(@Nullable String name, @Nullable String suggestion) {
+        if (name == null || suggestion == null) return false;
+        String lcName = name.toLowerCase();
+        return lcName.length() > 1 && suggestion.toLowerCase().contains(lcName);
     }
 }

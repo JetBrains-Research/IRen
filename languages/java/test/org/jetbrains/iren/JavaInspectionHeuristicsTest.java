@@ -20,7 +20,7 @@ public class JavaInspectionHeuristicsTest extends InspectionHeuristicsTest {
     }
 
     @Test
-    @Parameters({"0", "1", "2", "3", "4", "5"})
+    @Parameters({"0", "1", "2", "3", "4", "5", "6"})
     public void testExclude(int index) {
         doTestExclusionFromInspectionHeuristics(index, true);
     }

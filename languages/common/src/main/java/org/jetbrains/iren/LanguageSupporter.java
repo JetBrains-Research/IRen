@@ -9,13 +9,14 @@ import com.intellij.psi.*;
 import com.intellij.psi.search.FileTypeIndex;
 import com.intellij.psi.search.GlobalSearchScope;
 import com.intellij.psi.tree.IElementType;
-import com.intellij.refactoring.rename.NameSuggestionProvider;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.iren.storages.Context;
 
-import java.util.*;
+import java.util.Collection;
+import java.util.List;
+import java.util.NoSuchElementException;
 import java.util.function.Consumer;
 
 public interface LanguageSupporter {
@@ -93,21 +94,9 @@ public interface LanguageSupporter {
 
     boolean isVariableDeclaration(@Nullable PsiElement element);
 
-    default boolean excludeFromInspection(@NotNull PsiNameIdentifierOwner variable) {
-        return inDefaultSuggestions(variable);
-    }
+    boolean excludeFromInspection(@NotNull PsiNameIdentifierOwner variable);
 
-    default boolean inDefaultSuggestions(PsiNameIdentifierOwner variable) {
-        final NameSuggestionProvider nameSuggestionProvider = getNameSuggestionProvider();
-        if (nameSuggestionProvider == null) return false;
-        Set<String> defaultSuggestions = new HashSet<>();
-        nameSuggestionProvider.getSuggestedNames(variable, variable, defaultSuggestions);
-        return defaultSuggestions.contains(variable.getName());
-    }
-
-    default @Nullable NameSuggestionProvider getNameSuggestionProvider() {
-        return null;
-    }
+    @NotNull Collection<String> getDefaultSuggestions(@NotNull PsiNameIdentifierOwner variable);
 
     default boolean isInplaceRenameAvailable(PsiNamedElement elementToRename) {
         return true;

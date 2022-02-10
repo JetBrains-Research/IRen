@@ -13,6 +13,7 @@ import java.util.LinkedHashMap;
 import java.util.concurrent.TimeUnit;
 
 import static org.jetbrains.iren.utils.LimitedTimeRunner.runForSomeTime;
+import static org.jetbrains.iren.utils.StringUtils.isSubstringOfSuggestions;
 
 
 public class ConsistencyCheckerImpl implements ConsistencyChecker {
@@ -51,7 +52,7 @@ public class ConsistencyCheckerImpl implements ConsistencyChecker {
         final String firstName = predictions.keySet().stream().findFirst().orElse(null);
         return firstProbability > 0.5 &&
                 !Vocabulary.unknownCharacter.equals(firstName) &&
-                !predictions.containsKey(variable.getName());
+                !isSubstringOfSuggestions(variable.getName(), predictions.keySet());
     }
 
     @Override

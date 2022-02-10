@@ -107,10 +107,14 @@ public class KotlinLanguageSupporter extends LanguageSupporterBase {
 
     @Override
     public boolean excludeFromInspection(@NotNull PsiNameIdentifierOwner variable) {
-        return super.excludeFromInspection(variable) || isOverridden(variable) || parseParameter(variable) || parseProperty(variable) || isSuffixOfType(variable);
+        return super.excludeFromInspection(variable) ||
+                isOverridden(variable) ||
+                analyzeParameter(variable) ||
+                analyzeProperty(variable) ||
+                isSuffixOfType(variable);
     }
 
-    private boolean parseParameter(PsiNameIdentifierOwner variable) {
+    private boolean analyzeParameter(PsiNameIdentifierOwner variable) {
         if (variable instanceof KtParameter) {
 //            "Ignored" parameter in catch clause.
             final PsiElement parent = variable.getParent();
@@ -126,7 +130,7 @@ public class KotlinLanguageSupporter extends LanguageSupporterBase {
         return false;
     }
 
-    private boolean parseProperty(PsiNameIdentifierOwner variable) {
+    private boolean analyzeProperty(PsiNameIdentifierOwner variable) {
         if (variable instanceof KtProperty) {
 //            Variable name is a suffix of the reference name.
             KtExpression initializer = ((KtProperty) variable).getInitializer();
@@ -139,7 +143,7 @@ public class KotlinLanguageSupporter extends LanguageSupporterBase {
                 if (initializer == null) return false;
             }
             if (initializer instanceof KtNameReferenceExpression) {
-                return firstIsSuffixOfSecond(variable.getName(), ((KtNameReferenceExpression) initializer).getReferencedName());
+                return isSubstringOfSuggestion(variable.getName(), ((KtNameReferenceExpression) initializer).getReferencedName());
             }
         }
         return false;
@@ -150,7 +154,7 @@ public class KotlinLanguageSupporter extends LanguageSupporterBase {
         KotlinType type = callableDescriptor.getReturnType();
         return type != null && !TypeUtilsKt.isUnit(type) &&
                 !KotlinBuiltIns.isPrimitiveType(type) &&
-                firstIsSuffixOfSecond(variable.getName(), type.toString());
+                isSubstringOfSuggestion(variable.getName(), type.toString());
     }
 
     private boolean isOverridden(PsiElement element) {

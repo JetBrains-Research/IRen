@@ -6,6 +6,7 @@ open class Foo {
         val st<caret>ate = computeSmth()
         val compo<caret>nent = returnMy()
         val answerForTheUltimateQu<caret>estionOfLife = computeAnswerForTheUltimateQuestionOfLife()
+        val sc<caret>hool = getSomeSchoolNumber()
         try {
             println("Oh My!")
         } catch (ign<caret>ore: Exception) {
@@ -26,6 +27,10 @@ open class Foo {
 
     private fun computeAnswerForTheUltimateQuestionOfLife(): Int {
         return 42
+    }
+
+    private fun getSomeSchoolNumber(): Int {
+        return 239
     }
 
     class State

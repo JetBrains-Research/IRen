@@ -8,6 +8,7 @@ import com.intellij.openapi.util.TextRange;
 import com.intellij.psi.*;
 import com.intellij.psi.search.GlobalSearchScope;
 import com.intellij.psi.util.PsiTreeUtil;
+import com.intellij.refactoring.rename.NameSuggestionProvider;
 import com.intellij.refactoring.rename.RenamePsiElementProcessor;
 import com.intellij.refactoring.rename.UnresolvableCollisionUsageInfo;
 import com.intellij.usageView.UsageInfo;
@@ -16,7 +17,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.jetbrains.iren.LanguageSupporter;
 import org.jetbrains.iren.storages.Context;
 
 import java.time.Duration;
@@ -28,6 +28,7 @@ import java.util.stream.Stream;
 
 import static org.jetbrains.iren.utils.LimitedTimeRunner.runForSomeTime;
 import static org.jetbrains.iren.utils.StringUtils.STRING_TOKEN;
+import static org.jetbrains.iren.utils.StringUtils.isSubstringOfSuggestions;
 
 public abstract class LanguageSupporterBase implements LanguageSupporter {
     protected long time = 0;
@@ -210,6 +211,24 @@ public abstract class LanguageSupporterBase implements LanguageSupporter {
     }
 
     protected abstract @Nullable PsiElement resolveReference(@NotNull PsiElement reference);
+
+    @Override
+    public boolean excludeFromInspection(@NotNull PsiNameIdentifierOwner variable) {
+        return isSubstringOfSuggestions(variable.getName(), getDefaultSuggestions(variable));
+    }
+
+    @Override
+    public @NotNull Collection<String> getDefaultSuggestions(@NotNull PsiNameIdentifierOwner variable) {
+        final @Nullable NameSuggestionProvider nameSuggestionProvider = getNameSuggestionProvider();
+        if (nameSuggestionProvider == null) return Set.of();
+        Set<String> defaultSuggestions = new HashSet<>();
+        nameSuggestionProvider.getSuggestedNames(variable, variable, defaultSuggestions);
+        return defaultSuggestions;
+    }
+
+    public @Nullable NameSuggestionProvider getNameSuggestionProvider() {
+        return null;
+    }
 
     public @NotNull List<PsiElement> findVarIdentifiersUnderNode(@Nullable PsiElement node) {
         return SyntaxTraverser.psiTraverser()
