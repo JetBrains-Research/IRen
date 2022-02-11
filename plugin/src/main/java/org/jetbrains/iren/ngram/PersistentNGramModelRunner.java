@@ -27,7 +27,7 @@ public class PersistentNGramModelRunner extends NGramModelRunner {
         return "vocabulary";
     }
 
-    public PersistentNGramModelRunner(NGramModelRunner modelRunner) {
+    public PersistentNGramModelRunner(@NotNull NGramModelRunner modelRunner) {
         this(modelRunner.myModel,
                 modelRunner.myVocabulary,
                 modelRunner.myRememberedIdentifiers,
@@ -111,7 +111,7 @@ public class PersistentNGramModelRunner extends NGramModelRunner {
         }
     }
 
-    private boolean loadModelCounter(NGramModel model, File counterFile, @Nullable ProgressIndicator progressIndicator) {
+    private boolean loadModelCounter(@NotNull NGramModel model, File counterFile, @Nullable ProgressIndicator progressIndicator) {
         model.setCounter(new MapTrieCounter());
         PersistentCounter counter = loadCounter(counterFile, progressIndicator);
         if (counter == null) return false;
@@ -129,7 +129,7 @@ public class PersistentNGramModelRunner extends NGramModelRunner {
     }
 
     @Override
-    protected Vocabulary loadVocabulary(File file) {
+    protected Vocabulary loadVocabulary(@NotNull File file) {
         return new PersistentVocabulary(file.toPath());
     }
 

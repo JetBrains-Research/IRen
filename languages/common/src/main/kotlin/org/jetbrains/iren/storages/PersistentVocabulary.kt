@@ -1,5 +1,6 @@
 package org.jetbrains.iren.storages
 
+import com.intellij.openapi.util.ShutDownTracker
 import com.intellij.util.containers.IntIntHashMap
 import com.intellij.util.io.PersistentStringEnumerator
 import java.io.*
@@ -13,7 +14,7 @@ class PersistentVocabulary(val vocabularyPath: Path) : Vocabulary() {
     init {
         idx2enum = loadIdx2enum()
         enum2idx = idx2enum.mapIndexed { idx, enum -> enum to idx }.toMap(IntIntHashMap())
-        enumerator.force()
+        ShutDownTracker.getInstance().registerShutdownTask(enumerator::close)
     }
 
     override fun size() = enum2idx.size
