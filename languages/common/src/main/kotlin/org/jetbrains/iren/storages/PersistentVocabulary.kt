@@ -20,8 +20,7 @@ class PersistentVocabulary(val vocabularyPath: Path) : Vocabulary() {
 
     override fun toIndex(token: String) = enum2idx[enumerator.tryEnumerate(token)]
 
-    override fun toWord(index: Int) =
-        enumerator.valueOf(idx2enum[index]) ?: unknownCharacter
+    override fun toWord(index: Int) = enumerator.valueOf(idx2enum[index]) ?: unknownCharacter
 
     override fun store(token: String, count: Int) = -1
 
@@ -41,6 +40,7 @@ class PersistentVocabulary(val vocabularyPath: Path) : Vocabulary() {
 
     companion object {
         @JvmStatic
+        @kotlin.jvm.Throws(IOException::class)
         fun saveVocabulary(vocabulary: Vocabulary, path: Path) {
             val enumerator = PersistentStringEnumerator(path)
             val idx2enum = IntArray(vocabulary.size())
@@ -48,16 +48,16 @@ class PersistentVocabulary(val vocabularyPath: Path) : Vocabulary() {
                 val enum = enumerator.enumerate(word)
                 idx2enum[idx] = enum
             }
+            enumerator.close()
             saveIdx2enum(idx2enum, path)
         }
 
-        private fun saveIdx2enum(idx2enum: IntArray, path: Path) {
+        private fun saveIdx2enum(idx2enum: IntArray, path: Path) =
             DataOutputStream(BufferedOutputStream(FileOutputStream(getEnum2idxFile(path))))
                 .use {
                     it.writeInt(idx2enum.size)
                     for (enum in idx2enum) it.writeInt(enum)
                 }
-        }
 
         private fun getEnum2idxFile(path: Path) = "$path.idx2enum"
     }

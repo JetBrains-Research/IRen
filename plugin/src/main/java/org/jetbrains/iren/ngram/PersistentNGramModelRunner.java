@@ -89,7 +89,7 @@ public class PersistentNGramModelRunner extends NGramModelRunner {
     }
 
     @Override
-    protected void saveVocabulary(@NotNull File file) {
+    protected void saveVocabulary(@NotNull File file) throws IOException {
         PersistentVocabulary.saveVocabulary(myVocabulary, file.toPath());
     }
 
