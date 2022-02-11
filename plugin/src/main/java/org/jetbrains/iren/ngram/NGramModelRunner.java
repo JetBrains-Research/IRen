@@ -107,7 +107,11 @@ public class NGramModelRunner implements ModelRunner {
     @Override
     public @NotNull List<VarNamePrediction> suggestNames(@NotNull PsiNameIdentifierOwner variable, boolean forgetContext) {
         @Nullable Context<Integer> intContext = getContext(variable, forgetContext);
-        if (intContext == null) return List.of();
+        return intContext == null ? List.of() : suggestNames(intContext);
+    }
+
+    @NotNull
+    public List<VarNamePrediction> suggestNames(@NotNull Context<Integer> intContext) {
         Context<Integer> unknownContext = intContext.with(0);
         Set<Integer> candidates = new HashSet<>();
         for (int idx : intContext.getVarIdxs()) {
@@ -119,7 +123,11 @@ public class NGramModelRunner implements ModelRunner {
     @Override
     public @NotNull Context.Statistics getContextStatistics(@NotNull PsiNameIdentifierOwner variable, boolean forgetContext) {
         @Nullable Context<Integer> intContext = getContext(variable, forgetContext);
-        if (intContext == null) return Context.Statistics.EMPTY;
+        return intContext == null ? Context.Statistics.EMPTY : getContextStatistics(intContext);
+    }
+
+    @NotNull
+    private Context.Statistics getContextStatistics(@NotNull Context<Integer> intContext) {
         Context<Integer> unknownContext = intContext.with(0);
         int usageNumber = intContext.getVarIdxs().size();
         int countsSum = 0;
@@ -145,7 +153,7 @@ public class NGramModelRunner implements ModelRunner {
     @Override
     public @NotNull Pair<Double, Integer> getProbability(PsiNameIdentifierOwner variable, boolean forgetContext) {
         @Nullable Context<Integer> intContext = getContext(variable, forgetContext);
-        return intContext == null ? new Pair<>(0., 0) : new Pair<>(getLogProb(intContext), getModelPriority());
+        return intContext == null ? new Pair<>(0., 0) : new Pair<>(getProbability(intContext), getModelPriority());
     }
 
     @Override
@@ -357,7 +365,7 @@ public class NGramModelRunner implements ModelRunner {
     }
 
     @Nullable
-    synchronized private Context<Integer> getContext(@NotNull PsiNameIdentifierOwner variable, boolean forgetContext) {
+    synchronized public Context<Integer> getContext(@NotNull PsiNameIdentifierOwner variable, boolean forgetContext) {
         if (lastVariable == null || !lastVariable.equals(variable)) {
             lastVariable = variable;
             lastContext = prepareContext(variable, forgetContext);
@@ -403,7 +411,7 @@ public class NGramModelRunner implements ModelRunner {
                 .filter(candidate -> myRememberedIdentifiers.contains((int) candidate))
                 .forEach(candidate -> {
                     cs.add(candidate);
-                    logits.add(getLogProb(intContext.with(candidate)));
+                    logits.add(getProbability(intContext.with(candidate)));
                 });
 //        List<Double> probs = logits;
         List<Double> probs = softmax(logits, 6);
@@ -419,7 +427,7 @@ public class NGramModelRunner implements ModelRunner {
         return predictions.subList(0, Math.min(predictions.size(), IRenSuggestingService.PREDICTION_CUTOFF));
     }
 
-    private double getLogProb(@NotNull Context<Integer> intContext) {
+    private double getProbability(@NotNull Context<Integer> intContext) {
         double logProb = 0.;
         int leftIdx;
         int rightIdx = 0;

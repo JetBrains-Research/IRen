@@ -41,7 +41,6 @@ public class RenameHistoryImpl implements PersistentStateComponent<RenameHistory
 
     @Override
     public String getVariableHash(PsiNamedElement variable, boolean insertName) {
-//        TODO: mb add caching
         ArrayList<String> nameList = new ArrayList<>(5);
         if (insertName) nameList.add(variable.getName());
         LanguageSupporter supporter = LanguageSupporter.getInstance(variable.getLanguage());
