@@ -15,6 +15,8 @@ import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiFile;
 import com.intellij.psi.PsiNameIdentifierOwner;
+import com.intellij.util.io.IOUtil;
+import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
 import kotlin.Pair;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -44,7 +46,7 @@ public class NGramModelRunner implements ModelRunner {
     /**
      * {@link Set} of identifier names.
      */
-    protected final Set<Integer> myRememberedIdentifiers;
+    protected final IntOpenHashSet myRememberedIdentifiers;
     protected final Model myModel;
     protected final Vocabulary myVocabulary;
     protected final boolean biDirectional;
@@ -64,7 +66,7 @@ public class NGramModelRunner implements ModelRunner {
                                 new JMModel(order, 0.5, new MapTrieCounter())) :
                         new JMModel(order, 0.5, new MapTrieCounter()),
                 new Vocabulary(),
-                new HashSet<>(),
+                new IntOpenHashSet(),
                 biDirectional,
                 order);
     }
@@ -72,7 +74,7 @@ public class NGramModelRunner implements ModelRunner {
     public NGramModelRunner(Model model, Vocabulary vocabulary, Set<Integer> rememberedIdentifiers, boolean biDirectional, int order) {
         myModel = model;
         myVocabulary = vocabulary;
-        myRememberedIdentifiers = rememberedIdentifiers;
+        myRememberedIdentifiers = new IntOpenHashSet(rememberedIdentifiers);
         this.biDirectional = biDirectional;
         this.order = order;
     }
@@ -398,7 +400,7 @@ public class NGramModelRunner implements ModelRunner {
         List<Integer> cs = new ArrayList<>();
         List<Double> logits = new ArrayList<>();
         candidates.stream()
-                .filter(myRememberedIdentifiers::contains)
+                .filter(candidate -> myRememberedIdentifiers.contains((int) candidate))
                 .forEach(candidate -> {
                     cs.add(candidate);
                     logits.add(getLogProb(intContext.with(candidate)));
