@@ -43,7 +43,7 @@ class PersistentVocabulary(val vocabularyPath: Path) : Vocabulary() {
         @JvmStatic
         @kotlin.jvm.Throws(IOException::class)
         fun saveVocabulary(vocabulary: Vocabulary, path: Path) {
-            val enumerator = PersistentStringEnumerator(path)
+            val enumerator = PersistentStringEnumerator(path, true)
             val idx2enum = IntArray(vocabulary.size())
             for ((idx, word) in vocabulary.words.withIndex()) {
                 val enum = enumerator.enumerate(word)
