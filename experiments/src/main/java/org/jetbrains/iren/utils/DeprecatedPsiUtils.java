@@ -1,6 +1,5 @@
 package org.jetbrains.iren.utils;
 
-import com.intellij.completion.ngram.slp.translating.Vocabulary;
 import com.intellij.openapi.progress.ProcessCanceledException;
 import com.intellij.openapi.progress.ProgressManager;
 import com.intellij.openapi.progress.util.AbstractProgressIndicatorBase;
@@ -17,6 +16,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.iren.storages.Context;
+import org.jetbrains.iren.storages.Vocabulary;
 
 import java.util.*;
 import java.util.function.Consumer;

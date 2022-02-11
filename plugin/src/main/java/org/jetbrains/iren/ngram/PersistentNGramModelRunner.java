@@ -7,12 +7,13 @@ import com.intellij.completion.ngram.slp.counting.trie.persistent.PersistentCoun
 import com.intellij.completion.ngram.slp.modeling.Model;
 import com.intellij.completion.ngram.slp.modeling.mix.BiDirectionalModel;
 import com.intellij.completion.ngram.slp.modeling.ngram.NGramModel;
-import com.intellij.completion.ngram.slp.translating.Vocabulary;
 import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.psi.PsiFile;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.iren.IRenBundle;
+import org.jetbrains.iren.storages.PersistentVocabulary;
+import org.jetbrains.iren.storages.Vocabulary;
 
 import java.io.File;
 import java.io.IOException;
@@ -21,6 +22,11 @@ import java.util.List;
 import java.util.Set;
 
 public class PersistentNGramModelRunner extends NGramModelRunner {
+    @Override
+    public String getVocabularyFile() {
+        return "vocabulary";
+    }
+
     public PersistentNGramModelRunner(NGramModelRunner modelRunner) {
         this(modelRunner.myModel,
                 modelRunner.myVocabulary,
@@ -83,6 +89,11 @@ public class PersistentNGramModelRunner extends NGramModelRunner {
     }
 
     @Override
+    protected void saveVocabulary(@NotNull File file) {
+        PersistentVocabulary.saveVocabulary(myVocabulary, file.toPath());
+    }
+
+    @Override
     public boolean loadCounters(@NotNull Path modelPath, @Nullable ProgressIndicator progressIndicator) {
         if (biDirectional) {
             File forwardCounterFile = modelPath.resolve(FORWARD_COUNTER_FILE).toFile();
@@ -115,6 +126,11 @@ public class PersistentNGramModelRunner extends NGramModelRunner {
             progressIndicator.setText2(IRenBundle.message("loading.file", counterFile.getName()));
         }
         return PersistentCounterManager.deserialize(counterFile.getAbsolutePath());
+    }
+
+    @Override
+    protected Vocabulary loadVocabulary(File file) {
+        return new PersistentVocabulary(file.toPath());
     }
 
     /**

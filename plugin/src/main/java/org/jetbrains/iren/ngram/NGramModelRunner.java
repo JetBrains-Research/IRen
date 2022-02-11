@@ -9,8 +9,6 @@ import com.intellij.completion.ngram.slp.modeling.Model;
 import com.intellij.completion.ngram.slp.modeling.mix.BiDirectionalModel;
 import com.intellij.completion.ngram.slp.modeling.ngram.JMModel;
 import com.intellij.completion.ngram.slp.modeling.ngram.NGramModel;
-import com.intellij.completion.ngram.slp.translating.Vocabulary;
-import com.intellij.completion.ngram.slp.translating.VocabularyRunner;
 import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiFile;
@@ -26,6 +24,8 @@ import org.jetbrains.iren.ModelRunner;
 import org.jetbrains.iren.services.IRenSuggestingService;
 import org.jetbrains.iren.storages.Context;
 import org.jetbrains.iren.storages.VarNamePrediction;
+import org.jetbrains.iren.storages.Vocabulary;
+import org.jetbrains.iren.storages.VocabularyRunner;
 
 import java.io.*;
 import java.nio.charset.StandardCharsets;
@@ -41,20 +41,23 @@ public class NGramModelRunner implements ModelRunner {
     protected final static String FORWARD_COUNTER_FILE = "forwardCounter.ser";
     protected final static String REVERSE_COUNTER_FILE = "reverseCounter.ser";
     protected final static String REMEMBER_IDENTIFIERS_FILE = "rememberedIdentifiers.json";
-    protected final static String VOCABULARY_FILE = "vocabulary.txt";
     public static boolean DEFAULT_BIDIRECTIONAL = true;
     /**
      * {@link Set} of identifier names.
      */
     protected final IntOpenHashSet myRememberedIdentifiers;
     protected final Model myModel;
-    protected final Vocabulary myVocabulary;
+    protected Vocabulary myVocabulary;
     protected final boolean biDirectional;
     protected final int order;
     protected boolean myTraining = false;
     protected LanguageSupporter mySupporter = null;
     private PsiNameIdentifierOwner lastVariable = null;
     private Context<Integer> lastContext = null;
+
+    public String getVocabularyFile() {
+        return "vocabulary.txt";
+    }
 
     public NGramModelRunner() {
         this(DEFAULT_BIDIRECTIONAL, 6);
@@ -211,19 +214,23 @@ public class NGramModelRunner implements ModelRunner {
     }
 
     private long saveVocabulary(@NotNull Path modelPath, @Nullable ProgressIndicator progressIndicator) {
-        File vocabularyFile = modelPath.resolve(VOCABULARY_FILE).toFile();
+        File vocabularyFile = modelPath.resolve(getVocabularyFile()).toFile();
         if (progressIndicator != null) {
             if (progressIndicator.isCanceled()) return -1;
             progressIndicator.setText2(IRenBundle.message("saving.file", vocabularyFile.getName()));
         }
         try {
-            vocabularyFile.createNewFile();
-            VocabularyRunner.INSTANCE.write(myVocabulary, vocabularyFile);
+            if (vocabularyFile.exists()) IOUtil.deleteAllFilesStartingWith(vocabularyFile);
+            saveVocabulary(vocabularyFile);
         } catch (IOException e) {
             e.printStackTrace();
             return -1;
         }
         return vocabularyFile.length();
+    }
+
+    protected void saveVocabulary(File file) throws IOException {
+        VocabularyRunner.INSTANCE.write(myVocabulary, file);
     }
 
     private long saveRememberedVariable(@NotNull Path modelPath, @Nullable ProgressIndicator progressIndicator) {
@@ -289,7 +296,7 @@ public class NGramModelRunner implements ModelRunner {
     @Override
     public boolean load(@NotNull Path modelPath, @Nullable ProgressIndicator progressIndicator) {
         File rememberedVariablesFile = modelPath.resolve(REMEMBER_IDENTIFIERS_FILE).toFile();
-        File vocabularyFile = modelPath.resolve(VOCABULARY_FILE).toFile();
+        File vocabularyFile = modelPath.resolve(getVocabularyFile()).toFile();
         return rememberedVariablesFile.exists() &&
                 vocabularyFile.exists() &&
                 loadCounters(modelPath, progressIndicator) &&
@@ -332,14 +339,17 @@ public class NGramModelRunner implements ModelRunner {
         return true;
     }
 
-    private boolean loadVocabulary(@Nullable ProgressIndicator progressIndicator, File vocabularyFile) {
+    protected boolean loadVocabulary(@Nullable ProgressIndicator progressIndicator, File vocabularyFile) {
         if (progressIndicator != null) {
             if (progressIndicator.isCanceled()) return false;
             progressIndicator.setText2(IRenBundle.message("loading.file", vocabularyFile.getName()));
         }
-        VocabularyManager.clear(myVocabulary);
-        VocabularyManager.read(vocabularyFile, myVocabulary);
+        myVocabulary = loadVocabulary(vocabularyFile);
         return true;
+    }
+
+    protected Vocabulary loadVocabulary(File file) {
+        return VocabularyRunner.INSTANCE.read(file);
     }
 
     private boolean loadIndicesToRemember(@Nullable ProgressIndicator progressIndicator, File rememberedVariablesFile) {

@@ -2,8 +2,6 @@ package tools.countNGrams
 
 import com.google.gson.GsonBuilder
 import com.intellij.completion.ngram.slp.sequencing.NGramSequencer
-import com.intellij.completion.ngram.slp.translating.Vocabulary
-import com.intellij.completion.ngram.slp.translating.VocabularyRunner.write
 import com.intellij.ide.impl.ProjectUtil
 import com.intellij.lang.java.JavaLanguage
 import com.intellij.openapi.application.ApplicationStarter
@@ -17,6 +15,8 @@ import com.intellij.psi.search.GlobalSearchScope
 import com.jetbrains.python.PythonLanguage
 import me.tongfei.progressbar.ProgressBar
 import org.jetbrains.iren.LanguageSupporter
+import org.jetbrains.iren.storages.Vocabulary
+import org.jetbrains.iren.storages.VocabularyRunner.write
 import org.jetbrains.kotlin.idea.KotlinLanguage
 import java.io.File
 import java.io.FileOutputStream

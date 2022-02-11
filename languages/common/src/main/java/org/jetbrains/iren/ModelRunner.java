@@ -1,7 +1,6 @@
 package org.jetbrains.iren;
 
 import com.intellij.completion.ngram.slp.modeling.Model;
-import com.intellij.completion.ngram.slp.translating.Vocabulary;
 import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.psi.PsiFile;
 import com.intellij.psi.PsiNameIdentifierOwner;
@@ -10,6 +9,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.iren.storages.Context;
 import org.jetbrains.iren.storages.VarNamePrediction;
+import org.jetbrains.iren.storages.Vocabulary;
 
 import java.nio.file.Path;
 import java.util.List;

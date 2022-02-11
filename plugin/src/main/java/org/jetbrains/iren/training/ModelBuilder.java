@@ -1,6 +1,5 @@
 package org.jetbrains.iren.training;
 
-import com.intellij.completion.ngram.slp.translating.Vocabulary;
 import com.intellij.history.core.Paths;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.application.ReadAction;
@@ -26,13 +25,13 @@ import org.jetbrains.iren.LanguageSupporter;
 import org.jetbrains.iren.ModelRunner;
 import org.jetbrains.iren.ngram.NGramModelRunner;
 import org.jetbrains.iren.ngram.PersistentNGramModelRunner;
-import org.jetbrains.iren.ngram.VocabularyManager;
 import org.jetbrains.iren.services.ConsistencyChecker;
 import org.jetbrains.iren.services.ModelManager;
 import org.jetbrains.iren.services.ModelsSaveTime;
 import org.jetbrains.iren.services.ModelsUsabilityService;
 import org.jetbrains.iren.settings.AppSettingsState;
 import org.jetbrains.iren.storages.StringCounter;
+import org.jetbrains.iren.storages.Vocabulary;
 import org.jetbrains.iren.utils.ModelUtils;
 import org.jetbrains.iren.utils.NotificationsUtil;
 
@@ -123,7 +122,7 @@ public class ModelBuilder {
             final Path modelPath = ModelUtils.getPath(name);
             modelRunner = new PersistentNGramModelRunner(modelRunner);
             modelSize = modelRunner.save(modelPath, myProgressIndicator);
-            if (modelSize <= 0 || !modelRunner.loadCounters(modelPath, myProgressIndicator)) return;
+            if (modelSize <= 0 || !modelRunner.load(modelPath, myProgressIndicator)) return;
             System.out.println(IRenBundle.message("model.size", modelSize));
         }
         NotificationsUtil.modelTrained(myProject,
@@ -177,7 +176,7 @@ public class ModelBuilder {
                 });
         files.clear();
         files.addAll(viewedFiles);
-        VocabularyManager.clear(vocabulary);
+        vocabulary.clear();
         counter.toVocabulary(vocabulary, vocabularyCutOff);
         System.out.printf("Done in %s\n", Duration.between(trainingStart, Instant.now()));
     }

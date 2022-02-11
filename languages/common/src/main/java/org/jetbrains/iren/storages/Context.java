@@ -1,6 +1,5 @@
 package org.jetbrains.iren.storages;
 
-import com.intellij.completion.ngram.slp.translating.Vocabulary;
 import com.intellij.openapi.util.text.Strings;
 import org.jetbrains.annotations.NotNull;
 

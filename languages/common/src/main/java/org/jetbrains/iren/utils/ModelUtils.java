@@ -17,7 +17,7 @@ import java.util.stream.Stream;
 public class ModelUtils {
     public static final Path MODELS_DIRECTORY = Paths.get(PathManager.getSystemPath(), "models");
     public static final String INTELLIJ_NAME = "intellij";
-    public static final String CURRENT_MODEL_VERSION = "2";
+    public static final String CURRENT_MODEL_VERSION = "3";
 
     public static @NotNull Path getPath(@NotNull String name) {
         return MODELS_DIRECTORY.resolve(name);

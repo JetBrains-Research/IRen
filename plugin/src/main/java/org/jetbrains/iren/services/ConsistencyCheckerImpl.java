@@ -3,11 +3,11 @@ package org.jetbrains.iren.services;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
-import com.intellij.completion.ngram.slp.translating.Vocabulary;
 import com.intellij.psi.PsiNameIdentifierOwner;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.iren.LanguageSupporter;
 import org.jetbrains.iren.storages.Context;
+import org.jetbrains.iren.storages.Vocabulary;
 
 import java.util.LinkedHashMap;
 import java.util.concurrent.TimeUnit;
