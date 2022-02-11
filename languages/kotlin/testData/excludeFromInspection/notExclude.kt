@@ -3,6 +3,7 @@ package excludeFromInspection
 open class Foo3 {
     open var xy = 0
     open fun boo(b<caret>oi: Int) {
+        val sc<caret>h = getSomeSchoolNumber()
         try {
             println("Oh My!")
         } catch (ignore: Exception) {
@@ -11,6 +12,10 @@ open class Foo3 {
         } catch (<caret>e: Exception) {
             println("Exception is not ignored")
         }
+    }
+
+    private fun getSomeSchoolNumber(): Int {
+        return 239
     }
 }
 

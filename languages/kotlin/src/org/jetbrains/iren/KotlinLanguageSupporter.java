@@ -143,7 +143,7 @@ public class KotlinLanguageSupporter extends LanguageSupporterBase {
                 if (initializer == null) return false;
             }
             if (initializer instanceof KtNameReferenceExpression) {
-                return isSubstringOfSuggestion(variable.getName(), ((KtNameReferenceExpression) initializer).getReferencedName());
+                return areSubtokensMatch(variable.getName(), ((KtNameReferenceExpression) initializer).getReferencedName());
             }
         }
         return false;
@@ -154,7 +154,7 @@ public class KotlinLanguageSupporter extends LanguageSupporterBase {
         KotlinType type = callableDescriptor.getReturnType();
         return type != null && !TypeUtilsKt.isUnit(type) &&
                 !KotlinBuiltIns.isPrimitiveType(type) &&
-                isSubstringOfSuggestion(variable.getName(), type.toString());
+                areSubtokensMatch(variable.getName(), type.toString());
     }
 
     private boolean isOverridden(PsiElement element) {

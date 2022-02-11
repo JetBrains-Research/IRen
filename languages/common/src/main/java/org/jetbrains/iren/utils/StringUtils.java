@@ -8,6 +8,7 @@ import org.jetbrains.annotations.Unmodifiable;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 public class StringUtils {
@@ -44,15 +45,44 @@ public class StringUtils {
         return Arrays.stream(NameUtilCore.splitNameIntoWords(name)).map(String::toLowerCase).collect(Collectors.toList());
     }
 
-    public static boolean isSubstringOfSuggestions(@Nullable String name, @NotNull Collection<String> suggestions) {
+    public static boolean areSubtokensMatch(@Nullable String name, @NotNull Collection<String> suggestions) {
         if (name == null) return false;
-        String lcName = name.toLowerCase();
-        return lcName.length() > 1 && suggestions.stream().anyMatch(suggestion -> suggestion.toLowerCase().contains(lcName));
+        boolean isCharacter = name.length() < 2;
+        return suggestions.stream().anyMatch(suggestion -> isCharacter ?
+                suggestion.equals(name) :
+                checkSubtokensMatch(suggestion, name));
     }
 
-    public static boolean isSubstringOfSuggestion(@Nullable String name, @Nullable String suggestion) {
-        if (name == null || suggestion == null) return false;
-        String lcName = name.toLowerCase();
-        return lcName.length() > 1 && suggestion.toLowerCase().contains(lcName);
+    public static boolean areSubtokensMatch(@Nullable String name, @Nullable String suggestion) {
+        return name != null && suggestion != null &&
+                (name.length() < 2 ? suggestion.equals(name) : checkSubtokensMatch(suggestion, name));
+    }
+
+    /**
+     * Copied from {@link String#contains}
+     */
+    private static boolean checkSubtokensMatch(String suggestion, String name) {
+        @NotNull List<String> suggestionTokens = toLowerCasedTokens(suggestion);
+        @NotNull List<String> nameTokens = toLowerCasedTokens(name);
+
+        String first = nameTokens.get(0);
+        int max = (suggestionTokens.size() - nameTokens.size());
+        for (int i = 0; i <= max; i++) {
+            // Look for first token.
+            if (!Objects.equals(suggestionTokens.get(i), first)) {
+                while (++i <= max && !Objects.equals(suggestionTokens.get(i), first)) ;
+            }
+            // Found the first token, now look at the rest of the suggestionTokens
+            if (i <= max) {
+                int j = i + 1;
+                int end = j + nameTokens.size() - 1;
+                for (int k = 1; j < end && Objects.equals(suggestionTokens.get(j), nameTokens.get(k)); j++, k++) ;
+                if (j == end) {
+                    // Found whole tokens.
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 }

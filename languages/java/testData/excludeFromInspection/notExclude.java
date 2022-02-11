@@ -2,12 +2,17 @@ package testData.excludeFromInspection;
 
 public class Fooo {
     public void boo(int b<caret>oi) {
+        var s<caret>ch = getSomeSchoolNumber();
         try {
             System.out.println("Oh My!");
         } catch (Exception ignore) {
         } catch (Exception ignored) {
         } catch (Exception <caret>x) {
         }
+    }
+
+    private int getSomeSchoolNumber() {
+        return 239;
     }
 }
 

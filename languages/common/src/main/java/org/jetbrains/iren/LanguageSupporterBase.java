@@ -28,7 +28,7 @@ import java.util.stream.Stream;
 
 import static org.jetbrains.iren.utils.LimitedTimeRunner.runForSomeTime;
 import static org.jetbrains.iren.utils.StringUtils.STRING_TOKEN;
-import static org.jetbrains.iren.utils.StringUtils.isSubstringOfSuggestions;
+import static org.jetbrains.iren.utils.StringUtils.areSubtokensMatch;
 
 public abstract class LanguageSupporterBase implements LanguageSupporter {
     protected long time = 0;
@@ -214,7 +214,7 @@ public abstract class LanguageSupporterBase implements LanguageSupporter {
 
     @Override
     public boolean excludeFromInspection(@NotNull PsiNameIdentifierOwner variable) {
-        return isSubstringOfSuggestions(variable.getName(), getDefaultSuggestions(variable));
+        return areSubtokensMatch(variable.getName(), getDefaultSuggestions(variable));
     }
 
     @Override

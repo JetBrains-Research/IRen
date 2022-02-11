@@ -26,7 +26,7 @@ public class KotlinInspectionHeuristicsTest extends InspectionHeuristicsTest {
     }
 
     @Test
-    @Parameters({"0", "1"})
+    @Parameters({"0", "1", "2"})
     public void testNotExclude(int index) {
         doTestExclusionFromInspectionHeuristics(index, false);
     }
