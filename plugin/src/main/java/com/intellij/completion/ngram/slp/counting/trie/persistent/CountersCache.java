@@ -14,7 +14,7 @@ import java.nio.channels.FileChannel;
 
 public class CountersCache {
     public static int CACHE_DEPTH = 1;
-    public static int MAXIMUM_CACHE_SIZE = 10_000;
+    public static int MAXIMUM_CACHE_SIZE = 3_000;
     private final String counterPath;
 
     public CountersCache(String counterPath) {
