@@ -11,8 +11,8 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.iren.settings.AppSettingsState;
 
-import java.time.Duration;
-import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeParseException;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -40,19 +40,23 @@ public class ModelsSaveTime implements PersistentStateComponent<ModelsSaveTime> 
     }
 
     public void setTrainedTime(@NotNull Project project) {
-        mySavingTime.put(getName(project, null), Instant.now().toString());
+        mySavingTime.put(getName(project, null), LocalDateTime.now().toString());
     }
 
     public boolean needRetraining(@NotNull Project project) {
         if (isIdeaProject(project)) return false;
-        @Nullable Instant saveTime = whenTrained(project);
+        @Nullable LocalDateTime saveTime = whenTrained(project);
         AppSettingsState settings = AppSettingsState.getInstance();
-        Duration modelsLifetime = Duration.of(settings.modelsLifetime, settings.modelsLifetimeUnit);
-        return (saveTime == null || !Duration.between(saveTime, Instant.now()).minus(modelsLifetime).isNegative());
+        return (saveTime == null ||
+                settings.modelsLifetimeUnit.between(saveTime, LocalDateTime.now()) >= settings.modelsLifetime);
     }
 
-    public @Nullable Instant whenTrained(@NotNull Project project) {
+    public @Nullable LocalDateTime whenTrained(@NotNull Project project) {
         String str = mySavingTime.get(getName(project, null));
-        return str == null ? null : Instant.parse(str);
+        try {
+            return str == null ? null : LocalDateTime.parse(str);
+        } catch (DateTimeParseException e) {
+            return null;
+        }
     }
 }
