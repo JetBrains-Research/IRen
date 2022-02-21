@@ -2,6 +2,9 @@
 
 [![jetbrains plugins](https://img.shields.io/jetbrains/plugin/v/15432-iren.svg)](https://plugins.jetbrains.com/plugin/15432-iren)
 ![TeamCity build status](https://buildserver.labs.intellij.net/app/rest/builds/buildType:id:ijplatform_IntelliJProjectDependencies_CodeCompletionProjects_SuggestingIdentifierNames_Publish/statusIcon.svg)
+
+<img alt="IRen plugin logo" height="100" src="pictures/JB_IRen_plugin_logo.png"/>
+
 ## Description
 
 This tool replaces default IDE refactoring with the new one
