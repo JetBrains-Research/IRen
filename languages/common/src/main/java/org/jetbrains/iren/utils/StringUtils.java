@@ -46,9 +46,7 @@ public class StringUtils {
     }
 
     public static boolean areSubtokensMatch(@Nullable String name, @NotNull Collection<String> suggestions) {
-        if (name == null) return false;
-        boolean isCharacter = name.length() < 2;
-        return suggestions.stream().anyMatch(suggestion -> isCharacter ?
+        return name != null && suggestions.stream().anyMatch(suggestion -> name.length() < 2 ?
                 suggestion.equals(name) :
                 checkSubtokensMatch(suggestion, name));
     }
@@ -65,6 +63,7 @@ public class StringUtils {
         @NotNull List<String> suggestionTokens = toLowerCasedTokens(suggestion);
         @NotNull List<String> nameTokens = toLowerCasedTokens(name);
 
+        if (nameTokens.isEmpty()) return false;
         String first = nameTokens.get(0);
         int max = (suggestionTokens.size() - nameTokens.size());
         for (int i = 0; i <= max; i++) {
