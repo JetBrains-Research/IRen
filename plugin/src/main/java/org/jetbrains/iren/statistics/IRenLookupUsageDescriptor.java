@@ -20,7 +20,7 @@ public class IRenLookupUsageDescriptor implements LookupUsageDescriptor {
     public void fillUsageData(@NotNull Lookup lookup, @NotNull FeatureUsageData usageData) {
         if (lookup instanceof LookupImpl) {
             int idx = ((LookupImpl) lookup).getSelectedIndex();
-            if (idx >= lookup.getItems().size()) return;
+            if (idx < 0 || idx >= lookup.getItems().size()) return;
             LookupElement lookupElement = lookup.getItems().get(idx);
             @Nullable String model_type = lookupElement.getUserData(IRenLookups.model_type);
             if (model_type == null) return;
