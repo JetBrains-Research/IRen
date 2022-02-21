@@ -1,6 +1,12 @@
 <!-- Keep a Changelog guide -> https://keepachangelog.com -->
 
 # IRen Changelog
+## [0.1.8]
+### Fixed
+- Minor bugs
+### Added
+- Logo
+
 ## [0.1.7]
 ### Changes
 - Greatly reduce the memory-footprint of IRen models
