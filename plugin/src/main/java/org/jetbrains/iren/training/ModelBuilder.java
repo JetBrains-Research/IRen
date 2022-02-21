@@ -245,6 +245,11 @@ public class ModelBuilder {
             Instant start = Instant.now();
             final Path modelPath = ModelUtils.getPath(name);
             boolean isLoaded = modelRunner.load(modelPath, indicator);
+//            Don't want to save a link to the model if the project is disposed
+            if (project.isDisposed()) {
+                indicator.cancel();
+                break;
+            }
             isSmthngLoaded |= isLoaded;
             if (isLoaded) {
                 modelRunner.getVocabulary().close();
