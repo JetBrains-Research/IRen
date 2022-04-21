@@ -1,9 +1,9 @@
-package tools.transformerEvaluator
+package experiments.gnnEvaluator
 
-import tools.modelsEvaluatorApi.PluginRunner
-import tools.modelsEvaluatorApi.VarNamer
+import experiments.modelsEvaluatorApi.PluginRunner
+import experiments.modelsEvaluatorApi.VarNamer
 
-class TransformerPluginRunner : PluginRunner() {
+class GNNPluginRunner : PluginRunner() {
     override val javaSmallTrain = listOf(
         "cassandra", "elasticsearch", "gradle", "hibernate-orm", "intellij-community",
         "liferay-portal", "presto", "spring-framework", "wildfly"
@@ -12,8 +12,8 @@ class TransformerPluginRunner : PluginRunner() {
         listOf("libgdx", "hadoop")
 //        listOf("TestProject")
 
-    override fun getCommandName(): String = "TransformerEvaluator"
+    override fun getCommandName(): String = "GNNEvaluator"
 
     override val varNamer: VarNamer
-        get() = TransformerVarNamer(saveDir, supporter, ngramType)
+        get() = GNNVarNamer(saveDir, supporter, ngramType)
 }

@@ -1,14 +1,13 @@
-package tools.compareWithRAM
+package experiments.compareWithRAM
 
 import com.intellij.openapi.application.ReadAction
 import com.intellij.psi.PsiNameIdentifierOwner
+import experiments.ModelPrediction
+import experiments.modelsEvaluatorApi.VarNamer
 import org.jetbrains.iren.LanguageSupporter
 import org.jetbrains.iren.ngram.NGramModelRunner
 import org.jetbrains.iren.services.ModelManager
-import org.jetbrains.iren.services.ModelManagerImpl
 import org.jetbrains.iren.storages.VarNamePrediction
-import tools.ModelPrediction
-import tools.modelsEvaluatorApi.VarNamer
 import java.nio.file.Path
 
 open class RamVarNamer(

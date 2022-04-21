@@ -1,7 +1,7 @@
-package tools.compareWithRAM
+package experiments.compareWithRAM
 
-import tools.modelsEvaluatorApi.PluginRunner
-import tools.modelsEvaluatorApi.VarNamer
+import experiments.modelsEvaluatorApi.PluginRunner
+import experiments.modelsEvaluatorApi.VarNamer
 
 class RamPluginRunner : PluginRunner() {
     override val projectList: List<String>? = listOf("libgdx")

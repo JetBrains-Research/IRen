@@ -1,4 +1,4 @@
-package tools.differentProjectSizes
+package experiments.differentProjectSizes
 
 import com.intellij.ide.impl.ProjectUtil
 import com.intellij.openapi.project.Project
@@ -6,12 +6,12 @@ import com.intellij.openapi.project.ProjectManager
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.psi.search.FileTypeIndex
 import com.intellij.psi.search.GlobalSearchScope
+import experiments.modelsEvaluatorApi.PluginRunner
+import experiments.modelsEvaluatorApi.addText
 import org.jetbrains.iren.ngram.NGramModelRunner
 import org.jetbrains.iren.settings.AppSettingsState
 import org.jetbrains.iren.training.ModelBuilder
 import org.jetbrains.iren.training.ProgressBar
-import tools.modelsEvaluatorApi.PluginRunner
-import tools.modelsEvaluatorApi.addText
 import java.io.File
 import java.time.Duration
 import java.time.Instant

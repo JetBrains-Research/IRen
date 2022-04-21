@@ -1,4 +1,4 @@
-package tools.modelsEvaluatorApi
+package experiments.modelsEvaluatorApi
 
 import com.fasterxml.jackson.core.JsonProcessingException
 import com.fasterxml.jackson.databind.ObjectMapper
@@ -18,9 +18,9 @@ import org.jetbrains.iren.ngram.PersistentNGramModelRunner
 import org.jetbrains.iren.services.ModelManager
 import org.jetbrains.iren.storages.Context
 import org.jetbrains.iren.storages.VarNamePrediction
-import tools.ModelPrediction
-import tools.ModelPredictions
-import tools.VarNamePredictions
+import experiments.ModelPrediction
+import experiments.ModelPredictions
+import experiments.VarNamePredictions
 import java.io.File
 import java.nio.file.Path
 import java.time.Duration
@@ -34,7 +34,7 @@ open class VarNamer(
     private val ngramType: String,
 ) {
     open var runParallel = true
-    open val maxNumberOfThreads = 8
+    open val maxNumberOfThreads = 7
     protected lateinit var myModelRunner: NGramModelRunner
     private val persistentModelRunners: List<NGramModelRunner> by lazy { preparePersistentRunners() }
     private val mapper = ObjectMapper()
@@ -156,14 +156,15 @@ open class VarNamer(
         variable: PsiNameIdentifierOwner,
         thread: Int,
     ): VarNamePredictions? {
-        val nameIdentifier = variable.nameIdentifier
-        if (nameIdentifier === null || nameIdentifier.text == "") return null
+        System.gc()
+        val name = ReadAction.compute<String, Exception> { variable.name }
+        if (name === null || name == "" || ignoreVarWithName(name)) return null
 
         val nGramPredictions = predictWithNGram(variable, thread)
         val nnPredictions = predictWithNN(variable, thread)
 
         return VarNamePredictions(
-            nameIdentifier.text,
+            name,
             nGramPredictions,
             nnPredictions,
             variable.javaClass.interfaces[0].simpleName,
@@ -172,6 +173,10 @@ open class VarNamer(
                     ?.isInplaceRenameAvailable(variable, null) ?: false
             }
         )
+    }
+
+    open fun ignoreVarWithName(name: String): Boolean {
+        return false
     }
 
     open fun predictWithNGram(variable: PsiNameIdentifierOwner, thread: Int): ModelPredictions {

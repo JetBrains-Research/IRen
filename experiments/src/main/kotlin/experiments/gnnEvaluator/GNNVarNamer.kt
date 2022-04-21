@@ -1,4 +1,4 @@
-package tools.gnnEvaluator
+package experiments.gnnEvaluator
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.google.gson.GsonBuilder
@@ -7,11 +7,11 @@ import com.intellij.psi.PsiFile
 import com.intellij.psi.PsiNameIdentifierOwner
 import com.intellij.psi.PsiVariable
 import com.intellij.util.io.HttpRequests
+import experiments.VarNamePredictions
+import experiments.modelsEvaluatorApi.VarNamer
 import org.jetbrains.iren.LanguageSupporter
-import tools.VarNamePredictions
 import tools.graphVarMiner.GraphDatasetExtractor
 import tools.graphVarMiner.JavaGraphExtractor
-import tools.modelsEvaluatorApi.VarNamer
 import java.nio.file.Path
 
 class GNNVarNamer(saveDir: Path, supporter: LanguageSupporter, ngramType: String) : VarNamer(saveDir, supporter,

@@ -1,4 +1,4 @@
-package tools
+package experiments
 
 class VarNamePredictions(
     val groundTruth: String,

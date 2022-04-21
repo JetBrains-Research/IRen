@@ -1,10 +1,10 @@
-package tools.cacheSize
+package experiments.cacheSize
 
 import com.intellij.openapi.project.Project
+import experiments.modelsEvaluatorApi.PluginRunner
+import experiments.modelsEvaluatorApi.VarNamer
 import org.jetbrains.iren.ngram.NGramModelRunner
 import org.jetbrains.iren.ngram.PersistentNGramModelRunner
-import tools.modelsEvaluatorApi.PluginRunner
-import tools.modelsEvaluatorApi.VarNamer
 
 open class CacheSizePluginRunner : PluginRunner() {
     override fun getCommandName(): String = "cacheSize"

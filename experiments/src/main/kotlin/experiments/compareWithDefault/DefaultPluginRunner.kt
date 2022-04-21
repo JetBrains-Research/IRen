@@ -1,7 +1,7 @@
-package tools.compareWithDefault
+package experiments.compareWithDefault
 
-import tools.modelsEvaluatorApi.PluginRunner
-import tools.modelsEvaluatorApi.VarNamer
+import experiments.modelsEvaluatorApi.PluginRunner
+import experiments.modelsEvaluatorApi.VarNamer
 
 class DefaultPluginRunner : PluginRunner() {
     override val projectList: List<String>? = null // listOf("libgdx")// listOf("intellij-community")

@@ -1,4 +1,4 @@
-package tools.nGramTrainingTime
+package experiments.nGramTrainingTime
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.intellij.ide.impl.ProjectUtil

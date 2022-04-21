@@ -1,4 +1,4 @@
-package tools.modelsEvaluatorApi
+package experiments.modelsEvaluatorApi
 
 import com.intellij.ide.impl.ProjectUtil
 import com.intellij.lang.java.JavaLanguage
@@ -21,6 +21,7 @@ import java.util.*
 import kotlin.system.exitProcess
 
 open class PluginRunner : ApplicationStarter {
+    open val resumeEvaluation: Boolean = true
     protected lateinit var dataset: File
     protected lateinit var saveDir: Path
     protected lateinit var supporter: LanguageSupporter
@@ -39,7 +40,7 @@ open class PluginRunner : ApplicationStarter {
 
     override fun getCommandName(): String = "modelsEvaluator"
 
-    override fun main(args: Array<out String>) {
+    override fun main(args: List<String>) {
         try {
             dataset = File(args[1])
             saveDir = Paths.get(args[2])
@@ -86,24 +87,27 @@ open class PluginRunner : ApplicationStarter {
 
             val predictionsFile: File = saveDir.resolve("${projectDir}_$ngramType.jsonl").toFile()
             predictionsFile.parentFile.mkdirs()
-            if (!predictionsFile.createNewFile()) continue
-            println("Opening project $projectDir...")
-            val project = ProjectUtil.openOrImport(projectPath.path, projectToClose, true) ?: continue
-            addText(statsFile, "${project.name},")
-            try {
-                val trainingStart = Instant.now()
-                val modelRunner = trainModelRunner(project)
-                addText(statsFile,
-                    "${Duration.between(trainingStart, Instant.now())},${modelRunner.vocabulary.size()},")
-                val start = Instant.now()
-                if (varNamer.predict(modelRunner, project, statsFile, predictionsFile)) {
-                    addText(statsFile, "${Duration.between(start, Instant.now())}")
+            if (predictionsFile.createNewFile() || resumeEvaluation) {
+                println("Opening project $projectDir...")
+                val project = ProjectUtil.openOrImport(projectPath.path, projectToClose, true) ?: continue
+                addText(statsFile, "${project.name},")
+                try {
+                    val trainingStart = Instant.now()
+                    val modelRunner = trainModelRunner(project)
+                    addText(
+                        statsFile,
+                        "${Duration.between(trainingStart, Instant.now())},${modelRunner.vocabulary.size()},"
+                    )
+                    val start = Instant.now()
+                    if (varNamer.predict(modelRunner, project, statsFile, predictionsFile)) {
+                        addText(statsFile, "${Duration.between(start, Instant.now())}")
+                    }
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                } finally {
+                    addText(statsFile, "\n")
+                    projectToClose = project
                 }
-            } catch (e: Exception) {
-                e.printStackTrace()
-            } finally {
-                addText(statsFile, "\n")
-                projectToClose = project
             }
         }
         if (projectToClose != null) {

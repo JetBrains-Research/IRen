@@ -1,4 +1,4 @@
-package tools.countNGrams
+package experiments.countNGrams
 
 import com.google.gson.GsonBuilder
 import com.intellij.completion.ngram.slp.sequencing.NGramSequencer

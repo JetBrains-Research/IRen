@@ -1,11 +1,11 @@
-package tools.compareWithDefault
+package experiments.compareWithDefault
 
 import com.intellij.openapi.application.ReadAction
 import com.intellij.psi.PsiNameIdentifierOwner
+import experiments.ModelPrediction
+import experiments.modelsEvaluatorApi.VarNamer
 import org.jetbrains.iren.LanguageSupporter
 import org.jetbrains.iren.MyJavaNameSuggestionProvider
-import tools.ModelPrediction
-import tools.modelsEvaluatorApi.VarNamer
 import java.nio.file.Path
 
 open class DefaultVarNamer(

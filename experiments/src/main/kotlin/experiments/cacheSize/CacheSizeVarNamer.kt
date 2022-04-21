@@ -1,17 +1,17 @@
-package tools.cacheSize
+package experiments.cacheSize
 
 import com.intellij.completion.ngram.slp.counting.trie.persistent.CountersCache
 import com.intellij.openapi.application.ReadAction
 import com.intellij.psi.PsiNameIdentifierOwner
+import experiments.ModelPrediction
+import experiments.ModelPredictions
+import experiments.modelsEvaluatorApi.VarNamer
+import experiments.modelsEvaluatorApi.addText
 import org.jetbrains.iren.LanguageSupporter
 import org.jetbrains.iren.ngram.NGramModelRunner
 import org.jetbrains.iren.ngram.PersistentNGramModelRunner
 import org.jetbrains.iren.storages.Context
 import org.jetbrains.iren.storages.VarNamePrediction
-import tools.ModelPrediction
-import tools.ModelPredictions
-import tools.modelsEvaluatorApi.VarNamer
-import tools.modelsEvaluatorApi.addText
 import java.nio.file.Path
 import kotlin.io.path.Path
 
