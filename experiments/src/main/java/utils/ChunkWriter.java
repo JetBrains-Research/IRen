@@ -1,4 +1,4 @@
-package tools.graphVarMiner;
+package utils;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -8,6 +8,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.zip.GZIPOutputStream;
@@ -37,14 +38,10 @@ public class ChunkWriter<T> {
 
     private void writeChunk() throws IOException {
         log.info(String.format("Writing chunk number %d...", currentChunkIdx));
-        FileOutputStream output = new FileOutputStream(pathPrefix + '.' + currentChunkIdx + ".json.gz");
-        Gson gson = new GsonBuilder().create();
-        try {
-            Writer writer = new OutputStreamWriter(new GZIPOutputStream(output), "UTF-8");
+        try (FileOutputStream output = new FileOutputStream(pathPrefix + '.' + currentChunkIdx + ".json.gz");
+             Writer writer = new OutputStreamWriter(new GZIPOutputStream(output), StandardCharsets.UTF_8)) {
+            Gson gson = new GsonBuilder().create();
             writer.write(gson.toJson(unwrittenElements));
-            writer.close();
-        } finally {
-            output.close();
         }
 
         currentChunkIdx++;

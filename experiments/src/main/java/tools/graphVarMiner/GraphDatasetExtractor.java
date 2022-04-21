@@ -12,6 +12,7 @@ import com.intellij.psi.search.FileTypeIndex;
 import com.intellij.psi.search.GlobalSearchScope;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import utils.ChunkWriter;
 
 import java.io.IOException;
 import java.nio.file.Files;
