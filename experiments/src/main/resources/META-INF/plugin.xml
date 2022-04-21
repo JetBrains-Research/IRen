@@ -31,6 +31,7 @@
         <appStarter implementation="experiments.compareWithDefault.DefaultPluginRunner"/>
         <appStarter implementation="experiments.countNGrams.PluginRunner"/>
         <appStarter implementation="experiments.cacheSize.CacheSizePluginRunner"/>
+        <appStarter implementation="experiments.dobfEvaluator.DOBFPluginRunner"/>
         <!-- End of headless running part-->
         <applicationService serviceInterface="org.jetbrains.iren.services.ModelManager"
                             serviceImplementation="org.jetbrains.iren.services.ModelManagerImpl"/>

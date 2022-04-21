@@ -90,7 +90,7 @@ public abstract class LanguageSupporterBase implements LanguageSupporter {
                 computable.compute() : runForSomeTime(100, computable);
     }
 
-    private @Nullable PsiElement getIdentifier(Object element) {
+    public @Nullable PsiElement getIdentifier(Object element) {
         @Nullable PsiElement result = null;
         if (element instanceof PsiNameIdentifierOwner) {
             result = ((PsiNameIdentifierOwner) element).getNameIdentifier();
