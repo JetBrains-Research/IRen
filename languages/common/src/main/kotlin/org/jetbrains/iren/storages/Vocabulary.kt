@@ -91,7 +91,7 @@ open class Vocabulary : Serializable {
         return tokens.map { toIndex(it) }
     }
 
-    fun toIndices(tokens: List<String>): List<Int?> {
+    fun toIndices(tokens: List<String>): List<Int> {
         return tokens.map { toIndex(it) }
     }
 
