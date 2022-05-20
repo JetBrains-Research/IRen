@@ -1,19 +1,19 @@
 package org.jetbrains.iren.storages
 
 import com.intellij.openapi.util.ShutDownTracker
-import com.intellij.util.containers.IntIntHashMap
 import com.intellij.util.io.PersistentStringEnumerator
+import it.unimi.dsi.fastutil.ints.Int2IntOpenHashMap
 import java.io.*
 import java.nio.file.Path
 
 class PersistentVocabulary(val vocabularyPath: Path) : Vocabulary() {
     val enumerator: PersistentStringEnumerator = PersistentStringEnumerator(vocabularyPath, true)
-    val enum2idx: IntIntHashMap
+    val enum2idx: Int2IntOpenHashMap
     val idx2enum: IntArray
 
     init {
         idx2enum = loadIdx2enum()
-        enum2idx = idx2enum.mapIndexed { idx, enum -> enum to idx }.toMap(IntIntHashMap())
+        enum2idx = idx2enum.mapIndexed { idx, enum -> enum to idx }.toMap(Int2IntOpenHashMap())
         ShutDownTracker.getInstance().registerShutdownTask(enumerator::close)
     }
 

@@ -15,7 +15,7 @@
 
 package com.intellij.completion.ngram.slp.counting.trie.persistent;
 
-import com.intellij.util.containers.IntIntHashMap;
+import it.unimi.dsi.fastutil.ints.Int2IntOpenHashMap;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -26,7 +26,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 public class PersistentMapTrieCounter extends PersistentAbstractTrie {
-    private IntIntHashMap map;
+    private Int2IntOpenHashMap map;
 
     public PersistentMapTrieCounter(String counterPath, CountersCache cache) {
         this(counterPath, cache, 1);
@@ -34,7 +34,7 @@ public class PersistentMapTrieCounter extends PersistentAbstractTrie {
 
     public PersistentMapTrieCounter(String counterPath, CountersCache cache, int initSize) {
         super(counterPath, cache);
-        map = new IntIntHashMap(initSize);
+        map = new Int2IntOpenHashMap(initSize);
         map.trim();
     }
 
@@ -63,7 +63,7 @@ public class PersistentMapTrieCounter extends PersistentAbstractTrie {
         this.counts = new int[2];
         this.counts[0] = din.readInt();
         this.counts[1] = din.readInt();
-        this.map = new IntIntHashMap(successors);
+        this.map = new Int2IntOpenHashMap(successors);
         for (int pos = 0; pos < successors; pos++) {
             int key = din.readInt();
             int idx = din.readInt();
