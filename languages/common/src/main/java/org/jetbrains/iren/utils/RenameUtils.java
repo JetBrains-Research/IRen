@@ -2,7 +2,6 @@ package org.jetbrains.iren.utils;
 
 import com.intellij.codeInspection.ProblemHighlightType;
 import com.intellij.codeInspection.ProblemsHolder;
-import com.intellij.completion.ngram.slp.translating.Vocabulary;
 import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiNameIdentifierOwner;
 import com.intellij.psi.PsiNamedElement;
@@ -16,6 +15,7 @@ import org.jetbrains.iren.inspections.variable.RenameVariableQuickFix;
 import org.jetbrains.iren.services.ConsistencyChecker;
 import org.jetbrains.iren.services.IRenSuggestingService;
 import org.jetbrains.iren.services.ModelsUsabilityService;
+import org.jetbrains.iren.storages.Vocabulary;
 
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -63,6 +63,7 @@ public class RenameUtils {
     }
 
     private static void filterSuggestions(@NotNull LinkedHashSet<String> nameSuggestions, @NotNull PsiNamedElement elementToRename, @NotNull LinkedHashMap<String, Double> nameProbabilities, LinkedHashMap<String, Double> nameProbs) {
+//        TODO: it is more about filtering ngram models prediction (filtering with unknownCharacter should be somewhere else)
         double unknownNameProb = nameProbs.getOrDefault(Vocabulary.unknownCharacter, 0.);
         double varNameProb = nameProbs.getOrDefault(elementToRename.getText(), 0.) - 1e-4;
         double threshold = Math.max(0.02, Math.max(unknownNameProb, varNameProb));
