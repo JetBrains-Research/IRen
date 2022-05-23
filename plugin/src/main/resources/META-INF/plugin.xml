@@ -50,6 +50,7 @@
                                  displayName="IRen"/>
         <!--    End of settings part    -->
         <lookup.usageDetails implementation="org.jetbrains.iren.statistics.IRenLookupUsageDescriptor"/>
+        <statistics.collectorExtension implementation="org.jetbrains.iren.statistics.IRenCollectorExtension"/>
         <applicationService serviceImplementation="org.jetbrains.iren.services.ModelsSaveTime"/>
         <applicationService serviceInterface="org.jetbrains.iren.services.ModelsUsabilityService"
                             serviceImplementation="org.jetbrains.iren.services.ModelsUsabilityServiceImpl"/>
