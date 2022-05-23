@@ -140,7 +140,7 @@ public class ModelBuilder {
         if (myProgressIndicator != null) {
             myProgressIndicator.setIndeterminate(false);
         }
-        final Collection<VirtualFile> files = getProjectFilesInSource();
+        final Collection<VirtualFile> files = getProjectFilesNotExcluded();
         if (files.size() == 0) return CANCELED_OR_FAILED;
         ProgressBar progressBar = new ProgressBar(files.size(),
                 myProgressIndicator,
@@ -213,7 +213,7 @@ public class ModelBuilder {
                 NON_FULLY_COMPLETED;
     }
 
-    private Collection<VirtualFile> getProjectFilesInSource() {
+    private Collection<VirtualFile> getProjectFilesNotExcluded() {
         if (ApplicationManager.getApplication().isHeadlessEnvironment()) {
             return ReadAction.compute(() -> FileTypeIndex.getFiles(mySupporter.getFileType(),
                     GlobalSearchScope.projectScope(myProject)));
@@ -221,7 +221,7 @@ public class ModelBuilder {
         return ReadAction.compute(() -> FileTypeIndex.getFiles(mySupporter.getFileType(),
                         GlobalSearchScope.projectScope(myProject))
                 .stream()
-                .filter(ProjectFileIndex.getInstance(myProject)::isInSource)
+                .filter(file -> !ProjectFileIndex.getInstance(myProject).isExcluded(file))
                 .collect(Collectors.toList()));
     }
 
