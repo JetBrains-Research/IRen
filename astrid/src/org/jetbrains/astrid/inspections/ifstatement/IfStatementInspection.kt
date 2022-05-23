@@ -65,7 +65,9 @@ class IfStatementInspection : AbstractBaseJavaLocalInspectionTool() {
             if (descriptor.psiElement is PsiExpression) {
                 val editor = DataManager.getInstance().dataContext.getData(PlatformDataKeys.EDITOR)
                 descriptor.psiElement.delete()
-                EditorModificationUtil.insertStringAtCaret(editor, "${newMethodName}($newMethodCallArgs)", true)
+                if (editor != null) {
+                    EditorModificationUtil.insertStringAtCaret(editor, "${newMethodName}($newMethodCallArgs)", true)
+                }
             }
         }
 
