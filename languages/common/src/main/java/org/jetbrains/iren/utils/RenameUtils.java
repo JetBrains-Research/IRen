@@ -17,7 +17,9 @@ import org.jetbrains.iren.services.ConsistencyChecker;
 import org.jetbrains.iren.services.IRenSuggestingService;
 import org.jetbrains.iren.services.ModelsUsabilityService;
 
-import java.util.*;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
+import java.util.Map;
 
 public class RenameUtils {
     /**
@@ -49,14 +51,10 @@ public class RenameUtils {
     public static void addIRenPredictionsIfPossible(@NotNull LinkedHashSet<String> nameSuggestions,
                                                     @NotNull PsiNamedElement elementToRename,
                                                     @NotNull LinkedHashMap<String, Double> nameProbabilities) {
-        LanguageSupporter supporter;
-        try {
-            supporter = LanguageSupporter.getInstance(elementToRename.getLanguage());
-        } catch (NoSuchElementException ignore) {
-            return;
-        }
+        LanguageSupporter supporter = LanguageSupporter.getInstance(elementToRename.getLanguage());
         if (ModelsUsabilityService.getInstance().isUsable(
                 ModelUtils.getName(elementToRename.getProject(), elementToRename.getLanguage()))
+                && supporter != null
                 && supporter.isVariableDeclaration(elementToRename)
                 && supporter.isInplaceRenameAvailable(elementToRename)) {
             LinkedHashMap<String, Double> nameProbs = IRenSuggestingService.getInstance().suggestVariableName((PsiNameIdentifierOwner) elementToRename);

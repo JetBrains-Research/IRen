@@ -23,7 +23,7 @@ public class ConsistencyCheckerImpl implements ConsistencyChecker {
                     .expireAfterWrite(10, TimeUnit.MINUTES)
                     .build(new CacheLoader<>() {
                                @Override
-                               public Boolean load(@NotNull PsiNameIdentifierOwner variable) {
+                               public @NotNull Boolean load(@NotNull PsiNameIdentifierOwner variable) {
                                    return highlightByInspection(variable);
                                }
                            }
@@ -31,8 +31,10 @@ public class ConsistencyCheckerImpl implements ConsistencyChecker {
 
     @Override
     public @NotNull Boolean isInconsistent(@NotNull PsiNameIdentifierOwner variable) {
-        if (RenameHistory.getInstance(variable.getProject()).isRenamedVariable(variable) ||
-                LanguageSupporter.getInstance(variable.getLanguage()).excludeFromInspection(variable))
+        LanguageSupporter supporter = LanguageSupporter.getInstance(variable.getLanguage());
+        if (supporter == null ||
+                RenameHistory.getInstance(variable.getProject()).isRenamedVariable(variable) ||
+                supporter.excludeFromInspection(variable))
             return false;
         Boolean res = runForSomeTime(300, () -> {
             try {

@@ -399,10 +399,14 @@ public class NGramModelRunner implements ModelRunner {
     }
 
     private @Nullable LanguageSupporter getSupporter(PsiElement element) {
+//        TODO: initialize mySupporter with the model itself.
+//         It looks horrible, I will fix it later.
+//         It needs a lot of rewriting.
+//         Mb models should be stored in project_hash_version/language
         if (mySupporter == null) {
             mySupporter = LanguageSupporter.getInstance(element.getLanguage());
         }
-        return mySupporter.getLanguage().equals(element.getLanguage()) ? mySupporter : null;
+        return mySupporter != null && mySupporter.getLanguage().equals(element.getLanguage()) ? mySupporter : null;
     }
 
     public void forgetContext(@NotNull Context<Integer> context) {

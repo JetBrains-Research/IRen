@@ -46,7 +46,7 @@ class DOBFPreprocessor : ApplicationStarter {
                     "kotlin" -> KotlinLanguage.INSTANCE
                     else -> throw AssertionError("Unknown language")
                 }
-            )
+            )!!
 //            build()
         } catch (e: Exception) {
             e.printStackTrace()
@@ -65,7 +65,7 @@ class DOBFPreprocessor : ApplicationStarter {
         }
 
         private fun replaceUsages(file: PsiFile, variable: PsiNameIdentifierOwner): List<String>? {
-            val supporter = LanguageSupporter.getInstance(variable.language) as LanguageSupporterBase
+            val supporter = (LanguageSupporter.getInstance(variable.language)?: return null) as LanguageSupporterBase
             val usages = mutableSetOf(supporter.getIdentifier(variable) ?: return null)
             supporter.findReferences(variable, file)?.mapNotNull { e -> supporter.getIdentifier(e) }?.let {
                 usages.addAll(it)

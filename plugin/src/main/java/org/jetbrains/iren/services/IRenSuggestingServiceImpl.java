@@ -91,10 +91,11 @@ public class IRenSuggestingServiceImpl implements IRenSuggestingService {
                 rankedSuggestions.put(prediction.getName(), prob + addition);
             }
         }
+        LanguageSupporter supporter = LanguageSupporter.getInstance(variable.getLanguage());
         return rankedSuggestions.entrySet()
                 .stream()
                 .sorted((e1, e2) -> -Double.compare(e1.getValue(), e2.getValue()))
-                .filter(e -> !LanguageSupporter.getInstance(variable.getLanguage()).isColliding(variable, e.getKey()))
+                .filter(e -> supporter == null || !supporter.isColliding(variable, e.getKey()))
                 .limit(PREDICTION_CUTOFF)
                 .collect(Collectors.toMap(
                         Map.Entry::getKey,

@@ -37,7 +37,7 @@ open class PluginRunner : ApplicationStarter {
 
     override fun getCommandName(): String = "countNGrams"
 
-    override fun main(args: Array<out String>) {
+    override fun main(args: List<String>) {
         try {
             dataset = File(args[1])
             saveDir = Paths.get(args[2])
@@ -48,7 +48,7 @@ open class PluginRunner : ApplicationStarter {
                     "kotlin" -> KotlinLanguage.INSTANCE
                     else -> throw AssertionError("Unknown language")
                 }
-            )
+            )!!
             countNGrams()
         } catch (e: OutOfMemoryError) {
             println("Not enough memory!")
@@ -82,7 +82,7 @@ open class PluginRunner : ApplicationStarter {
                 progressBar.step()
                 val psiFile = PsiManager.getInstance(project).findFile(file) ?: return@forEach
                 NGramSequencer.sequenceForward(
-                    vocabulary.toIndices(supporter.lexPsiFile(psiFile)).filterNotNull(), 6
+                    vocabulary.toIndices(supporter.lexPsiFile(psiFile)), 6
                 ).forEach {
                     val count = nGramMap[it] ?: 0
                     nGramMap[it] = count + 1

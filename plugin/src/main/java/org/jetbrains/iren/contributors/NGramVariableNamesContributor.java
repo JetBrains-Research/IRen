@@ -46,7 +46,8 @@ public abstract class NGramVariableNamesContributor implements VariableNamesCont
     public abstract @Nullable ModelRunner getModelRunnerToContribute(@NotNull PsiNameIdentifierOwner variable);
 
     private static boolean notSupported(@NotNull PsiNameIdentifierOwner identifierOwner) {
-        return !LanguageSupporter.getInstance(identifierOwner.getLanguage()).isVariableDeclaration(identifierOwner);
+        LanguageSupporter supporter = LanguageSupporter.getInstance(identifierOwner.getLanguage());
+        return supporter == null || !supporter.isVariableDeclaration(identifierOwner);
     }
 
     public @NotNull Context.Statistics getContextStatistics(@NotNull PsiNameIdentifierOwner variable) {

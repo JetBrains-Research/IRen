@@ -27,7 +27,7 @@ class PluginRunner : ApplicationStarter {
 
     override fun getCommandName(): String = "nGramTrainingTime"
 
-    override fun main(args: Array<out String>) {
+    override fun main(args: List<String>) {
         try {
             val dataset = File(args[1])
             val saveDir = args[2]
@@ -65,7 +65,7 @@ class PluginRunner : ApplicationStarter {
                 val start = Instant.now()
                 ModelBuilder(
                     project,
-                    LanguageSupporter.getInstance(JavaLanguage.INSTANCE),
+                    LanguageSupporter.getInstance(JavaLanguage.INSTANCE)!!,
                     null
                 )
                     .trainModelRunner(NGramModelRunner(true, 6))

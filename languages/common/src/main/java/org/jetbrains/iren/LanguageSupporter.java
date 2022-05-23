@@ -16,15 +16,14 @@ import org.jetbrains.iren.storages.Context;
 
 import java.util.Collection;
 import java.util.List;
-import java.util.NoSuchElementException;
 import java.util.function.Consumer;
 
 public interface LanguageSupporter {
     ExtensionPointName<LanguageSupporter> INSTANCE = ExtensionPointName.create("org.jetbrains.iren.language.supporter");
 
-    static @NotNull LanguageSupporter getInstance(Language language) throws NoSuchElementException {
-        return INSTANCE.extensions().filter(x -> language.isKindOf(x.getLanguage())).findFirst()
-                .orElseThrow(() -> new NoSuchElementException("IRen doesn't support this language"));
+    static @Nullable LanguageSupporter getInstance(Language language) {
+//        TODO: think about how to better handle unsupported languages, mb inform about it in logs...
+        return INSTANCE.extensions().filter(x -> language.isKindOf(x.getLanguage())).findFirst().orElse(null);
     }
 
     @NotNull Language getLanguage();
@@ -84,8 +83,9 @@ public interface LanguageSupporter {
 
     void printAvgTime();
 
-    static PsiElementVisitor getVariableVisitor(@NotNull Language language, @NotNull ProblemsHolder holder) {
-        return getInstance(language).createVariableVisitor(holder);
+    static @NotNull PsiElementVisitor getVariableVisitor(@NotNull Language language, @NotNull ProblemsHolder holder) {
+        LanguageSupporter supporter = getInstance(language);
+        return supporter == null ? PsiElementVisitor.EMPTY_VISITOR : supporter.createVariableVisitor(holder);
     }
 
     @NotNull PsiElementVisitor createVariableVisitor(@NotNull ProblemsHolder holder);

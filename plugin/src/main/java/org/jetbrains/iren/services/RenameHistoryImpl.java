@@ -44,12 +44,15 @@ public class RenameHistoryImpl implements PersistentStateComponent<RenameHistory
         ArrayList<String> nameList = new ArrayList<>(5);
         if (insertName) nameList.add(variable.getName());
         LanguageSupporter supporter = LanguageSupporter.getInstance(variable.getLanguage());
-        PsiElement parent = variable.getParent();
-        while (parent != null && !(parent instanceof PsiFile)) {
-            if (parent instanceof PsiNameIdentifierOwner && supporter.isFunctionOrClass((PsiNameIdentifierOwner) parent)) {
-                nameList.add(((PsiNameIdentifierOwner) parent).getName());
+        PsiElement parent = null;
+        if (supporter != null) {
+            parent = variable.getParent();
+            while (parent != null && !(parent instanceof PsiFile)) {
+                if (parent instanceof PsiNameIdentifierOwner && supporter.isFunctionOrClass((PsiNameIdentifierOwner) parent)) {
+                    nameList.add(((PsiNameIdentifierOwner) parent).getName());
+                }
+                parent = parent.getParent();
             }
-            parent = parent.getParent();
         }
         final VirtualFile file = parent != null ? ((PsiFile) parent).getVirtualFile() : variable.getContainingFile().getVirtualFile();
         nameList.add(file.getPath());

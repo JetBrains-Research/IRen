@@ -51,7 +51,7 @@ open class PluginRunner : ApplicationStarter {
                     "kotlin" -> KotlinLanguage.INSTANCE
                     else -> throw AssertionError("Unknown language")
                 }
-            )
+            )!!
             ngramType = args[4]
             assert(ngramTypes.contains(ngramType))
             evaluate()
