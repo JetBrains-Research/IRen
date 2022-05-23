@@ -1,6 +1,13 @@
 <!-- Keep a Changelog guide -> https://keepachangelog.com -->
 
 # IRen Changelog
+## [0.1.9]
+### Fixed
+- Minor bugs
+### Added
+- Support of 2022.* IntelliJ-based IDEs
+- Models training on the non excluded files
+
 ## [0.1.8]
 ### Fixed
 - Minor bugs
