@@ -51,7 +51,7 @@ class DOBFContributor : VariableNamesContributor {
         val idxs = vocab.toIndices(tokensList).toIntArray()
 
 //        Encoder's inference part
-//        B=1 - batch size, S - source length, T - target length, E=256 - embeddings size
+//        B=1 - batch size, S - source length, T - target length, E=256 - embeddings size, V=64000 - vocabulary size
 //        All shapes from debugging
         val longIds = LongTiledArray(arrayOf(idxs.toLongArray()))
         var inputIds: NumberNDArray = LongNDArray(longIds, Strides(intArrayOf(1, idxs.size)))
@@ -69,28 +69,29 @@ class DOBFContributor : VariableNamesContributor {
         val decoder = Model.load(modelDir.resolve("decoder.opt.onnx").toFile().readBytes(), KIEngine)
 
         val eosIdx = vocab.toIndex("</s>")
-        val toDecList = mutableListOf(eosIdx)
+        val toDecList = mutableListOf(eosIdx)  // Size: T
         var toDec = LongTiledArray(arrayOf(toDecList.toIntArray().toLongArray()))
-        var decIds: NumberNDArray = LongNDArray(toDec, Strides(intArrayOf(toDec.size, 1)))
-        var decLengths = LongNDArray(intArrayOf(1)) { toDec.size.toLong() }
+        var decIds: NumberNDArray = LongNDArray(toDec, Strides(intArrayOf(toDec.size, 1)))  // Shape: [T, B]
+        var decLengths = LongNDArray(intArrayOf(1)) { toDec.size.toLong() }  // Shape: [B]
 
         val decInput = ArrayList<KITensor>()
 //        ['x', 'lengths', 'src_enc', 'src_len']
-        decInput.add(decIds.asTensor("x"))
-        decInput.add(decLengths.asTensor("lengths"))
-        decInput.add(enc1.asTensor("src_enc"))
-        decInput.add(inputLengths.asTensor("src_len"))
+        decInput.add(decIds.asTensor("x"))  // Shape: [T, B]
+        decInput.add(decLengths.asTensor("lengths"))  // Shape: [B]
+        decInput.add(enc1.asTensor("src_enc"))  // Shape: [B, S, E]
+        decInput.add(inputLengths.asTensor("src_len"))  // Shape: [B]
 
+//        Problem: it keeps generating VAR_i token
         var logProb = .0
         for (i in 0..5) {
-            val out = ((decoder.predict(decInput)["output"] as KITensor).data as FloatNDArray)
-            val idx = out.argmax(1).array[0]
+            val out = ((decoder.predict(decInput)["output"] as KITensor).data as FloatNDArray)  // Shape: [B, V]
+            val idx: Int = out.argmax(1).array[0]
             if (idx == eosIdx) break
             logProb += logSoftmax(arrayOf((out.row(0) as MutableFloatNDArray).array.toArray()))[0][idx]
-            toDecList.add(idx)
+            toDecList.add(idx)  // T += 1
             toDec = LongTiledArray(arrayOf(toDecList.toIntArray().toLongArray()))
-            decIds = LongNDArray(toDec, Strides(intArrayOf(toDec.size, 1)))
-            decLengths = LongNDArray(intArrayOf(1)) { toDec.size.toLong() }
+            decIds = LongNDArray(toDec, Strides(intArrayOf(toDec.size, 1)))  // Shape: [T, B]
+            decLengths = LongNDArray(intArrayOf(1)) { toDec.size.toLong() }  // Shape: [B]
 
             decInput.clear()
 //        ['x', 'lengths', 'src_enc', 'src_len']
