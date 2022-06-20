@@ -17,6 +17,7 @@ tasks {
 }
 
 val junit = properties("junit")
+val kinference = properties("kinference")
 
 allprojects {
     apply {
@@ -29,6 +30,13 @@ allprojects {
     repositories {
         mavenCentral()
         maven("https://packages.jetbrains.team/maven/p/ij/intellij-dependencies")
+        maven("https://packages.jetbrains.team/maven/p/ki/maven")
+    }
+
+    configurations {
+        all {
+            exclude(group = "org.slf4j")
+        }
     }
 
     dependencies {
@@ -38,6 +46,11 @@ allprojects {
         testImplementation("org.junit.jupiter:junit-jupiter-api:${junit}")
         testImplementation("org.junit.jupiter:junit-jupiter-params:${junit}")
         testImplementation("org.junit.vintage:junit-vintage-engine:${junit}")
+
+        implementation("io.kinference:inference-api:${kinference}")
+        implementation("io.kinference:ndarray:${kinference}")
+        implementation("io.kinference:serialization:${kinference}")
+        implementation("io.kinference:inference-core:${kinference}")
     }
 
     // Configure Gradle IntelliJ Plugin - read more: https://github.com/JetBrains/gradle-intellij-plugin

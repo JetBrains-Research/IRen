@@ -59,6 +59,17 @@ public class Context<T> {
         }
     }
 
+    public List<List<T>> splitByUsages() {
+        List<List<T>> res = new ArrayList<>();
+        int lastIdx = 0;
+        for (int idx: varIdxs) {
+            res.add(tokens.subList(lastIdx, idx));
+            lastIdx = idx + 1;
+        }
+        res.add(tokens.subList(lastIdx, tokens.size()));
+        return res;
+    }
+
     // --------------------------- For tests ---------------------------
     public String serialize() {
         return Strings.join(tokens, " ") + "\n" + Strings.join(varIdxs, " ");

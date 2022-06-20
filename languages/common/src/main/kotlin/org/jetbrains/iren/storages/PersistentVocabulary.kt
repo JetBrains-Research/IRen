@@ -5,6 +5,9 @@ import com.intellij.util.io.PersistentStringEnumerator
 import it.unimi.dsi.fastutil.ints.Int2IntOpenHashMap
 import java.io.*
 import java.nio.file.Path
+import com.intellij.util.io.exists
+import com.intellij.util.io.size
+import kotlin.io.path.readLines
 
 class PersistentVocabulary(val vocabularyPath: Path) : Vocabulary() {
     val enumerator: PersistentStringEnumerator = PersistentStringEnumerator(vocabularyPath, true)
@@ -43,9 +46,19 @@ class PersistentVocabulary(val vocabularyPath: Path) : Vocabulary() {
         @JvmStatic
         @kotlin.jvm.Throws(IOException::class)
         fun saveVocabulary(vocabulary: Vocabulary, path: Path) {
+            save(vocabulary.words, path)
+        }
+
+        fun readFromPath(path: Path, vocabularyPath: Path = path.parent.resolve("vocabulary")): PersistentVocabulary {
+            if (vocabularyPath.exists() && vocabularyPath.size() > 0) return PersistentVocabulary(vocabularyPath)
+            save(path.readLines(), vocabularyPath)
+            return PersistentVocabulary(vocabularyPath)
+        }
+
+        private fun save(words: List<String>, path: Path) {
             val enumerator = PersistentStringEnumerator(path, true)
-            val idx2enum = IntArray(vocabulary.size())
-            for ((idx, word) in vocabulary.words.withIndex()) {
+            val idx2enum = IntArray(words.size)
+            for ((idx, word) in words.withIndex()) {
                 val enum = enumerator.enumerate(word)
                 idx2enum[idx] = enum
             }

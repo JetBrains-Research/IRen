@@ -386,7 +386,7 @@ public class NGramModelRunner implements ModelRunner {
     private @Nullable Context<Integer> prepareContext(PsiNameIdentifierOwner variable, boolean forgetContext) {
         final LanguageSupporter supporter = getSupporter(variable);
         if (supporter == null) return null;
-        final Context<String> context = supporter.getContext(variable, false);
+        final Context<String> context = supporter.getContext(variable, false, false);
         if (context == null) return null;
         Context<Integer> intContext = Context.fromStringToInt(context, myVocabulary);
         if (forgetContext) {

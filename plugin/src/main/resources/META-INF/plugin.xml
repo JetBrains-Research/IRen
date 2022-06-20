@@ -76,6 +76,8 @@
     <extensions defaultExtensionNs="org.jetbrains.iren">
         <variableNamesContributor
                 implementation="org.jetbrains.iren.contributors.ProjectVariableNamesContributor"/>
+                <variableNamesContributor
+                        implementation="org.jetbrains.iren.contributors.DOBFContributor"/>
     </extensions>
     <actions>
         <action id="train.project.iren.model" class="org.jetbrains.iren.impl.TrainProjectNGramModelAction"

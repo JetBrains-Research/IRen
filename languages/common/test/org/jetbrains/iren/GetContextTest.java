@@ -25,7 +25,7 @@ public abstract class GetContextTest extends ParsingTest {
         @NotNull LanguageSupporter supporter = getLanguageSupporter();
         final PsiElement variable = getTargetElementAtCaret();
         assertTrue(supporter.isVariableDeclarationOrReference(variable));
-        return supporter.getContext((PsiNameIdentifierOwner) variable, false);
+        return supporter.getContext((PsiNameIdentifierOwner) variable, false, false);
     }
 
     @Override

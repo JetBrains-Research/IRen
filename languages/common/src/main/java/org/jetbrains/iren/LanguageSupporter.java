@@ -57,11 +57,14 @@ public interface LanguageSupporter {
 
     /**
      * @param variable        for which to find a context.
+     * @param forWholeFile    parse the whole file.
      * @param changeToUnknown if true, {@link Context} instance doesn't contain information
      *                        about ground truth name of the {@code variable}.
      * @return context of the variable.
      */
-    @Nullable Context<String> getContext(@NotNull PsiNameIdentifierOwner variable, boolean changeToUnknown);
+    @Nullable Context<String> getContext(@NotNull PsiNameIdentifierOwner variable,
+                                         boolean forWholeFile,
+                                         boolean changeToUnknown);
 
     @NotNull List<String> lexPsiFile(@NotNull PsiFile file);
 
