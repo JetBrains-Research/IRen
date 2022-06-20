@@ -29,8 +29,11 @@ class DOBFContributor : VariableNamesContributor {
     private val VAR_TOKEN = "VAR_10"
 
     override fun contribute(variable: PsiNameIdentifierOwner, predictionList: MutableList<VarNamePrediction>): Int {
-        val context = (LanguageSupporter.getInstance(variable.language)
-            ?.getContext(variable, true, false) ?: return 0).with(VAR_TOKEN)
+        val context = (
+                LanguageSupporter.getInstance(variable.language)
+                    ?.getContext(variable, true, false, false)
+                    ?: return 0
+                ).with(VAR_TOKEN)
 
 //        TODO: extract it to another class
 //        Apply BPE to context
@@ -100,12 +103,14 @@ class DOBFContributor : VariableNamesContributor {
             decInput.add(enc1.asTensor("src_enc"))  // Shape: [B, S, E]
             decInput.add(inputLengths.asTensor("src_len"))  // Shape: [B]
         }
-        predictionList.add(VarNamePrediction(
+        predictionList.add(
+            VarNamePrediction(
 //            join(" ", vocab.toWords(toDecList)).replace("@@ ", "").split(" ")[2],
-            join(" ", vocab.toWords(toDecList)).replace("@@ ", ""),
-            exp(logProb),
-            100000
-        ))
+                join(" ", vocab.toWords(toDecList)).replace("@@ ", ""),
+                exp(logProb),
+                100000
+            )
+        )
         return 100000
     }
 

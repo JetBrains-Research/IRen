@@ -60,11 +60,13 @@ public interface LanguageSupporter {
      * @param forWholeFile    parse the whole file.
      * @param changeToUnknown if true, {@link Context} instance doesn't contain information
      *                        about ground truth name of the {@code variable}.
+     * @param processTokens   replace string literals, numbers, etc.
      * @return context of the variable.
      */
     @Nullable Context<String> getContext(@NotNull PsiNameIdentifierOwner variable,
                                          boolean forWholeFile,
-                                         boolean changeToUnknown);
+                                         boolean changeToUnknown,
+                                         boolean processTokens);
 
     @NotNull List<String> lexPsiFile(@NotNull PsiFile file);
 

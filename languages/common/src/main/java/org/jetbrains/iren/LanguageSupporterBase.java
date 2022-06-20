@@ -44,7 +44,8 @@ public abstract class LanguageSupporterBase implements LanguageSupporter {
     @Override
     public @Nullable Context<String> getContext(@NotNull PsiNameIdentifierOwner variable,
                                                 boolean forWholeFile,
-                                                boolean changeToUnknown) {
+                                                boolean changeToUnknown,
+                                                boolean processTokens) {
         PsiFile file = variable.getContainingFile();
         Collection<PsiElement> usages = findUsages(variable, file);
         PsiElement root = forWholeFile ? file : findRoot(variable, usages);
@@ -57,7 +58,7 @@ public abstract class LanguageSupporterBase implements LanguageSupporter {
             if (usages.contains(element)) {
                 varIdxs.add(i);
             }
-            tokens.add(processToken(element));
+            tokens.add(processTokens ? processToken(element) : element.getText());
 
         }
         Context<String> result = new Context<>(tokens, varIdxs);
