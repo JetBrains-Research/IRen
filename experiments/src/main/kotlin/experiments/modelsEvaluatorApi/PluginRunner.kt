@@ -36,7 +36,7 @@ open class PluginRunner : ApplicationStarter {
     protected open val javaSmallTest =
         listOf("libgdx", "hadoop")
 
-    protected open val projectList: List<String>? = listOf("libgdx")
+    protected open val projectList: List<String>? = null
 
     override fun getCommandName(): String = "modelsEvaluator"
 

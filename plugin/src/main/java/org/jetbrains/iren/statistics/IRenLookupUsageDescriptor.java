@@ -6,6 +6,7 @@ import com.intellij.codeInsight.lookup.impl.LookupUsageDescriptor;
 import com.intellij.internal.statistic.eventLog.events.*;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.iren.config.ModelType;
 import org.jetbrains.iren.rename.IRenLookups;
 
 import java.util.ArrayList;
@@ -26,11 +27,11 @@ public class IRenLookupUsageDescriptor implements LookupUsageDescriptor {
         LookupElement lookupElement = lookupResultDescriptor.getSelectedItem();
         List<EventPair<?>> eventPairs = new ArrayList<>();
         if (lookupElement == null) return eventPairs;
-        @Nullable String model_type = lookupElement.getUserData(IRenLookups.model_type);
+        @Nullable String model_type = lookupElement.getUserData(IRenLookups.modelTypeKey);
         if (model_type == null) return eventPairs;
         eventPairs.add(irenModelType.with(model_type));
-        if (model_type.equals(IRenLookups.NGram.MODEL_TYPE)) {
-            @Nullable Double probability = lookupElement.getUserData(IRenLookups.NGram.probability);
+        if (!model_type.equals(ModelType.DEFAULT.toString())) {
+            @Nullable Double probability = lookupElement.getUserData(IRenLookups.LookupWithProbability.probabilityKey);
             if (probability == null) return eventPairs;
             eventPairs.add(irenProbability.with(probability));
         }

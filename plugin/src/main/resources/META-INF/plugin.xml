@@ -52,13 +52,15 @@
         <lookup.usageDetails implementation="org.jetbrains.iren.statistics.IRenLookupUsageDescriptor"/>
         <statistics.collectorExtension implementation="org.jetbrains.iren.statistics.IRenCollectorExtension"/>
         <applicationService serviceImplementation="org.jetbrains.iren.services.ModelsSaveTime"/>
-        <applicationService serviceInterface="org.jetbrains.iren.services.ModelsUsabilityService"
-                            serviceImplementation="org.jetbrains.iren.services.ModelsUsabilityServiceImpl"/>
-        <applicationService serviceInterface="org.jetbrains.iren.services.ModelManager"
-                            serviceImplementation="org.jetbrains.iren.services.ModelManagerImpl"/>
-        <applicationService serviceInterface="org.jetbrains.iren.services.IRenSuggestingService"
+        <projectService serviceInterface="org.jetbrains.iren.services.NGramModelsUsabilityService"
+                            serviceImplementation="org.jetbrains.iren.services.NGramModelsUsabilityServiceImpl"/>
+        <projectService serviceInterface="org.jetbrains.iren.services.NGramModelManager"
+                            serviceImplementation="org.jetbrains.iren.services.NGramModelManagerImpl"/>
+        <applicationService serviceInterface="org.jetbrains.iren.services.DOBFModelManager"
+                            serviceImplementation="org.jetbrains.iren.services.DOBFModelManagerImpl"/>
+        <projectService serviceInterface="org.jetbrains.iren.services.IRenSuggestingService"
                             serviceImplementation="org.jetbrains.iren.services.IRenSuggestingServiceImpl"/>
-        <applicationService serviceInterface="org.jetbrains.iren.services.ConsistencyChecker"
+        <projectService serviceInterface="org.jetbrains.iren.services.ConsistencyChecker"
                             serviceImplementation="org.jetbrains.iren.services.ConsistencyCheckerImpl"/>
         <projectService serviceInterface="org.jetbrains.iren.services.RenameHistory"
                         serviceImplementation="org.jetbrains.iren.services.RenameHistoryImpl"/>
@@ -75,9 +77,11 @@
     </extensions>
     <extensions defaultExtensionNs="org.jetbrains.iren">
         <variableNamesContributor
+                implementation="org.jetbrains.iren.contributors.DefaultContributor"/>
+        <variableNamesContributor
                 implementation="org.jetbrains.iren.contributors.ProjectVariableNamesContributor"/>
-                <variableNamesContributor
-                        implementation="org.jetbrains.iren.contributors.DOBFContributor"/>
+        <variableNamesContributor
+                implementation="org.jetbrains.iren.contributors.DOBFContributor"/>
     </extensions>
     <actions>
         <action id="train.project.iren.model" class="org.jetbrains.iren.impl.TrainProjectNGramModelAction"

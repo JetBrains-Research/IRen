@@ -2,6 +2,7 @@ package org.jetbrains.iren;
 
 import com.intellij.codeInspection.ProblemsHolder;
 import com.intellij.lang.Language;
+import com.intellij.openapi.application.ReadAction;
 import com.intellij.openapi.fileTypes.FileType;
 import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiElementVisitor;
@@ -73,7 +74,7 @@ public class KotlinLanguageSupporter extends LanguageSupporterBase {
         if (tokenType == KtTokens.REGULAR_STRING_PART) {
             return STRING_TOKEN;
         } else if (NumberTypes.contains(tokenType)) {
-            return IntegersToLeave.contains(text) ? text : NUMBER_TOKEN;
+            return INTEGERS_TO_LEAVE.contains(text) ? text : NUMBER_TOKEN;
         }
         return null;
     }
@@ -171,7 +172,7 @@ public class KotlinLanguageSupporter extends LanguageSupporterBase {
 
     @Override
     public boolean isColliding(@NotNull PsiElement element, @NotNull String newName) {
-        return super.isColliding(element, newName) || isCollidingWithParameter(element, newName);
+        return super.isColliding(element, newName) || ReadAction.compute(() -> isCollidingWithParameter(element, newName));
     }
 
     /**

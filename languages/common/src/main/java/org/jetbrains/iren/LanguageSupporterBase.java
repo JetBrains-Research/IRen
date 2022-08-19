@@ -3,6 +3,8 @@ package org.jetbrains.iren;
 import com.intellij.completion.ngram.slp.translating.Vocabulary;
 import com.intellij.lang.ASTNode;
 import com.intellij.openapi.application.ApplicationManager;
+import com.intellij.openapi.application.ReadAction;
+import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.Computable;
 import com.intellij.openapi.util.TextRange;
 import com.intellij.psi.*;
@@ -17,7 +19,10 @@ import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.iren.config.InferenceStrategies;
+import org.jetbrains.iren.services.IRenSuggestingService;
 import org.jetbrains.iren.storages.Context;
+import org.jetbrains.iren.storages.VarNamePrediction;
 
 import java.time.Duration;
 import java.util.*;
@@ -37,7 +42,8 @@ public abstract class LanguageSupporterBase implements LanguageSupporter {
     @Override
     public boolean isColliding(@NotNull PsiElement element, @NotNull String newName) {
         List<UsageInfo> info = new SmartList<>();
-        RenamePsiElementProcessor.forElement(element).findCollisions(element, newName, new HashMap<>(), info);
+        ReadAction.run(() ->
+                RenamePsiElementProcessor.forElement(element).findCollisions(element, newName, new HashMap<>(), info));
         return info.stream().anyMatch(usageInfo -> usageInfo instanceof UnresolvableCollisionUsageInfo);
     }
 
@@ -46,23 +52,25 @@ public abstract class LanguageSupporterBase implements LanguageSupporter {
                                                 boolean forWholeFile,
                                                 boolean changeToUnknown,
                                                 boolean processTokens) {
-        PsiFile file = variable.getContainingFile();
-        Collection<PsiElement> usages = findUsages(variable, file);
-        PsiElement root = forWholeFile ? file : findRoot(variable, usages);
-        if (root == null) return null;
-        List<Integer> varIdxs = new ArrayList<>();
-        List<PsiElement> elements = getLeafElementsFromRoot(root);
-        List<String> tokens = new ArrayList<>();
-        for (int i = 0; i < elements.size(); i++) {
-            PsiElement element = elements.get(i);
-            if (usages.contains(element)) {
-                varIdxs.add(i);
-            }
-            tokens.add(processTokens ? processToken(element) : element.getText());
+        return ReadAction.compute(() -> {
+            PsiFile file = variable.getContainingFile();
+            Collection<PsiElement> usages = findUsages(variable, file);
+            PsiElement root = forWholeFile ? file : findRoot(variable, usages);
+            if (root == null) return null;
+            List<Integer> varIdxs = new ArrayList<>();
+            List<PsiElement> elements = getLeafElementsFromRoot(root);
+            List<String> tokens = new ArrayList<>();
+            for (int i = 0; i < elements.size(); i++) {
+                PsiElement element = elements.get(i);
+                if (usages.contains(element)) {
+                    varIdxs.add(i);
+                }
+                tokens.add(processTokens ? processToken(element) : element.getText());
 
-        }
-        Context<String> result = new Context<>(tokens, varIdxs);
-        return changeToUnknown ? result.with(Vocabulary.unknownCharacter) : result;
+            }
+            Context<String> result = new Context<>(tokens, varIdxs);
+            return changeToUnknown ? result.with(Vocabulary.unknownCharacter) : result;
+        });
     }
 
     private List<PsiElement> getLeafElementsFromRoot(PsiElement root) {
@@ -78,7 +86,7 @@ public abstract class LanguageSupporterBase implements LanguageSupporter {
      * @param file     where to find usages
      * @return usages with declaration
      */
-    public Collection<PsiElement> findUsages(PsiNameIdentifierOwner variable, PsiFile file) {
+    private Collection<PsiElement> findUsages(PsiNameIdentifierOwner variable, PsiFile file) {
         @Nullable Collection<PsiReference> references = findReferences(variable, file);
         return Stream.concat(Stream.of(variable), references != null ? references.stream() : Stream.empty())
                 .map(this::getIdentifier)
@@ -144,7 +152,7 @@ public abstract class LanguageSupporterBase implements LanguageSupporter {
     }
 
     public @NotNull List<String> lexPsiFile(@NotNull PsiFile file, @Nullable Consumer<PsiElement> consumer) {
-        return SyntaxTraverser.psiTraverser()
+        return ReadAction.compute(() -> SyntaxTraverser.psiTraverser()
                 .withRoot(file)
                 .onRange(new TextRange(0, 64 * 1024)) // first 128 KB of chars
                 .forceIgnore(node -> node instanceof PsiComment)
@@ -157,7 +165,7 @@ public abstract class LanguageSupporterBase implements LanguageSupporter {
                     }
                 })
                 .map(this::processToken)
-                .collect(Collectors.toList());
+                .collect(Collectors.toList()));
     }
 
     @Override
@@ -222,6 +230,7 @@ public abstract class LanguageSupporterBase implements LanguageSupporter {
 
     @Override
     public @NotNull Collection<String> getDefaultSuggestions(@NotNull PsiNameIdentifierOwner variable) {
+//        TODO: mb remove it, since I move NameSuggestionProvider suggestions to DefaultContributor
         final @Nullable NameSuggestionProvider nameSuggestionProvider = getNameSuggestionProvider();
         if (nameSuggestionProvider == null) return Set.of();
         Set<String> defaultSuggestions = new HashSet<>();
@@ -259,5 +268,27 @@ public abstract class LanguageSupporterBase implements LanguageSupporter {
                 total += 1;
             }
         }
+    }
+
+    public boolean fastHighlighting(Project project, @NotNull PsiNameIdentifierOwner variable) {
+        @NotNull List<VarNamePrediction> predictions = IRenSuggestingService.getInstance(project)
+                .suggestVariableName(project, variable, InferenceStrategies.FAST_WITHOUT_DEFAULT);
+        return !areSubtokensMatch(ReadAction.compute(variable::getName), varNamePredictions2set(predictions));
+    }
+
+    static double FIRST_PROBABILITY_THRESHOLD = 0.3;
+
+    public boolean slowHighlighting(Project project, @NotNull PsiNameIdentifierOwner variable) {
+        @NotNull List<VarNamePrediction> predictions = IRenSuggestingService.getInstance(project)
+                .suggestVariableName(project, variable, InferenceStrategies.WITHOUT_DEFAULT);
+        if (predictions.isEmpty()) return false;
+        final Double firstProbability = predictions.get(0).getProbability();
+        return firstProbability > FIRST_PROBABILITY_THRESHOLD &&
+                !areSubtokensMatch(ReadAction.compute(variable::getName), varNamePredictions2set(predictions));
+    }
+
+    @NotNull
+    public static Set<String> varNamePredictions2set(@NotNull List<VarNamePrediction> predictions) {
+        return predictions.stream().map(VarNamePrediction::getName).collect(Collectors.toSet());
     }
 }

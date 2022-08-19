@@ -6,7 +6,7 @@ import org.jetbrains.annotations.NotNull;
 import java.util.HashSet;
 import java.util.Set;
 
-public class ModelsUsabilityServiceImpl implements ModelsUsabilityService {
+public class NGramModelsUsabilityServiceImpl implements NGramModelsUsabilityService {
     private @Transient final Set<String> myUsable = new HashSet<>();
     private @Transient boolean training = false;
 

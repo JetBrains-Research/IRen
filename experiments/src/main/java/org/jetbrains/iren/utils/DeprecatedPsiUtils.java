@@ -71,7 +71,7 @@ public class DeprecatedPsiUtils {
                 return text.length() > 10 ? STRING_TOKEN : text;
             }
             if (NumberTypes.contains(literalType)) {
-                return IntegersToLeave.contains(text) ? text : NUMBER_TOKEN;
+                return INTEGERS_TO_LEAVE.contains(text) ? text : NUMBER_TOKEN;
             }
         } else if (variable != null && isVariableOrReference(variable, token)) {
             return VARIABLE_TOKEN;

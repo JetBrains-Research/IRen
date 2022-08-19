@@ -13,6 +13,7 @@ import org.jetbrains.iren.storages.Vocabulary;
 
 import java.nio.file.Path;
 import java.util.List;
+import java.util.concurrent.ExecutionException;
 
 public interface ModelRunner {
     Model getModel();
@@ -25,11 +26,9 @@ public interface ModelRunner {
 
     @NotNull List<VarNamePrediction> suggestNames(@NotNull PsiNameIdentifierOwner variable);
 
-    @NotNull List<VarNamePrediction> suggestNames(@NotNull PsiNameIdentifierOwner variable, boolean forgetContext);
+    @NotNull Context.Statistics getContextStatistics(@NotNull PsiNameIdentifierOwner variable);
 
-    @NotNull Context.Statistics getContextStatistics(@NotNull PsiNameIdentifierOwner variable, boolean forgetContext);
-
-    @NotNull Pair<Double, Integer> getProbability(PsiNameIdentifierOwner variable, boolean forgetContext);
+    @NotNull Pair<Double, Integer> getProbability(PsiNameIdentifierOwner variable);
 
     int getOrder();
 

@@ -5,37 +5,38 @@ import com.intellij.codeInsight.lookup.LookupElementDecorator;
 import com.intellij.codeInsight.lookup.LookupElementPresentation;
 import com.intellij.openapi.util.Key;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.iren.config.ModelType;
 
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 public class IRenLookups {
-    public static Key<String> model_type = new Key<>("model_type");
+    public static Key<String> modelTypeKey = new Key<>("model_type");
 
-    public static class NGram extends LookupElementDecorator<LookupElement> {
-        public static Key<Double> probability = new Key<>("probability");
-        public static String MODEL_TYPE = "ngram";
+    public static class LookupWithProbability extends LookupElementDecorator<LookupElement> {
+        public static Key<Double> probabilityKey = new Key<>("probability");
 
-        protected NGram(@NotNull LookupElement delegate, Map<String, Double> namesProbs) {
+        protected LookupWithProbability(@NotNull LookupElement delegate, Map<String, Double> namesProbs, LinkedHashMap<String, ModelType> modelTypes) {
             super(delegate);
-            putUserData(model_type, MODEL_TYPE);
-            putUserData(probability, namesProbs.get(getLookupString()));
+            String name = getLookupString();
+            putUserData(modelTypeKey, modelTypes.get(name).toString());
+            putUserData(probabilityKey, namesProbs.get(name));
         }
 
         @Override
         public void renderElement(LookupElementPresentation presentation) {
             super.renderElement(presentation);
-            Double probability = getUserData(NGram.probability);
+            Double probability = getUserData(LookupWithProbability.probabilityKey);
             if (probability == null) return;
-            presentation.setTypeText(String.format("%.3f", probability));
+            String modelType = getUserData(modelTypeKey);
+            presentation.setTypeText(String.format("%s%3.0f%%", modelType, probability * 100));
         }
     }
 
     public static class Default extends LookupElementDecorator<LookupElement> {
-        public static String MODEL_TYPE = "default";
-
         protected Default(@NotNull LookupElement delegate) {
             super(delegate);
-            putUserData(model_type, MODEL_TYPE);
+            putUserData(modelTypeKey, ModelType.DEFAULT.toString());
         }
     }
 }

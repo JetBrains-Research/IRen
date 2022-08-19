@@ -103,11 +103,12 @@ public class NotificationsUtil {
             text.append("\n");
             text.append(IRenBundle.message("model.size", modelSize));
         }
+        ModelUtils modelUtils = new ModelUtils();
         notificationAboutModel(
                 project,
                 fullyCompleted ? IRenBundle.message("model.training.completed") : IRenBundle.message("model.training.early.stopped"),
                 text.toString(),
-                modelSaved ? ModelUtils.getPath(ModelUtils.getName(project, supporter.getLanguage())) : null
+                modelSaved ? modelUtils.getPath(modelUtils.getName(project, supporter.getLanguage())) : null
         );
     }
 

@@ -5,7 +5,7 @@ import com.intellij.openapi.project.ProjectManagerListener;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.iren.LanguageSupporter;
 import org.jetbrains.iren.training.ModelBuilder;
-import org.jetbrains.iren.services.ModelManager;
+import org.jetbrains.iren.services.NGramModelManager;
 
 public class ProjectOpenCloseListener implements ProjectManagerListener {
     @Override
@@ -16,6 +16,6 @@ public class ProjectOpenCloseListener implements ProjectManagerListener {
 
     @Override
     public void projectClosed(@NotNull Project project) {
-        ModelManager.getInstance().removeProjectModelRunners(project);
+        NGramModelManager.getInstance(project).removeProjectModelRunners(project);
     }
 }

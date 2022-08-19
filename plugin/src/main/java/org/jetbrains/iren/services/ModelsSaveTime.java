@@ -10,6 +10,7 @@ import com.intellij.util.xmlb.annotations.XMap;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.iren.settings.AppSettingsState;
+import org.jetbrains.iren.utils.ModelUtils;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeParseException;
@@ -17,7 +18,6 @@ import java.util.HashMap;
 import java.util.Map;
 
 import static org.jetbrains.iren.utils.IdeaUtil.isIdeaProject;
-import static org.jetbrains.iren.utils.ModelUtils.getName;
 
 @State(name = "ModelsSaveTime",
         storages = {@Storage("IRenModelsSaveTime.xml")})
@@ -40,7 +40,7 @@ public class ModelsSaveTime implements PersistentStateComponent<ModelsSaveTime> 
     }
 
     public void setTrainedTime(@NotNull Project project) {
-        mySavingTime.put(getName(project, null), LocalDateTime.now().toString());
+        mySavingTime.put(new ModelUtils().getName(project, null), LocalDateTime.now().toString());
     }
 
     public boolean needRetraining(@NotNull Project project) {
@@ -52,7 +52,7 @@ public class ModelsSaveTime implements PersistentStateComponent<ModelsSaveTime> 
     }
 
     public @Nullable LocalDateTime whenTrained(@NotNull Project project) {
-        String str = mySavingTime.get(getName(project, null));
+        String str = mySavingTime.get(new ModelUtils().getName(project, null));
         try {
             return str == null ? null : LocalDateTime.parse(str);
         } catch (DateTimeParseException e) {

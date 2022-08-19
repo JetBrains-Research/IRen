@@ -3,58 +3,64 @@ package org.jetbrains.iren.services;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
+import com.intellij.openapi.application.ReadAction;
+import com.intellij.openapi.project.Project;
 import com.intellij.psi.PsiNameIdentifierOwner;
+import com.intellij.util.concurrency.AppExecutorUtil;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.iren.LanguageSupporter;
-import org.jetbrains.iren.storages.Context;
-import org.jetbrains.iren.storages.Vocabulary;
+import org.jetbrains.iren.config.InferenceStrategies;
+import org.jetbrains.iren.storages.VarNamePrediction;
 
-import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Set;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 import static org.jetbrains.iren.utils.LimitedTimeRunner.runForSomeTime;
 import static org.jetbrains.iren.utils.StringUtils.areSubtokensMatch;
 
 
 public class ConsistencyCheckerImpl implements ConsistencyChecker {
-    private final LoadingCache<PsiNameIdentifierOwner, Boolean> inconsistentVariablesMap =
+    private final int TIME_FOR_CHECKING = 2000;
+
+    private ExecutorService executor = AppExecutorUtil.createBoundedApplicationPoolExecutor("ConsistencyChecker", 1);
+    private final LoadingCache<PsiNameIdentifierOwner, Future<Boolean>> inconsistentVariablesMap =
             CacheBuilder.newBuilder()
                     .maximumSize(1000)
                     .expireAfterWrite(10, TimeUnit.MINUTES)
                     .build(new CacheLoader<>() {
                                @Override
-                               public @NotNull Boolean load(@NotNull PsiNameIdentifierOwner variable) {
-                                   return highlightByInspection(variable);
+                               public @NotNull Future<Boolean> load(@NotNull PsiNameIdentifierOwner variable) {
+                                   return executor.submit(() ->
+                                           runForSomeTime(TIME_FOR_CHECKING, () ->
+                                                           highlightByInspection(variable)));
                                }
                            }
                     );
 
     @Override
-    public @NotNull Boolean isInconsistent(@NotNull PsiNameIdentifierOwner variable) {
+    public boolean isInconsistent(@NotNull PsiNameIdentifierOwner variable) {
         LanguageSupporter supporter = LanguageSupporter.getInstance(variable.getLanguage());
         if (supporter == null ||
                 RenameHistory.getInstance(variable.getProject()).isRenamedVariable(variable) ||
                 supporter.excludeFromInspection(variable))
             return false;
-        Boolean res = runForSomeTime(300, () -> {
-            try {
-                return inconsistentVariablesMap.get(variable);
-            } catch (Exception ignore) {
-                return false;
-            }
-        });
-        return res != null && res;
+        try {
+            Future<Boolean> future = inconsistentVariablesMap.get(variable);
+            if (future.isDone()) return future.get();
+            return false;
+        } catch (Exception ignore) {
+            return false;
+        }
     }
 
     static synchronized boolean highlightByInspection(@NotNull PsiNameIdentifierOwner variable) {
-        final Context.Statistics contextStatistics = IRenSuggestingService.getInstance().getVariableContextStatistics(variable);
-        if (contextStatistics.countsMean() < 1.) return false;
-        @NotNull LinkedHashMap<String, Double> predictions = IRenSuggestingService.getInstance().suggestVariableName(variable);
-        final Double firstProbability = predictions.values().stream().findFirst().orElse(0.);
-        final String firstName = predictions.keySet().stream().findFirst().orElse(null);
-        return firstProbability > 0.5 &&
-                !Vocabulary.unknownCharacter.equals(firstName) &&
-                !areSubtokensMatch(variable.getName(), predictions.keySet());
+        LanguageSupporter supporter = LanguageSupporter.getInstance(variable.getLanguage());
+        Project project = ReadAction.compute(variable::getProject);
+        return supporter.fastHighlighting(project, variable) && supporter.slowHighlighting(project, variable);
     }
 
     @Override

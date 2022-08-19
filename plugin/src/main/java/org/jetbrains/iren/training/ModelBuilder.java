@@ -1,6 +1,7 @@
 package org.jetbrains.iren.training;
 
 import com.intellij.history.core.Paths;
+import com.intellij.lang.Language;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.application.ReadAction;
 import com.intellij.openapi.diagnostic.Logger;
@@ -20,18 +21,18 @@ import com.intellij.psi.search.GlobalSearchScope;
 import com.intellij.util.ObjectUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.iren.DOBFModelRunner;
 import org.jetbrains.iren.IRenBundle;
 import org.jetbrains.iren.LanguageSupporter;
 import org.jetbrains.iren.ModelRunner;
+import org.jetbrains.iren.models.OrtModelRunner;
 import org.jetbrains.iren.ngram.NGramModelRunner;
 import org.jetbrains.iren.ngram.PersistentNGramModelRunner;
-import org.jetbrains.iren.services.ConsistencyChecker;
-import org.jetbrains.iren.services.ModelManager;
-import org.jetbrains.iren.services.ModelsSaveTime;
-import org.jetbrains.iren.services.ModelsUsabilityService;
+import org.jetbrains.iren.services.*;
 import org.jetbrains.iren.settings.AppSettingsState;
 import org.jetbrains.iren.storages.StringCounter;
 import org.jetbrains.iren.storages.Vocabulary;
+import org.jetbrains.iren.utils.DOBFModelUtils;
 import org.jetbrains.iren.utils.ModelUtils;
 import org.jetbrains.iren.utils.NotificationsUtil;
 
@@ -42,9 +43,10 @@ import java.util.Collection;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.stream.Collectors;
 
-import static org.jetbrains.iren.ModelLoaderKt.downloadAndExtractIntellijModels;
+import static org.jetbrains.iren.ModelLoaderKt.downloadAndExtractModel;
 import static org.jetbrains.iren.training.ModelBuilder.TrainingStatus.*;
 import static org.jetbrains.iren.utils.IdeaUtil.isIdeaProject;
+import static org.jetbrains.iren.utils.ModelUtils.INTELLIJ_NAME;
 
 public class ModelBuilder {
     private static final Logger LOG = Logger.getInstance(ModelBuilder.class);
@@ -78,13 +80,13 @@ public class ModelBuilder {
                                                    @NotNull ProgressIndicator progressIndicator,
                                                    boolean save) {
         if (isIdeaProject(project)) {
-            loadModelsOrIntellij(project, progressIndicator);
+            loadNGramModelsOrIntellij(project, progressIndicator);
             return;
         }
         progressIndicator.setText(IRenBundle.message("training.progress.indexing"));
 //            Waits until indexes are prepared
         DumbService.getInstance(project).waitForSmartMode();
-        @NotNull ModelsUsabilityService usabilityService = ModelsUsabilityService.getInstance();
+        @NotNull NGramModelsUsabilityService usabilityService = NGramModelsUsabilityService.getInstance(project);
         if (usabilityService.isTraining()) return;
         usabilityService.setTraining(true);
         try {
@@ -95,7 +97,7 @@ public class ModelBuilder {
             ModelsSaveTime.getInstance().setTrainedTime(project);
         } finally {
             usabilityService.setTraining(false);
-            ConsistencyChecker.getInstance().dispose();
+            ConsistencyChecker.getInstance(project).dispose();
         }
     }
 
@@ -104,9 +106,10 @@ public class ModelBuilder {
     }
 
     private void train(boolean save) {
-        String name = ModelUtils.getName(myProject, mySupporter.getLanguage());
-        ModelsUsabilityService.getInstance().setUsable(name, false);
-        ModelManager.getInstance().removeModelRunner(name);
+        ModelUtils modelUtils = new ModelUtils();
+        String name = modelUtils.getName(myProject, mySupporter.getLanguage());
+        NGramModelsUsabilityService.getInstance(myProject).setUsable(name, false);
+        NGramModelManager.getInstance(myProject).remove(name);
         if (myProgressIndicator != null)
             myProgressIndicator.setText(IRenBundle.message("training.progress.indicator.text",
                     myProject.getName(), mySupporter.getLanguage().getDisplayName()));
@@ -119,7 +122,7 @@ public class ModelBuilder {
         if (save) {
             if (myProgressIndicator != null)
                 myProgressIndicator.setText(IRenBundle.message("saving.text", myProject.getName(), mySupporter.getLanguage().getDisplayName()));
-            final Path modelPath = ModelUtils.getPath(name);
+            final Path modelPath = modelUtils.getPath(name);
             modelRunner = new PersistentNGramModelRunner(modelRunner);
             modelSize = modelRunner.save(modelPath, myProgressIndicator);
             if (modelSize <= 0 || !modelRunner.load(modelPath, myProgressIndicator)) return;
@@ -131,8 +134,8 @@ public class ModelBuilder {
                 start,
                 modelRunner.getVocabulary().size(),
                 modelSize);
-        ModelManager.getInstance().putModelRunner(name, modelRunner);
-        ModelsUsabilityService.getInstance().setUsable(name, true);
+        NGramModelManager.getInstance(myProject).put(name, modelRunner);
+        NGramModelsUsabilityService.getInstance(myProject).setUsable(name, true);
     }
 
     public TrainingStatus trainModelRunner(@NotNull ModelRunner modelRunner) {
@@ -188,9 +191,9 @@ public class ModelBuilder {
     }
 
     public @NotNull TrainingStatus trainNGramModel(@NotNull ModelRunner modelRunner,
-                                                    @NotNull Collection<VirtualFile> files,
-                                                    @NotNull ProgressBar progressBar,
-                                                    Instant trainingStart) {
+                                                   @NotNull Collection<VirtualFile> files,
+                                                   @NotNull ProgressBar progressBar,
+                                                   Instant trainingStart) {
         System.out.println("Training NGram model...");
         progressBar.clear(files.size());
         Instant start = Instant.now();
@@ -225,25 +228,28 @@ public class ModelBuilder {
                 .collect(Collectors.toList()));
     }
 
-    private static boolean loadModelsOrIntellij(@NotNull Project project, @NotNull ProgressIndicator indicator) {
+    private static boolean loadNGramModelsOrIntellij(@NotNull Project project, @NotNull ProgressIndicator indicator) {
         if (isIdeaProject(project)) {
             LOG.info(String.format("Project %s was defined as intellij", project.getName()));
-            if (ModelManager.getInstance().containsIntellijModel() || loadModels(project, indicator))
+            if (NGramModelManager.getInstance(project).containsIntellijModel() || loadNGramModels(project, indicator))
                 return true;
             final AppSettingsState settings = AppSettingsState.getInstance();
-            if (!settings.firstOpen && settings.automaticTraining) downloadAndExtractIntellijModels(indicator);
+            if (!settings.firstOpen && settings.automaticTraining) downloadAndExtractModel(indicator,
+                    INTELLIJ_NAME,
+                    new ModelUtils().modelsDirectory);
         }
-        return loadModels(project, indicator);
+        return loadNGramModels(project, indicator);
     }
 
-    private static boolean loadModels(@NotNull Project project, @NotNull ProgressIndicator indicator) {
+    private static boolean loadNGramModels(@NotNull Project project, @NotNull ProgressIndicator indicator) {
         boolean isSmthngLoaded = false;
+        ModelUtils modelUtils = new ModelUtils();
         for (LanguageSupporter supporter : LanguageSupporter.INSTANCE.getExtensionList()) {
             indicator.setText(IRenBundle.message("loading.text", project.getName(), supporter.getLanguage().getDisplayName()));
-            String name = ModelUtils.getName(project, supporter.getLanguage());
+            String name = modelUtils.getName(project, supporter.getLanguage());
             ModelRunner modelRunner = new PersistentNGramModelRunner();
             Instant start = Instant.now();
-            final Path modelPath = ModelUtils.getPath(name);
+            final Path modelPath = modelUtils.getPath(name);
             boolean isLoaded = modelRunner.load(modelPath, indicator);
 //            Don't want to save a link to the model if the project is disposed
             if (project.isDisposed()) {
@@ -253,8 +259,8 @@ public class ModelBuilder {
             isSmthngLoaded |= isLoaded;
             if (isLoaded) {
                 modelRunner.getVocabulary().close();
-                ModelManager.getInstance().putModelRunner(name, modelRunner);
-                ModelsUsabilityService.getInstance().setUsable(name, true);
+                NGramModelManager.getInstance(project).put(name, modelRunner);
+                NGramModelsUsabilityService.getInstance(project).setUsable(name, true);
                 NotificationsUtil.notificationAboutModel(project,
                         IRenBundle.message("model.loaded"),
                         IRenBundle.message("model.loading.statistics",
@@ -264,6 +270,31 @@ public class ModelBuilder {
                                 modelRunner.getVocabulary().size()),
                         modelPath);
             }
+            if (indicator.isCanceled()) break;
+        }
+        return isSmthngLoaded;
+    }
+
+    private static boolean loadDOBFModels(@NotNull Project project, @NotNull ProgressIndicator indicator) {
+        boolean isSmthngLoaded = false;
+        DOBFModelUtils modelUtils = new DOBFModelUtils();
+        for (LanguageSupporter supporter : LanguageSupporter.INSTANCE.getExtensionList()) {
+            if (!supporter.dobfReady()) continue;
+            Language language = supporter.getLanguage();
+            indicator.setText(IRenBundle.message("dobf.model.loading", language.getDisplayName()));
+            String name = modelUtils.getName(language);
+            Instant start = Instant.now();
+            final Path modelPath = modelUtils.getPath(name);
+            if (!modelPath.toFile().exists()) downloadAndExtractModel(indicator, name, modelUtils.modelsDirectory);
+            DOBFModelRunner modelRunner = new OrtModelRunner(modelPath);
+            isSmthngLoaded = true;
+            DOBFModelManager.Companion.getInstance().put(language, modelRunner);
+            NotificationsUtil.notificationAboutModel(project,
+                    IRenBundle.message("dobf.model.loaded"),
+                    IRenBundle.message("dobf.model.loading.statistics",
+                            language.getDisplayName(),
+                            Duration.between(start, Instant.now()).toSeconds()),
+                    modelPath);
             if (indicator.isCanceled()) break;
         }
         return isSmthngLoaded;
@@ -283,10 +314,12 @@ public class ModelBuilder {
             @Override
             public void run(@NotNull ProgressIndicator indicator) {
                 indicator.setText(IRenBundle.message("delete.old.models.process"));
-                if (ModelUtils.deleteOldModels()) NotificationsUtil.oldModelsDeleted();
+                if (new ModelUtils().deleteOldModels() || new DOBFModelUtils().deleteOldModels())
+                    NotificationsUtil.oldModelsDeleted();
+                loadDOBFModels(project, indicator);
                 AppSettingsState settings = AppSettingsState.getInstance();
                 if ((ModelsSaveTime.getInstance().needRetraining(project) ||
-                        !loadModelsOrIntellij(project, indicator)) && !settings.firstOpen && settings.automaticTraining) {
+                        !loadNGramModelsOrIntellij(project, indicator)) && !settings.firstOpen && settings.automaticTraining) {
                     trainModelsForAllLanguages(project, indicator, true);
                 }
             }

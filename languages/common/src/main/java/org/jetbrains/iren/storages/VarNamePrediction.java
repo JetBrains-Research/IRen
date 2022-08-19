@@ -1,19 +1,24 @@
 package org.jetbrains.iren.storages;
 
+import org.jetbrains.iren.config.ModelType;
+
 public class VarNamePrediction {
     private final String myName;
     private final double myProbability;
     private final int myPriority;
+    private final ModelType myModelType;
 
-    public VarNamePrediction(String name, double probability, int priority) {
+    public VarNamePrediction(String name, double probability, ModelType modelType, int priority) {
         myName = name;
         myProbability = probability;
+        myModelType = modelType;
         myPriority = priority;
     }
 
-    public VarNamePrediction(String name, double probability) {
+    public VarNamePrediction(String name, double probability, ModelType modelType) {
         myName = name;
         myProbability = probability;
+        myModelType = modelType;
         myPriority = 1;
     }
 
@@ -27,6 +32,10 @@ public class VarNamePrediction {
 
     public int getPriority() {
         return myPriority;
+    }
+
+    public ModelType getModelType() {
+        return myModelType;
     }
 
     @Override

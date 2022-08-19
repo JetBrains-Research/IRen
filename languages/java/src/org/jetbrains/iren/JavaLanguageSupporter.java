@@ -63,7 +63,7 @@ public class JavaLanguageSupporter extends LanguageSupporterBase {
                 return STRING_TOKEN;
             }
             if (NumberTypes.contains(literalType)) {
-                return IntegersToLeave.contains(text) ? text : NUMBER_TOKEN;
+                return INTEGERS_TO_LEAVE.contains(text) ? text : NUMBER_TOKEN;
             }
         }
         return null;
@@ -95,6 +95,11 @@ public class JavaLanguageSupporter extends LanguageSupporterBase {
                 variable instanceof PsiParameter &&
                         variable.getParent() instanceof PsiCatchSection &&
                         PsiUtil.isIgnoredName(variable.getName());
+    }
+
+    @Override
+    public boolean dobfReady() {
+        return true;
     }
 
     @Override

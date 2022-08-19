@@ -42,7 +42,7 @@ open class CacheSizeVarNamer(
         val allTimeStart = System.nanoTime()
         val runner = prepareThreadRunner(thread, variable)
         val intContext =
-            ReadAction.compute<Context<Int>, Exception> { runner.getContext(variable, false) }
+            ReadAction.compute<Context<Int>, Exception> { runner.getContext(variable) }
         val counterTimeStart = System.nanoTime()
         val nameSuggestions = runner.suggestNames(intContext)
         val counterTime = (System.nanoTime() - counterTimeStart) / 1.0e9

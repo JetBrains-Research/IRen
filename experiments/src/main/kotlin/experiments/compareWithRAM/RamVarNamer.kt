@@ -6,7 +6,7 @@ import experiments.ModelPrediction
 import experiments.modelsEvaluatorApi.VarNamer
 import org.jetbrains.iren.LanguageSupporter
 import org.jetbrains.iren.ngram.NGramModelRunner
-import org.jetbrains.iren.services.ModelManager
+import org.jetbrains.iren.services.NGramModelManager
 import org.jetbrains.iren.storages.VarNamePrediction
 import java.nio.file.Path
 
@@ -29,7 +29,7 @@ open class RamVarNamer(
 
     override fun predictWithNN(variable: PsiNameIdentifierOwner, thread: Int): Any {
         val runner = ramModelRunners[thread]
-        ReadAction.run<Exception> { ModelManager.getInstance().forgetFileIfNeeded(runner, variable.containingFile) }
+        ReadAction.run<Exception> { NGramModelManager.getInstance(variable.project).forgetFileIfNeeded(runner, variable.containingFile) }
         val nameSuggestions: List<VarNamePrediction> =
             ReadAction.compute<List<VarNamePrediction>, Exception> { runner.suggestNames(variable) }
         return nameSuggestions.map { x: VarNamePrediction -> ModelPrediction(x.name, x.probability) }

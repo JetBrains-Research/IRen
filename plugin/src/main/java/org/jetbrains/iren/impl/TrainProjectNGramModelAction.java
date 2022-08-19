@@ -5,8 +5,8 @@ import com.intellij.openapi.project.Project;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.iren.api.AbstractTrainModelAction;
 import org.jetbrains.iren.LanguageSupporter;
+import org.jetbrains.iren.services.NGramModelsUsabilityService;
 import org.jetbrains.iren.training.ModelBuilder;
-import org.jetbrains.iren.services.ModelsUsabilityService;
 
 public class TrainProjectNGramModelAction extends AbstractTrainModelAction {
     @Override
@@ -18,7 +18,9 @@ public class TrainProjectNGramModelAction extends AbstractTrainModelAction {
 
     @Override
     protected boolean canBePerformed(@NotNull AnActionEvent e) {
-        return e.getProject() != null && !ModelsUsabilityService.getInstance().isTraining() &&
-                LanguageSupporter.hasSupportedFiles(e.getProject());
+        Project project = e.getProject();
+        return project != null && !project.isDisposed()
+                && !NGramModelsUsabilityService.getInstance(project).isTraining()
+                && LanguageSupporter.hasSupportedFiles(project);
     }
 }

@@ -1,23 +1,22 @@
 package org.jetbrains.iren.services;
 
 import com.intellij.openapi.Disposable;
-import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.psi.PsiFile;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.iren.ModelRunner;
 
-public interface ModelManager extends Disposable {
-    static @NotNull ModelManager getInstance() {
-        return ApplicationManager.getApplication().getService(ModelManager.class);
+public interface NGramModelManager extends Disposable {
+    static @NotNull NGramModelManager getInstance(@NotNull Project project) {
+        return project.getService(NGramModelManager.class);
     }
 
-    @Nullable ModelRunner getModelRunner(@NotNull String name);
+    @Nullable ModelRunner get(@NotNull String name);
 
-    void putModelRunner(@NotNull String name, @NotNull ModelRunner modelRunner);
+    void put(@NotNull String name, @NotNull ModelRunner modelRunner);
 
-    void removeModelRunner(@NotNull String name);
+    void remove(@NotNull String name);
 
     void removeProjectModelRunners(@NotNull Project project);
 

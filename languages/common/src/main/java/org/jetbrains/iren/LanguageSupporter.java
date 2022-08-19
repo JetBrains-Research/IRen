@@ -18,6 +18,8 @@ import java.util.Collection;
 import java.util.List;
 import java.util.function.Consumer;
 
+import static org.jetbrains.iren.utils.StringUtils.areSubtokensMatch;
+
 public interface LanguageSupporter {
     ExtensionPointName<LanguageSupporter> INSTANCE = ExtensionPointName.create("org.jetbrains.iren.language.supporter");
 
@@ -108,4 +110,12 @@ public interface LanguageSupporter {
     }
 
     boolean isFunctionOrClass(PsiNameIdentifierOwner element);
+
+    default boolean dobfReady() {
+        return false;
+    }
+
+    boolean fastHighlighting(Project project, @NotNull PsiNameIdentifierOwner variable);
+
+    boolean slowHighlighting(Project project, @NotNull PsiNameIdentifierOwner variable);
 }

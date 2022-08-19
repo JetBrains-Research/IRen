@@ -20,7 +20,7 @@ public class FastBPEAnalyzer {
 
     final private HashMap<Pair<String, String>, Integer> codes;
     final private HashMap<String, Pair<String, String>> reversedCodes;
-    final private Map<String, Integer> vocab;
+    final public Map<String, Integer> vocab;
 
     final private int numThreads;
 

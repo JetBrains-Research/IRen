@@ -2,6 +2,7 @@ package org.jetbrains.iren.utils;
 
 import com.intellij.codeInspection.ProblemHighlightType;
 import com.intellij.codeInspection.ProblemsHolder;
+import com.intellij.openapi.project.Project;
 import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiNameIdentifierOwner;
 import com.intellij.psi.PsiNamedElement;
@@ -11,15 +12,14 @@ import com.intellij.spellchecker.quickfixes.DictionarySuggestionProvider;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.iren.LanguageSupporter;
+import org.jetbrains.iren.config.ModelType;
 import org.jetbrains.iren.inspections.variable.RenameVariableQuickFix;
 import org.jetbrains.iren.services.ConsistencyChecker;
 import org.jetbrains.iren.services.IRenSuggestingService;
-import org.jetbrains.iren.services.ModelsUsabilityService;
-import org.jetbrains.iren.storages.Vocabulary;
+import org.jetbrains.iren.services.NGramModelsUsabilityService;
+import org.jetbrains.iren.storages.VarNamePrediction;
 
-import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
-import java.util.Map;
+import java.util.*;
 
 public class RenameUtils {
     /**
@@ -29,8 +29,9 @@ public class RenameUtils {
      * @param holder   registers the problem
      */
     public static void visitVariable(PsiNameIdentifierOwner variable, ProblemsHolder holder) {
-        if (ModelsUsabilityService.getInstance().isUsable(ModelUtils.getName(variable.getProject(), variable.getLanguage()))
-                && ConsistencyChecker.getInstance().isInconsistent(variable)) {
+        @NotNull Project project = holder.getProject();
+        if (NGramModelsUsabilityService.getInstance(project).isUsable(new ModelUtils().getName(variable.getProject(), variable.getLanguage()))
+                && ConsistencyChecker.getInstance(project).isInconsistent(variable)) {
             @Nullable PsiElement identifier = variable.getNameIdentifier();
             if (identifier == null) return;
             holder.registerProblem(identifier,
@@ -46,33 +47,52 @@ public class RenameUtils {
      *
      * @param nameSuggestions   where to store predictions
      * @param elementToRename   IRen model suggests names for this element
+     * @param selectedElement   element under caret
      * @param nameProbabilities stores probabilities of names
+     * @param inferenceStratagy which models to use to suggest names
      */
     public static void addIRenPredictionsIfPossible(@NotNull LinkedHashSet<String> nameSuggestions,
                                                     @NotNull PsiNamedElement elementToRename,
-                                                    @NotNull LinkedHashMap<String, Double> nameProbabilities) {
+                                                    @Nullable PsiElement selectedElement,
+                                                    @NotNull LinkedHashMap<String, Double> nameProbabilities,
+                                                    @NotNull LinkedHashMap<String, ModelType> modelTypes,
+                                                    Set<ModelType> inferenceStratagy) {
         LanguageSupporter supporter = LanguageSupporter.getInstance(elementToRename.getLanguage());
-        if (ModelsUsabilityService.getInstance().isUsable(
-                ModelUtils.getName(elementToRename.getProject(), elementToRename.getLanguage()))
-                && supporter != null
+        if (supporter != null
                 && supporter.isVariableDeclaration(elementToRename)
                 && supporter.isInplaceRenameAvailable(elementToRename)) {
-            LinkedHashMap<String, Double> nameProbs = IRenSuggestingService.getInstance().suggestVariableName((PsiNameIdentifierOwner) elementToRename);
-            filterSuggestions(nameSuggestions, elementToRename, nameProbabilities, nameProbs);
+            List<VarNamePrediction> varNamePredictions = IRenSuggestingService.getInstance(elementToRename.getProject())
+                    .suggestVariableName(elementToRename.getProject(), (PsiNameIdentifierOwner) elementToRename, selectedElement, inferenceStratagy);
+            filterSuggestions(nameSuggestions, elementToRename, nameProbabilities, modelTypes, varNamePredictions);
         }
     }
 
-    private static void filterSuggestions(@NotNull LinkedHashSet<String> nameSuggestions, @NotNull PsiNamedElement elementToRename, @NotNull LinkedHashMap<String, Double> nameProbabilities, LinkedHashMap<String, Double> nameProbs) {
-//        TODO: it is more about filtering ngram models prediction (filtering with unknownCharacter should be somewhere else)
-        double unknownNameProb = nameProbs.getOrDefault(Vocabulary.unknownCharacter, 0.);
-        double varNameProb = nameProbs.getOrDefault(elementToRename.getText(), 0.) - 1e-4;
-        double threshold = Math.max(0.02, Math.max(unknownNameProb, varNameProb));
-        for (Map.Entry<String, Double> e : nameProbs.entrySet()) {
-            if (e.getValue() > threshold) {
-                nameProbabilities.put(e.getKey(), e.getValue());
+    private static void filterSuggestions(@NotNull LinkedHashSet<String> nameSuggestions,
+                                          @NotNull PsiNamedElement elementToRename,
+                                          @NotNull LinkedHashMap<String, Double> nameProbabilities,
+                                          @NotNull LinkedHashMap<String, ModelType> modelTypes,
+                                          @NotNull List<VarNamePrediction> predictions) {
+        double varNameProb = findVarNameProb(elementToRename, predictions);
+        double threshold = Math.max(0.02, varNameProb);
+        for (VarNamePrediction prediction : predictions) {
+            if (prediction.getProbability() > threshold) {
+                nameProbabilities.put(prediction.getName(), prediction.getProbability());
+                modelTypes.put(prediction.getName(), prediction.getModelType());
+            } else if (prediction.getModelType() == ModelType.DEFAULT) {
+                modelTypes.putIfAbsent(prediction.getName(), prediction.getModelType());
             }
         }
-        nameSuggestions.addAll(nameProbabilities.keySet());
+        nameSuggestions.addAll(modelTypes.keySet());
+    }
+
+    private static double findVarNameProb(@NotNull PsiNamedElement elementToRename, @NotNull List<VarNamePrediction> predictions) {
+        double varNameProb = 0;
+        String name = elementToRename.getText();
+        for (VarNamePrediction prediction : predictions) {
+            if (prediction.getModelType() != ModelType.DEFAULT && Objects.equals(prediction.getName(), name))
+                varNameProb = prediction.getProbability();
+        }
+        return varNameProb - 1e-4;
     }
 
     /**

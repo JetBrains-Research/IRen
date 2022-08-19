@@ -15,28 +15,38 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Stream;
 
 public class ModelUtils {
-    public static final Path MODELS_DIRECTORY = Paths.get(PathManager.getSystemPath(), "models");
-    public static final String INTELLIJ_NAME = "intellij";
-    public static final String CURRENT_MODEL_VERSION = "3";
-
-    public static @NotNull Path getPath(@NotNull String name) {
-        return MODELS_DIRECTORY.resolve(name);
+    @NotNull
+    public String getModelsDirectoryName() {
+        return "models";
     }
 
-    public static @NotNull String getName(@NotNull Project project,
+    @NotNull
+    public String getVersion() {
+        return "3";
+    }
+
+    public final Path modelsDirectory = Paths.get(PathManager.getSystemPath(), getModelsDirectoryName());
+
+    public static final String INTELLIJ_NAME = "intellij";
+
+    public @NotNull Path getPath(@NotNull String name) {
+        return modelsDirectory.resolve(name);
+    }
+
+    public @NotNull String getName(@NotNull Project project,
                                    @Nullable Language language) {
         return (IdeaUtil.isIdeaProject(project) ?
                 INTELLIJ_NAME : String.join("_", project.getName(), project.getLocationHash())
-        ) + (language == null ? "" : String.join("_", "", language.getID(), CURRENT_MODEL_VERSION));
+        ) + (language == null ? "" : String.join("_", "", language.getID(), getVersion()));
     }
 
-    public static boolean deleteOldModels() {
+    public boolean deleteOldModels() {
         AtomicBoolean res = new AtomicBoolean(false);
-        if (Files.exists(ModelUtils.MODELS_DIRECTORY)) {
-            try (Stream<Path> paths = Files.list(ModelUtils.MODELS_DIRECTORY)) {
+        if (Files.exists(modelsDirectory)) {
+            try (Stream<Path> paths = Files.list(modelsDirectory)) {
                 paths
                         .filter(Files::isDirectory)
-                        .filter(ModelUtils::isNotCurrentVersion)
+                        .filter(this::isNotCurrentVersion)
                         .map(Path::toFile)
                         .forEach(file -> {
                             try {
@@ -53,7 +63,7 @@ public class ModelUtils {
         return res.get();
     }
 
-    private static boolean isNotCurrentVersion(Path path) {
-        return !path.toString().endsWith(CURRENT_MODEL_VERSION);
+    private boolean isNotCurrentVersion(Path path) {
+        return !path.toString().endsWith(getVersion());
     }
 }

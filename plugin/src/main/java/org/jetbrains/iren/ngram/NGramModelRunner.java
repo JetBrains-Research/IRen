@@ -1,5 +1,8 @@
 package org.jetbrains.iren.ngram;
 
+import com.google.common.cache.CacheBuilder;
+import com.google.common.cache.CacheLoader;
+import com.google.common.cache.LoadingCache;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.stream.JsonReader;
@@ -9,10 +12,11 @@ import com.intellij.completion.ngram.slp.modeling.Model;
 import com.intellij.completion.ngram.slp.modeling.mix.BiDirectionalModel;
 import com.intellij.completion.ngram.slp.modeling.ngram.JMModel;
 import com.intellij.completion.ngram.slp.modeling.ngram.NGramModel;
+import com.intellij.openapi.application.ReadAction;
+import com.intellij.openapi.progress.ProcessCanceledException;
 import com.intellij.openapi.progress.ProgressIndicator;
-import com.intellij.psi.PsiElement;
-import com.intellij.psi.PsiFile;
-import com.intellij.psi.PsiNameIdentifierOwner;
+import com.intellij.openapi.progress.ProgressManager;
+import com.intellij.psi.*;
 import com.intellij.util.io.IOUtil;
 import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
 import kotlin.Pair;
@@ -21,6 +25,7 @@ import org.jetbrains.annotations.Nullable;
 import org.jetbrains.iren.IRenBundle;
 import org.jetbrains.iren.LanguageSupporter;
 import org.jetbrains.iren.ModelRunner;
+import org.jetbrains.iren.config.ModelType;
 import org.jetbrains.iren.services.IRenSuggestingService;
 import org.jetbrains.iren.storages.Context;
 import org.jetbrains.iren.storages.VarNamePrediction;
@@ -31,10 +36,12 @@ import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.util.*;
+import java.util.concurrent.ExecutionException;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 import static java.lang.Math.*;
+import static org.jetbrains.iren.models.OrtModelRunnerKt.CACHE_SIZE;
 
 public class NGramModelRunner implements ModelRunner {
     protected final static String COUNTER_FILE = "counter.ser";
@@ -102,15 +109,28 @@ public class NGramModelRunner implements ModelRunner {
         myTraining = false;
     }
 
-    @Override
-    public @NotNull List<VarNamePrediction> suggestNames(@NotNull PsiNameIdentifierOwner variable) {
-        return suggestNames(variable, false);
-    }
+    private final LoadingCache<SmartPsiElementPointer<PsiNameIdentifierOwner>, List<VarNamePrediction>> cache =
+            CacheBuilder.newBuilder()
+                    .maximumSize(CACHE_SIZE)
+                    .build(new CacheLoader<>() {
+                               @Override
+                               public @NotNull List<VarNamePrediction> load(@NotNull SmartPsiElementPointer<PsiNameIdentifierOwner> variable) {
+                                   PsiNameIdentifierOwner element = ReadAction.compute(variable::getElement);
+                                   if (element == null) return List.of();
+                                   @Nullable Context<Integer> intContext = getContext(element);
+                                   return intContext == null ? List.of() : suggestNames(intContext);
+                               }
+                           }
+                    );
 
     @Override
-    public @NotNull List<VarNamePrediction> suggestNames(@NotNull PsiNameIdentifierOwner variable, boolean forgetContext) {
-        @Nullable Context<Integer> intContext = getContext(variable, forgetContext);
-        return intContext == null ? List.of() : suggestNames(intContext);
+    public @NotNull List<VarNamePrediction> suggestNames(@NotNull PsiNameIdentifierOwner variable) {
+        try {
+//            Use smart pointers here because after renaming PsiElement is replaced with the new one and caching doesn't work.
+            return cache.get(ReadAction.compute(() -> SmartPointerManager.createPointer(variable)));
+        } catch (ExecutionException ignore) {
+            return List.of();
+        }
     }
 
     @NotNull
@@ -124,8 +144,8 @@ public class NGramModelRunner implements ModelRunner {
     }
 
     @Override
-    public @NotNull Context.Statistics getContextStatistics(@NotNull PsiNameIdentifierOwner variable, boolean forgetContext) {
-        @Nullable Context<Integer> intContext = getContext(variable, forgetContext);
+    public Context.@NotNull Statistics getContextStatistics(@NotNull PsiNameIdentifierOwner variable) {
+        @Nullable Context<Integer> intContext = getContext(variable);
         return intContext == null ? Context.Statistics.EMPTY : getContextStatistics(intContext);
     }
 
@@ -154,8 +174,8 @@ public class NGramModelRunner implements ModelRunner {
     }
 
     @Override
-    public @NotNull Pair<Double, Integer> getProbability(PsiNameIdentifierOwner variable, boolean forgetContext) {
-        @Nullable Context<Integer> intContext = getContext(variable, forgetContext);
+    public @NotNull Pair<Double, Integer> getProbability(PsiNameIdentifierOwner variable) {
+        @Nullable Context<Integer> intContext = getContext(variable);
         return intContext == null ? new Pair<>(0., 0) : new Pair<>(getProbability(intContext), getModelPriority());
     }
 
@@ -166,7 +186,7 @@ public class NGramModelRunner implements ModelRunner {
 
     @Override
     public int getModelPriority() {
-        return myVocabulary.size();
+        return 1;
     }
 
     @Override
@@ -375,26 +395,20 @@ public class NGramModelRunner implements ModelRunner {
     }
 
     @Nullable
-    synchronized public Context<Integer> getContext(@NotNull PsiNameIdentifierOwner variable, boolean forgetContext) {
+    synchronized public Context<Integer> getContext(@NotNull PsiNameIdentifierOwner variable) {
         if (lastVariable == null || !lastVariable.equals(variable)) {
             lastVariable = variable;
-            lastContext = prepareContext(variable, forgetContext);
+            lastContext = prepareContext(variable);
         }
         return lastContext;
     }
 
-    private @Nullable Context<Integer> prepareContext(PsiNameIdentifierOwner variable, boolean forgetContext) {
+    private @Nullable Context<Integer> prepareContext(PsiNameIdentifierOwner variable) {
         final LanguageSupporter supporter = getSupporter(variable);
         if (supporter == null) return null;
         final Context<String> context = supporter.getContext(variable, false, false, true);
         if (context == null) return null;
         Context<Integer> intContext = Context.fromStringToInt(context, myVocabulary);
-        if (forgetContext) {
-//            I don't try to relearn context after refactoring because forgetting
-//            context makes sense only for models that trained on a single file.
-//            It means that this model will be discarded and relearning things is waste of the time.
-            forgetContext(intContext);
-        }
         return intContext;
     }
 
@@ -421,24 +435,38 @@ public class NGramModelRunner implements ModelRunner {
                                                             @NotNull Context<Integer> intContext) {
         List<Integer> cs = new ArrayList<>();
         List<Double> logits = new ArrayList<>();
-        candidates.stream()
-                .filter(candidate -> myRememberedIdentifiers.contains((int) candidate))
-                .forEach(candidate -> {
-                    cs.add(candidate);
-                    logits.add(getProbability(intContext.with(candidate)));
-                });
-//        List<Double> probs = logits;
+        for (int candidate : candidates) {
+            cs.add(candidate);
+            logits.add(getProbability(intContext.with(candidate)));
+            if (isCanceled()) break;
+        }
+//        List<Double> logProbs = logits;
         List<Double> probs = softmax(logits, 6);
         List<VarNamePrediction> predictions = new ArrayList<>();
         for (int i = 0; i < cs.size(); i++) {
             String name = myVocabulary.toWord(cs.get(i));
             if (mySupporter.isStopName(name)) continue;
-            predictions.add(new VarNamePrediction(name,
-                    probs.get(i),
-                    getModelPriority()));
+            predictions.add(new VarNamePrediction(name, probs.get(i), ModelType.NGRAM, getModelPriority()));
         }
         predictions.sort((a, b) -> -Double.compare(a.getProbability(), b.getProbability()));
-        return predictions.subList(0, Math.min(predictions.size(), IRenSuggestingService.PREDICTION_CUTOFF));
+        return predictions.subList(0, getCutOff(predictions));
+    }
+
+    private boolean isCanceled() {
+        try {
+            ProgressManager.checkCanceled();
+            return false;
+        } catch (ProcessCanceledException ignore) {
+            return true;
+        }
+    }
+
+    private static int getCutOff(List<VarNamePrediction> predictions) {
+        int maxSize = min(predictions.size(), IRenSuggestingService.PREDICTION_CUTOFF);
+        for (int i = 0; i < maxSize; i++) {
+            if (Vocabulary.unknownCharacter.equals(predictions.get(i).getName())) return i;
+        }
+        return maxSize;
     }
 
     private double getProbability(@NotNull Context<Integer> intContext) {

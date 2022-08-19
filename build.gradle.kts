@@ -51,6 +51,8 @@ allprojects {
         implementation("io.kinference:ndarray:${kinference}")
         implementation("io.kinference:serialization:${kinference}")
         implementation("io.kinference:inference-core:${kinference}")
+
+        implementation("com.microsoft.onnxruntime:onnxruntime:1.11.0")
     }
 
     // Configure Gradle IntelliJ Plugin - read more: https://github.com/JetBrains/gradle-intellij-plugin

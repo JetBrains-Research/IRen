@@ -2,7 +2,9 @@ package org.jetbrains.iren;
 
 import com.intellij.codeInspection.ProblemsHolder;
 import com.intellij.lang.Language;
+import com.intellij.openapi.application.ReadAction;
 import com.intellij.openapi.fileTypes.FileType;
+import com.intellij.openapi.project.Project;
 import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiElementVisitor;
 import com.intellij.psi.PsiNameIdentifierOwner;
@@ -16,6 +18,11 @@ import com.jetbrains.python.psi.*;
 import com.jetbrains.python.refactoring.PyRefactoringProvider;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.iren.config.InferenceStrategies;
+import org.jetbrains.iren.services.IRenSuggestingService;
+import org.jetbrains.iren.storages.Context;
+import org.jetbrains.iren.storages.VarNamePrediction;
+import org.jetbrains.iren.storages.Vocabulary;
 
 import java.util.Arrays;
 import java.util.Collection;
@@ -27,6 +34,7 @@ import static org.jetbrains.iren.utils.StringUtils.*;
 public class PyLanguageSupporter extends LanguageSupporterBase {
     private static final List<Class<? extends PsiNameIdentifierOwner>> variableClasses = List.of(PyNamedParameter.class, PyTargetExpression.class);
     private static final Collection<String> stopNames = List.of("self");
+
     @Override
     public @NotNull Language getLanguage() {
         return PythonLanguage.INSTANCE;
@@ -58,7 +66,7 @@ public class PyLanguageSupporter extends LanguageSupporterBase {
         if (STRING_NODES.contains(tokenType) || FSTRING_TEXT_TOKENS.contains(tokenType)) {
             return STRING_TOKEN;
         } else if (NUMERIC_LITERALS.contains(tokenType)) {
-            return IntegersToLeave.contains(text) ? text : NUMBER_TOKEN;
+            return INTEGERS_TO_LEAVE.contains(text) ? text : NUMBER_TOKEN;
         }
         return null;
     }
@@ -96,7 +104,7 @@ public class PyLanguageSupporter extends LanguageSupporterBase {
     @Override
     public boolean isColliding(@NotNull PsiElement element, @NotNull String newName) {
         return super.isColliding(element, newName) ||
-                element instanceof PyParameter && isCollidingWithParameter((PyParameter) element, newName);
+                element instanceof PyParameter && ReadAction.compute(() -> isCollidingWithParameter((PyParameter) element, newName));
     }
 
     /**
@@ -108,5 +116,26 @@ public class PyLanguageSupporter extends LanguageSupporterBase {
             final PyNamedParameter namedParameter = parameter.getAsNamed();
             return namedParameter != null && newName.equals(namedParameter.getName());
         });
+    }
+
+    private final double FIRST_PROBABILITY_THRESHOLD = 0.5;
+
+    @Override
+    public boolean fastHighlighting(Project project, @NotNull PsiNameIdentifierOwner variable) {
+        IRenSuggestingService suggestingService = IRenSuggestingService.getInstance(project);
+        final Context.Statistics contextStatistics = suggestingService.getVariableContextStatistics(variable);
+        if (contextStatistics.countsMean() < 1.) return false;
+        @NotNull List<VarNamePrediction> predictions = suggestingService.suggestVariableName(project, variable, InferenceStrategies.FAST_WITHOUT_DEFAULT);
+        VarNamePrediction firstPrediction = predictions.get(0);
+        final double firstProbability = firstPrediction.getProbability();
+        final String firstName = firstPrediction.getName();
+        return firstProbability > FIRST_PROBABILITY_THRESHOLD &&
+                !Vocabulary.unknownCharacter.equals(firstName) &&
+                !areSubtokensMatch(variable.getName(), varNamePredictions2set(predictions));
+    }
+
+    @Override
+    public boolean slowHighlighting(Project project, @NotNull PsiNameIdentifierOwner variable) {
+        return true;
     }
 }

@@ -10,21 +10,21 @@ import org.jetbrains.iren.utils.ModelUtils;
 import java.util.HashMap;
 import java.util.Map;
 
-public class ModelManagerImpl implements ModelManager {
+public class NGramModelManagerImpl implements NGramModelManager {
     private final Map<String, ModelRunner> myModelRunners = new HashMap<>();
 
     @Override
-    public @Nullable ModelRunner getModelRunner(@NotNull String name) {
+    public @Nullable ModelRunner get(@NotNull String name) {
         return myModelRunners.get(name);
     }
 
     @Override
-    public void putModelRunner(@NotNull String name, @NotNull ModelRunner modelRunner) {
+    public void put(@NotNull String name, @NotNull ModelRunner modelRunner) {
         myModelRunners.put(name, modelRunner);
     }
 
     @Override
-    public void removeModelRunner(@NotNull String name) {
+    public void remove(@NotNull String name) {
         myModelRunners.remove(name);
     }
 

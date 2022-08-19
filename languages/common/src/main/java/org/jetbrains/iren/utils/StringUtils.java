@@ -5,10 +5,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.Unmodifiable;
 
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 import java.util.stream.Collectors;
 
 public class StringUtils {
@@ -16,7 +13,7 @@ public class StringUtils {
     public static final String NUMBER_TOKEN = "<num>";
     public static final String VARIABLE_TOKEN = "<var>";
     public static final String END_SUBTOKEN = "<end>";
-    public static final List<String> IntegersToLeave = Arrays.asList("0", "1", "32", "64");
+    public static final List<String> INTEGERS_TO_LEAVE = Arrays.asList("0", "1", "32", "64");
 
     public static @NotNull Collection<String> subtokenSplit(@NotNull String token) {
         return Arrays.asList(token.split("(?<!(^|[A-Z]))(?=[A-Z])|(?<!^)(?=[A-Z][a-z])|_"));
@@ -48,12 +45,20 @@ public class StringUtils {
     public static boolean areSubtokensMatch(@Nullable String name, @NotNull Collection<String> suggestions) {
         return name != null && suggestions.stream().anyMatch(suggestion -> name.length() < 2 ?
                 suggestion.equals(name) :
-                checkSubtokensMatch(suggestion, name));
+                checkAnySubtokensMatch(suggestion, name));
+    }
+
+    private static boolean checkAnySubtokensMatch(String first, String second) {
+        @NotNull List<String> firstTokens = toLowerCasedTokens(first);
+        @NotNull List<String> secondTokens = toLowerCasedTokens(second);
+        Set<String> intersection = new HashSet<>(firstTokens); // use the copy constructor
+        intersection.retainAll(new HashSet<>(secondTokens));
+        return !intersection.isEmpty();
     }
 
     public static boolean areSubtokensMatch(@Nullable String name, @Nullable String suggestion) {
         return name != null && suggestion != null &&
-                (name.length() < 2 ? suggestion.equals(name) : checkSubtokensMatch(suggestion, name));
+                (name.length() < 2 ? suggestion.equals(name) : checkAnySubtokensMatch(suggestion, name));
     }
 
     /**

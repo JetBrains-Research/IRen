@@ -7,7 +7,7 @@ import com.intellij.internal.statistic.eventLog.events.EventFields;
 import com.intellij.internal.statistic.eventLog.events.StringEventField;
 import com.intellij.internal.statistic.service.fus.collectors.FeatureUsageCollectorExtension;
 import org.jetbrains.annotations.NonNls;
-import org.jetbrains.iren.rename.IRenLookups;
+import org.jetbrains.iren.config.ModelType;
 
 import java.util.Arrays;
 import java.util.List;
@@ -15,7 +15,7 @@ import java.util.List;
 @SuppressWarnings("UnstableApiUsage")
 public class IRenCollectorExtension implements FeatureUsageCollectorExtension {
     public final static StringEventField irenModelType = EventFields.String("iren_model_type",
-            Arrays.asList(IRenLookups.Default.MODEL_TYPE, IRenLookups.NGram.MODEL_TYPE));
+            Arrays.asList(ModelType.DEFAULT.toString(), "both", ModelType.NGRAM.toString(), ModelType.DOBF.toString()));
     public final static DoubleEventField irenProbability = EventFields.Double("iren_probability");
 
     @Override

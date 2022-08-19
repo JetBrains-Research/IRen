@@ -9,11 +9,12 @@ import com.intellij.openapi.editor.Editor;
 import com.intellij.openapi.project.Project;
 import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiNamedElement;
-import com.intellij.refactoring.rename.NameSuggestionProvider;
 import com.intellij.refactoring.rename.inplace.MyLookupExpression;
 import com.intellij.refactoring.rename.inplace.VariableInplaceRenamer;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.iren.config.InferenceStrategies;
+import org.jetbrains.iren.config.ModelType;
 import org.jetbrains.iren.services.RenameHistory;
 
 import java.util.LinkedHashMap;
@@ -24,6 +25,7 @@ import static org.jetbrains.iren.utils.RenameUtils.notTypoRename;
 
 public class IRenVariableInplaceRenamer extends VariableInplaceRenamer {
     private final LinkedHashMap<String, Double> myNameProbabilities = new LinkedHashMap<>();
+    private final LinkedHashMap<String, ModelType> myModelTypes = new LinkedHashMap<>();
     private @Nullable String variableHash = null;
 
     public IRenVariableInplaceRenamer(@NotNull PsiNamedElement elementToRename, @NotNull Editor editor) {
@@ -41,21 +43,26 @@ public class IRenVariableInplaceRenamer extends VariableInplaceRenamer {
     @Override
     public boolean performInplaceRefactoring(@Nullable LinkedHashSet<String> nameSuggestions) {
         if (nameSuggestions == null) nameSuggestions = new LinkedHashSet<>();
-        if (notTypoRename()) addIRenPredictionsIfPossible(nameSuggestions, myElementToRename, myNameProbabilities);
         variableHash = RenameHistory.getInstance(myProject).getVariableHash(myElementToRename, false);
         return super.performInplaceRefactoring(nameSuggestions);
     }
 
     @Override
     protected MyLookupExpression createLookupExpression(PsiElement selectedElement) {
-        NameSuggestionProvider.suggestNames(myElementToRename, selectedElement, myNameSuggestions);
+        addIRenPredictionsIfPossible(myNameSuggestions,
+                myElementToRename,
+                selectedElement,
+                myNameProbabilities,
+                myModelTypes,
+                notTypoRename() ? InferenceStrategies.ALL : InferenceStrategies.DEFAULT_ONLY);
         return new IRenLookupExpression(getInitialName(),
                 myNameSuggestions,
                 myElementToRename,
                 selectedElement,
                 shouldSelectAll(),
                 myAdvertisementText,
-                myNameProbabilities);
+                myNameProbabilities,
+                myModelTypes);
     }
 
     @Override
