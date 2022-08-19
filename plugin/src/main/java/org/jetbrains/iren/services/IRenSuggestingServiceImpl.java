@@ -44,7 +44,7 @@ public class IRenSuggestingServiceImpl implements IRenSuggestingService {
             stats.put(String.format("%s (ms)", modelContributor.getClass().getSimpleName()), Duration.between(start, Instant.now()).toNanos() / 1_000_000.);
         }
 
-        List<VarNamePrediction> result = rankSuggestions(variable, nameSuggestions, prioritiesSum);
+        List<VarNamePrediction> result = rankSuggestions(project, variable, nameSuggestions, prioritiesSum);
         stats.put("Total time (ms)", Duration.between(timerStart, Instant.now()).toNanos() / 1_000_000.);
         notify(project, stats);
         return result;
@@ -78,7 +78,7 @@ public class IRenSuggestingServiceImpl implements IRenSuggestingService {
         return contributor == null ? Context.Statistics.EMPTY : contributor.getContextStatistics(variable);
     }
 
-    private @NotNull List<VarNamePrediction> rankSuggestions(@NotNull PsiElement variable, @NotNull List<VarNamePrediction> nameSuggestions, int prioritiesSum) {
+    private @NotNull List<VarNamePrediction> rankSuggestions(Project project, @NotNull PsiElement variable, @NotNull List<VarNamePrediction> nameSuggestions, int prioritiesSum) {
         Map<String, ModelType> modelTypes = new HashMap<>();
         Map<String, Double> rankedSuggestions = new HashMap<>();
         List<VarNamePrediction> defaultSuggestions = new ArrayList<>();
@@ -90,7 +90,7 @@ public class IRenSuggestingServiceImpl implements IRenSuggestingService {
                 continue;
             }
             String predictionName = prediction.getName();
-            if (!LanguageNamesValidation.isIdentifier(variableLanguage, predictionName, variable.getProject())) continue;
+            if (!LanguageNamesValidation.isIdentifier(variableLanguage, predictionName, project)) continue;
             Double prob = rankedSuggestions.get(predictionName);
             double addition = prediction.getProbability() * prediction.getPriority() / prioritiesSum;
             if (prob == null) {
