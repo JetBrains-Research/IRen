@@ -131,7 +131,7 @@ public class PyLanguageSupporter extends LanguageSupporterBase {
         final String firstName = firstPrediction.getName();
         return firstProbability > FIRST_PROBABILITY_THRESHOLD &&
                 !Vocabulary.unknownCharacter.equals(firstName) &&
-                !areSubtokensMatch(variable.getName(), varNamePredictions2set(predictions));
+                !areSubtokensMatch(ReadAction.compute(variable::getName), varNamePredictions2set(predictions));
     }
 
     @Override
