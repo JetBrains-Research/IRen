@@ -7,7 +7,6 @@ import com.intellij.refactoring.rename.inplace.MemberInplaceRenamer;
 import com.intellij.refactoring.rename.inplace.MyLookupExpression;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.jetbrains.iren.config.InferenceStrategies;
 import org.jetbrains.iren.config.ModelType;
 import org.jetbrains.iren.services.RenameHistory;
 
@@ -16,7 +15,6 @@ import java.util.LinkedHashSet;
 
 import static org.jetbrains.iren.rename.IRenVariableInplaceRenamer.rememberNameAfterRefactoring;
 import static org.jetbrains.iren.utils.RenameUtils.addIRenPredictionsIfPossible;
-import static org.jetbrains.iren.utils.RenameUtils.notTypoRename;
 
 public class IRenMemberInplaceRenamer extends MemberInplaceRenamer {
     private final LinkedHashMap<String, Double> myNameProbabilities = new LinkedHashMap<>();
@@ -52,8 +50,7 @@ public class IRenMemberInplaceRenamer extends MemberInplaceRenamer {
                 myElementToRename,
                 selectedElement,
                 myNameProbabilities,
-                myModelTypes,
-                notTypoRename() ? InferenceStrategies.ALL : InferenceStrategies.DEFAULT_ONLY);
+                myModelTypes);
         return new IRenLookupExpression(getInitialName(),
                 myNameSuggestions,
                 myElementToRename,

@@ -37,7 +37,7 @@ public class IRenLookupExpression extends MyLookupExpression {
         List<LookupElement> newLookupElements = new ArrayList<>();
         for (LookupElement lookupElement : lookupElements) {
             newLookupElements.add(
-                    myModelTypes.get(lookupElement.getLookupString()) != ModelType.DEFAULT ?
+                    myModelTypes.getOrDefault(lookupElement.getLookupString(), ModelType.DEFAULT) != ModelType.DEFAULT ?
                             new IRenLookups.LookupWithProbability(lookupElement, myNameProbabilities, myModelTypes) :
                             new IRenLookups.Default(lookupElement));
         }

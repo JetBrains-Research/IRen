@@ -73,7 +73,12 @@ public abstract class LanguageSupporterBase implements LanguageSupporter {
         });
     }
 
-    private List<PsiElement> getLeafElementsFromRoot(PsiElement root) {
+    @Override
+    public @Nullable Context<String> getDOBFContext(@NotNull PsiNameIdentifierOwner variable) {
+        return getContext(variable, true, false, false);
+    }
+
+    private @NotNull List<PsiElement> getLeafElementsFromRoot(PsiElement root) {
         return SyntaxTraverser.psiTraverser()
                 .withRoot(root)
                 .forceIgnore(node -> node instanceof PsiComment)
@@ -86,7 +91,7 @@ public abstract class LanguageSupporterBase implements LanguageSupporter {
      * @param file     where to find usages
      * @return usages with declaration
      */
-    private Collection<PsiElement> findUsages(PsiNameIdentifierOwner variable, PsiFile file) {
+    protected Collection<PsiElement> findUsages(PsiNameIdentifierOwner variable, PsiFile file) {
         @Nullable Collection<PsiReference> references = findReferences(variable, file);
         return Stream.concat(Stream.of(variable), references != null ? references.stream() : Stream.empty())
                 .map(this::getIdentifier)
@@ -225,12 +230,12 @@ public abstract class LanguageSupporterBase implements LanguageSupporter {
 
     @Override
     public boolean excludeFromInspection(@NotNull PsiNameIdentifierOwner variable) {
-        return areSubtokensMatch(variable.getName(), getDefaultSuggestions(variable));
+        String name = variable.getName();
+        return (name != null && isStopName(name)) || areSubtokensMatch(name, getDefaultSuggestions(variable));
     }
 
     @Override
     public @NotNull Collection<String> getDefaultSuggestions(@NotNull PsiNameIdentifierOwner variable) {
-//        TODO: mb remove it, since I move NameSuggestionProvider suggestions to DefaultContributor
         final @Nullable NameSuggestionProvider nameSuggestionProvider = getNameSuggestionProvider();
         if (nameSuggestionProvider == null) return Set.of();
         Set<String> defaultSuggestions = new HashSet<>();
@@ -238,6 +243,9 @@ public abstract class LanguageSupporterBase implements LanguageSupporter {
         return defaultSuggestions;
     }
 
+    /**
+     * Get custom NameSuggestionProvider that works the same way as default one, but don't suggest variable name itself.
+     */
     public @Nullable NameSuggestionProvider getNameSuggestionProvider() {
         return null;
     }
@@ -272,7 +280,7 @@ public abstract class LanguageSupporterBase implements LanguageSupporter {
 
     public boolean fastHighlighting(Project project, @NotNull PsiNameIdentifierOwner variable) {
         @NotNull List<VarNamePrediction> predictions = IRenSuggestingService.getInstance(project)
-                .suggestVariableName(project, variable, InferenceStrategies.FAST_WITHOUT_DEFAULT);
+                .suggestVariableName(project, variable, InferenceStrategies.NGRAM_ONLY);
         return !areSubtokensMatch(ReadAction.compute(variable::getName), varNamePredictions2set(predictions));
     }
 
@@ -280,9 +288,9 @@ public abstract class LanguageSupporterBase implements LanguageSupporter {
 
     public boolean slowHighlighting(Project project, @NotNull PsiNameIdentifierOwner variable) {
         @NotNull List<VarNamePrediction> predictions = IRenSuggestingService.getInstance(project)
-                .suggestVariableName(project, variable, InferenceStrategies.WITHOUT_DEFAULT);
+                .suggestVariableName(project, variable, InferenceStrategies.ALL);
         if (predictions.isEmpty()) return false;
-        final Double firstProbability = predictions.get(0).getProbability();
+        final double firstProbability = predictions.get(0).getProbability();
         return firstProbability > FIRST_PROBABILITY_THRESHOLD &&
                 !areSubtokensMatch(ReadAction.compute(variable::getName), varNamePredictions2set(predictions));
     }

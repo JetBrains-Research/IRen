@@ -1,11 +1,9 @@
 package org.jetbrains.iren;
 
 import com.intellij.openapi.extensions.ExtensionPointName;
-import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiNameIdentifierOwner;
 import kotlin.Pair;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import org.jetbrains.iren.config.ModelType;
 import org.jetbrains.iren.storages.VarNamePrediction;
 
@@ -18,17 +16,11 @@ public interface VariableNamesContributor {
     /**
      * Contribute some variable names.
      *
-     * @param variable        variable which name we want to predict.
-     * @param selectedElement
-     * @param predictionList  container which contains all predictions.
+     * @param variable       variable which name we want to predict.
+     * @param predictionList container which contains all predictions.
      * @return priority of contribution
      */
-    int contribute(@NotNull PsiNameIdentifierOwner variable, @Nullable PsiElement selectedElement, @NotNull List<VarNamePrediction> predictionList);
-
-
-    default int contribute(@NotNull PsiNameIdentifierOwner variable, @NotNull List<VarNamePrediction> predictionList) {
-        return contribute(variable, null, predictionList);
-    };
+    int contribute(@NotNull PsiNameIdentifierOwner variable, @NotNull List<VarNamePrediction> predictionList);
 
     /**
      * Get conditional probability of variable name.

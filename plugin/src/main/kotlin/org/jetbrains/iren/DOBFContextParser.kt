@@ -16,7 +16,7 @@ class DOBFContextParser(modelDir: Path, private val maxSequenceLength: Int = 512
 
     fun getContext(variable: PsiNameIdentifierOwner): List<Int> {
 //        Data preparation
-        val context = (LanguageSupporter.getInstance(variable.language)?.getContext(variable, true, false, false)
+        val context = (LanguageSupporter.getInstance(variable.language)?.getDOBFContext(variable)
             ?: return listOf()).with(VAR_TOKEN)
 
 //        Apply BPE to context

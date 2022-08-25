@@ -3,7 +3,6 @@ package org.jetbrains.iren.models
 import com.google.common.cache.CacheBuilder
 import com.google.common.cache.CacheLoader
 import com.intellij.openapi.application.ReadAction
-import com.intellij.openapi.progress.ProcessCanceledException
 import com.intellij.psi.PsiNameIdentifierOwner
 import com.intellij.psi.SmartPointerManager
 import com.intellij.psi.SmartPsiElementPointer
@@ -13,7 +12,6 @@ import org.jetbrains.iren.config.ModelType
 import org.jetbrains.iren.contributors.DOBFContributor.Companion.MODEL_PRIORITY
 import org.jetbrains.iren.search.BeamSearchGenerator
 import org.jetbrains.iren.search.logSoftmax
-import org.jetbrains.iren.storages.Context
 import org.jetbrains.iren.storages.VarNamePrediction
 import java.nio.file.Path
 import java.util.concurrent.ExecutionException
@@ -28,20 +26,22 @@ class OrtModelRunner(modelDir: Path) : DOBFModelRunner {
     private val cache = CacheBuilder.newBuilder()
         .maximumSize(CACHE_SIZE)
         .build(object : CacheLoader<SmartPsiElementPointer<PsiNameIdentifierOwner>, List<VarNamePrediction>>() {
-            override fun load(variable: SmartPsiElementPointer<PsiNameIdentifierOwner>): List<VarNamePrediction> {
-                val truncatedIdxs =
-                    contextParser.getContext(ReadAction.compute<PsiNameIdentifierOwner, Throwable> { variable.element }
-                        ?: return listOf())
-                return predictBeamSearch(truncatedIdxs).map { (prediction, prob) ->
-                    toVariableName(prediction)?.let {
-                        VarNamePrediction(
-//                    join(" ", vocab.toWords(prediction)).replace("@@ ", ""),
-                            it, prob, ModelType.DOBF, MODEL_PRIORITY
-                        )
-                    }
-                }.filterNotNull()
-            }
+            override fun load(variable: SmartPsiElementPointer<PsiNameIdentifierOwner>) = loadCache(variable)
         })
+
+    private fun loadCache(variable: SmartPsiElementPointer<PsiNameIdentifierOwner>): List<VarNamePrediction> {
+        val truncatedIdxs =
+            contextParser.getContext(ReadAction.compute<PsiNameIdentifierOwner, Throwable> { variable.element }
+                ?: return listOf())
+        return predictBeamSearch(truncatedIdxs).map { (prediction, prob) ->
+            toVariableName(prediction)?.let {
+                VarNamePrediction(
+    //                    join(" ", vocab.toWords(prediction)).replace("@@ ", ""),
+                    it, prob, ModelType.DOBF, MODEL_PRIORITY
+                )
+            }
+        }.filterNotNull()
+    }
 
     override fun predict(variable: PsiNameIdentifierOwner): List<VarNamePrediction> {
         return try {

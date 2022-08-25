@@ -7,7 +7,6 @@ import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiNameIdentifierOwner;
 import kotlin.Pair;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import org.jetbrains.iren.LanguageSupporter;
 import org.jetbrains.iren.VariableNamesContributor;
 import org.jetbrains.iren.contributors.ProjectVariableNamesContributor;
@@ -22,9 +21,8 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 public class IRenSuggestingServiceImpl implements IRenSuggestingService {
-    //    TODO: mb change InferenceStrategies to parameters ¯\_(ツ)_/¯
     @Override
-    public @NotNull List<VarNamePrediction> suggestVariableName(Project project, @NotNull PsiNameIdentifierOwner variable, @Nullable PsiElement selectedElement, Collection<ModelType> modelTypes) {
+    public @NotNull List<VarNamePrediction> suggestVariableName(Project project, @NotNull PsiNameIdentifierOwner variable, Collection<ModelType> modelTypes) {
         Instant timerStart = Instant.now();
         List<VarNamePrediction> nameSuggestions = new ArrayList<>();
         boolean verboseInference = NotificationsUtil.isVerboseInference();
@@ -40,7 +38,7 @@ public class IRenSuggestingServiceImpl implements IRenSuggestingService {
             if (!modelTypes.contains(modelContributor.getModelType()))
                 continue;
             Instant start = Instant.now();
-            prioritiesSum += modelContributor.contribute(variable, selectedElement, nameSuggestions);
+            prioritiesSum += modelContributor.contribute(variable, nameSuggestions);
             stats.put(String.format("%s (ms)", modelContributor.getClass().getSimpleName()), Duration.between(start, Instant.now()).toNanos() / 1_000_000.);
         }
 

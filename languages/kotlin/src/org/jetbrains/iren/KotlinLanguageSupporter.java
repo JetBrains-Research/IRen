@@ -39,7 +39,7 @@ import static org.jetbrains.iren.utils.StringUtils.*;
 public class KotlinLanguageSupporter extends LanguageSupporterBase {
     public static final TokenSet NumberTypes = TokenSet.create(KtTokens.FLOAT_LITERAL, KtTokens.INTEGER_LITERAL);
     private static final Collection<Class<? extends PsiNameIdentifierOwner>> variableClasses = List.of(KtProperty.class, KtParameter.class);
-    private static final Collection<String> stopNames = List.of("it");
+    private static final Collection<String> stopNames = List.of("it", "_");
 
     @Override
     public @NotNull Language getLanguage() {

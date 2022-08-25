@@ -5,10 +5,7 @@ import com.intellij.lang.Language;
 import com.intellij.openapi.application.ReadAction;
 import com.intellij.openapi.fileTypes.FileType;
 import com.intellij.openapi.project.Project;
-import com.intellij.psi.PsiElement;
-import com.intellij.psi.PsiElementVisitor;
-import com.intellij.psi.PsiNameIdentifierOwner;
-import com.intellij.psi.PsiNamedElement;
+import com.intellij.psi.*;
 import com.intellij.psi.tree.IElementType;
 import com.intellij.refactoring.rename.RenameHandler;
 import com.intellij.refactoring.rename.inplace.VariableInplaceRenameHandler;
@@ -16,6 +13,7 @@ import com.jetbrains.python.PythonFileType;
 import com.jetbrains.python.PythonLanguage;
 import com.jetbrains.python.psi.*;
 import com.jetbrains.python.refactoring.PyRefactoringProvider;
+import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.iren.config.InferenceStrategies;
@@ -24,6 +22,7 @@ import org.jetbrains.iren.storages.Context;
 import org.jetbrains.iren.storages.VarNamePrediction;
 import org.jetbrains.iren.storages.Vocabulary;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
@@ -33,7 +32,7 @@ import static org.jetbrains.iren.utils.StringUtils.*;
 
 public class PyLanguageSupporter extends LanguageSupporterBase {
     private static final List<Class<? extends PsiNameIdentifierOwner>> variableClasses = List.of(PyNamedParameter.class, PyTargetExpression.class);
-    private static final Collection<String> stopNames = List.of("self");
+    private static final Collection<String> stopNames = List.of("self", "_");
 
     @Override
     public @NotNull Language getLanguage() {
@@ -102,6 +101,50 @@ public class PyLanguageSupporter extends LanguageSupporterBase {
     }
 
     @Override
+    public @Nullable Context<String> getDOBFContext(@NotNull PsiNameIdentifierOwner variable) {
+        return ReadAction.compute(() -> {
+            PsiFile file = variable.getContainingFile();
+            Collection<PsiElement> usages = findUsages(variable, file);
+            if (file == null) return null;
+            List<Integer> varIdxs = new ArrayList<>();
+            List<PsiElement> elements = lexFile(file);
+            List<String> tokens = new ArrayList<>();
+            int indent = 0;
+            for (int i = 0; i < elements.size(); i++) {
+                PsiElement element = elements.get(i);
+                if (usages.contains(element)) {
+                    varIdxs.add(i);
+                }
+                if (element instanceof PsiWhiteSpace && element.getText().contains("\n")) {
+                    tokens.add(NEW_LINE_TOKEN);
+                    int newIndent = countIndent(file, element);
+                    int diff = newIndent - indent;
+                    if (diff != 0) {
+                        indent = newIndent;
+                        String indentToken = diff > 0 ? INDENT_TOKEN : DEDENT_TOKEN;
+                        for (int j=0; j < diff; j++) tokens.add(indentToken);
+                    }
+                } else {
+                    tokens.add(element.getText());
+                }
+            }
+            return new Context<>(tokens, varIdxs);
+        });
+    }
+
+    private static int countIndent(PsiFile file, PsiElement element) {
+        return StringUtils.countMatches(PyIndentUtil.getElementIndent(element), PyIndentUtil.getIndentFromSettings(file));
+    }
+
+    protected List<PsiElement> lexFile(PsiFile file) {
+        return SyntaxTraverser.psiTraverser()
+                .withRoot(file)
+                .forceIgnore(node -> node instanceof PsiComment)
+                .filter(this::isLeaf)
+                .toList();
+    }
+
+    @Override
     public boolean isColliding(@NotNull PsiElement element, @NotNull String newName) {
         return super.isColliding(element, newName) ||
                 element instanceof PyParameter && ReadAction.compute(() -> isCollidingWithParameter((PyParameter) element, newName));
@@ -125,7 +168,8 @@ public class PyLanguageSupporter extends LanguageSupporterBase {
         IRenSuggestingService suggestingService = IRenSuggestingService.getInstance(project);
         final Context.Statistics contextStatistics = suggestingService.getVariableContextStatistics(variable);
         if (contextStatistics.countsMean() < 1.) return false;
-        @NotNull List<VarNamePrediction> predictions = suggestingService.suggestVariableName(project, variable, InferenceStrategies.FAST_WITHOUT_DEFAULT);
+        @NotNull List<VarNamePrediction> predictions = suggestingService.suggestVariableName(project, variable, InferenceStrategies.NGRAM_ONLY);
+        if (predictions.isEmpty()) return false;
         VarNamePrediction firstPrediction = predictions.get(0);
         final double firstProbability = firstPrediction.getProbability();
         final String firstName = firstPrediction.getName();

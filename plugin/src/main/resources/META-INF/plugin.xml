@@ -74,10 +74,9 @@
         <renameHandler implementation="org.jetbrains.iren.rename.IRenVariableInplaceRenameHandler"/>
         <renameHandler implementation="org.jetbrains.iren.rename.IRenMemberInplaceRenameHandler"/>
         <preloadingActivity implementation="org.jetbrains.iren.application.AskPermissionsPreloadingActivity"/>
+        <nameSuggestionProvider implementation="org.jetbrains.iren.IRenVariableNameSuggestionProvider" id="iren" order="last"/>
     </extensions>
     <extensions defaultExtensionNs="org.jetbrains.iren">
-        <variableNamesContributor
-                implementation="org.jetbrains.iren.contributors.DefaultContributor"/>
         <variableNamesContributor
                 implementation="org.jetbrains.iren.contributors.ProjectVariableNamesContributor"/>
         <variableNamesContributor

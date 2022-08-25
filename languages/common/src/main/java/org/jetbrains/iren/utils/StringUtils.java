@@ -14,6 +14,9 @@ public class StringUtils {
     public static final String VARIABLE_TOKEN = "<var>";
     public static final String END_SUBTOKEN = "<end>";
     public static final List<String> INTEGERS_TO_LEAVE = Arrays.asList("0", "1", "32", "64");
+    public static final String NEW_LINE_TOKEN = "NEW_LINE";
+    public static final String INDENT_TOKEN = "INDENT";
+    public static final String DEDENT_TOKEN = "DEDENT";
 
     public static @NotNull Collection<String> subtokenSplit(@NotNull String token) {
         return Arrays.asList(token.split("(?<!(^|[A-Z]))(?=[A-Z])|(?<!^)(?=[A-Z][a-z])|_"));

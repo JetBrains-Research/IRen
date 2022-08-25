@@ -1,14 +1,11 @@
 package org.jetbrains.iren.contributors
 
 import com.intellij.lang.java.JavaLanguage
-import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiNameIdentifierOwner
 import org.jetbrains.iren.VariableNamesContributor
 import org.jetbrains.iren.config.ModelType
 import org.jetbrains.iren.services.DOBFModelManager
 import org.jetbrains.iren.storages.VarNamePrediction
-import org.jetbrains.kotlin.idea.KotlinLanguage
-import java.lang.String.join
 
 
 class DOBFContributor : VariableNamesContributor {
@@ -19,7 +16,6 @@ class DOBFContributor : VariableNamesContributor {
 
     override fun contribute(
         variable: PsiNameIdentifierOwner,
-        selectedElement: PsiElement?,
         predictionList: MutableList<VarNamePrediction>
     ): Int {
         var language = variable.language

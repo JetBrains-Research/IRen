@@ -2,7 +2,6 @@ package org.jetbrains.iren.contributors;
 
 import com.intellij.openapi.application.ReadAction;
 import com.intellij.openapi.project.Project;
-import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiNameIdentifierOwner;
 import kotlin.Pair;
 import org.jetbrains.annotations.NotNull;
@@ -25,7 +24,6 @@ public abstract class NGramVariableNamesContributor implements VariableNamesCont
 
     @Override
     public synchronized int contribute(@NotNull PsiNameIdentifierOwner variable,
-                                       @Nullable PsiElement selectedElement,
                                        @NotNull List<VarNamePrediction> predictionList) {
         Project project = ReadAction.compute(variable::getProject);
         ModelRunner modelRunner = getModelRunnerToContribute(project, variable);

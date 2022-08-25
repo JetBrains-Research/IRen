@@ -18,8 +18,6 @@ import java.util.Collection;
 import java.util.List;
 import java.util.function.Consumer;
 
-import static org.jetbrains.iren.utils.StringUtils.areSubtokensMatch;
-
 public interface LanguageSupporter {
     ExtensionPointName<LanguageSupporter> INSTANCE = ExtensionPointName.create("org.jetbrains.iren.language.supporter");
 
@@ -69,6 +67,8 @@ public interface LanguageSupporter {
                                          boolean forWholeFile,
                                          boolean changeToUnknown,
                                          boolean processTokens);
+
+    @Nullable Context<String> getDOBFContext(@NotNull PsiNameIdentifierOwner variable);
 
     @NotNull List<String> lexPsiFile(@NotNull PsiFile file);
 

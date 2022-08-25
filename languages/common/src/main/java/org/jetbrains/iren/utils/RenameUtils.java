@@ -6,12 +6,11 @@ import com.intellij.openapi.project.Project;
 import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiNameIdentifierOwner;
 import com.intellij.psi.PsiNamedElement;
-import com.intellij.psi.SmartPointerManager;
+import com.intellij.psi.codeStyle.SuggestedNameInfo;
 import com.intellij.refactoring.rename.NameSuggestionProvider;
-import com.intellij.spellchecker.quickfixes.DictionarySuggestionProvider;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.jetbrains.iren.LanguageSupporter;
+import org.jetbrains.iren.IRenVariableNameSuggestionProvider;
 import org.jetbrains.iren.config.ModelType;
 import org.jetbrains.iren.inspections.variable.RenameVariableQuickFix;
 import org.jetbrains.iren.services.ConsistencyChecker;
@@ -19,7 +18,10 @@ import org.jetbrains.iren.services.IRenSuggestingService;
 import org.jetbrains.iren.services.NGramModelsUsabilityService;
 import org.jetbrains.iren.storages.VarNamePrediction;
 
-import java.util.*;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Objects;
 
 public class RenameUtils {
     /**
@@ -37,7 +39,7 @@ public class RenameUtils {
             holder.registerProblem(identifier,
                     RenameBundle.message("inspection.description.template"),
                     ProblemHighlightType.WEAK_WARNING,
-                    new RenameVariableQuickFix(SmartPointerManager.createPointer(variable))
+                    new RenameVariableQuickFix()
             );
         }
     }
@@ -49,39 +51,36 @@ public class RenameUtils {
      * @param elementToRename   IRen model suggests names for this element
      * @param selectedElement   element under caret
      * @param nameProbabilities stores probabilities of names
-     * @param inferenceStratagy which models to use to suggest names
      */
     public static void addIRenPredictionsIfPossible(@NotNull LinkedHashSet<String> nameSuggestions,
                                                     @NotNull PsiNamedElement elementToRename,
                                                     @Nullable PsiElement selectedElement,
                                                     @NotNull LinkedHashMap<String, Double> nameProbabilities,
-                                                    @NotNull LinkedHashMap<String, ModelType> modelTypes,
-                                                    Set<ModelType> inferenceStratagy) {
-        LanguageSupporter supporter = LanguageSupporter.getInstance(elementToRename.getLanguage());
-        if (supporter != null
-                && supporter.isVariableDeclaration(elementToRename)
-                && supporter.isInplaceRenameAvailable(elementToRename)) {
-            List<VarNamePrediction> varNamePredictions = IRenSuggestingService.getInstance(elementToRename.getProject())
-                    .suggestVariableName(elementToRename.getProject(), (PsiNameIdentifierOwner) elementToRename, selectedElement, inferenceStratagy);
-            filterSuggestions(nameSuggestions, elementToRename, nameProbabilities, modelTypes, varNamePredictions);
+                                                    @NotNull LinkedHashMap<String, ModelType> modelTypes) {
+        SuggestedNameInfo info = NameSuggestionProvider.suggestNames(elementToRename, selectedElement, nameSuggestions);
+        if (info instanceof IRenVariableNameSuggestionProvider.IRenSuggestedNameInfo) {
+            sortAndFilterSuggestions(nameSuggestions, elementToRename, nameProbabilities, modelTypes,
+                    ((IRenVariableNameSuggestionProvider.IRenSuggestedNameInfo) info).getPredictions());
         }
     }
 
-    private static void filterSuggestions(@NotNull LinkedHashSet<String> nameSuggestions,
-                                          @NotNull PsiNamedElement elementToRename,
-                                          @NotNull LinkedHashMap<String, Double> nameProbabilities,
-                                          @NotNull LinkedHashMap<String, ModelType> modelTypes,
-                                          @NotNull List<VarNamePrediction> predictions) {
+    private static void sortAndFilterSuggestions(@NotNull LinkedHashSet<String> nameSuggestions,
+                                                 @NotNull PsiNamedElement elementToRename,
+                                                 @NotNull LinkedHashMap<String, Double> nameProbabilities,
+                                                 @NotNull LinkedHashMap<String, ModelType> modelTypes,
+                                                 @NotNull List<VarNamePrediction> predictions) {
         double varNameProb = findVarNameProb(elementToRename, predictions);
         double threshold = Math.max(0.02, varNameProb);
         for (VarNamePrediction prediction : predictions) {
             if (prediction.getProbability() > threshold) {
                 nameProbabilities.put(prediction.getName(), prediction.getProbability());
                 modelTypes.put(prediction.getName(), prediction.getModelType());
-            } else if (prediction.getModelType() == ModelType.DEFAULT) {
-                modelTypes.putIfAbsent(prediction.getName(), prediction.getModelType());
             }
         }
+        for (String name : nameSuggestions) {
+            modelTypes.putIfAbsent(name, ModelType.DEFAULT);
+        }
+        nameSuggestions.clear();
         nameSuggestions.addAll(modelTypes.keySet());
     }
 
@@ -93,25 +92,5 @@ public class RenameUtils {
                 varNameProb = prediction.getProbability();
         }
         return varNameProb - 1e-4;
-    }
-
-    /**
-     * Checks if typo rename inactive.
-     *
-     * @return boolean
-     */
-    public static boolean notTypoRename() {
-        final DictionarySuggestionProvider provider = findDictionarySuggestionProvider();
-        return provider == null || provider.shouldCheckOthers();
-    }
-
-    @Nullable
-    private static DictionarySuggestionProvider findDictionarySuggestionProvider() {
-        for (Object extension : NameSuggestionProvider.EP_NAME.getExtensionList()) {
-            if (extension instanceof DictionarySuggestionProvider) {
-                return (DictionarySuggestionProvider) extension;
-            }
-        }
-        return null;
     }
 }
