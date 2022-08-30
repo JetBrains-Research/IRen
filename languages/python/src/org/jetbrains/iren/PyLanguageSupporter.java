@@ -12,7 +12,6 @@ import com.intellij.refactoring.rename.inplace.VariableInplaceRenameHandler;
 import com.jetbrains.python.PythonFileType;
 import com.jetbrains.python.PythonLanguage;
 import com.jetbrains.python.psi.*;
-import com.jetbrains.python.refactoring.PyRefactoringProvider;
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -93,11 +92,6 @@ public class PyLanguageSupporter extends LanguageSupporterBase {
     @Override
     public boolean isStopName(@NotNull String name) {
         return stopNames.contains(name);
-    }
-
-    @Override
-    public boolean isInplaceRenameAvailable(PsiNamedElement elementToRename) {
-        return new PyRefactoringProvider().isInplaceRenameAvailable(elementToRename, null);
     }
 
     @Override

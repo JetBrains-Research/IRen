@@ -1,17 +1,17 @@
 package org.jetbrains.iren;
 
+import com.intellij.ide.highlighter.JavaFileType;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.kotlin.idea.KotlinFileType;
 
-public class KotlinInspectionHeuristicsTest extends IRenInspectionTest {
+public class JavaIRenInspectionTest extends IRenInspectionTest {
     @Override
     public @NotNull String getFileExtension() {
-        return "." + KotlinFileType.EXTENSION;
+        return JavaFileType.DOT_DEFAULT_EXTENSION;
     }
 
     @Override
     public @NotNull LanguageSupporter getLanguageSupporter() {
-        return new KotlinLanguageSupporter();
+        return new JavaLanguageSupporter();
     }
 
     public void testInspection() {

@@ -105,10 +105,6 @@ public interface LanguageSupporter {
 
     @NotNull Collection<String> getDefaultSuggestions(@NotNull PsiNameIdentifierOwner variable);
 
-    default boolean isInplaceRenameAvailable(PsiNamedElement elementToRename) {
-        return true;
-    }
-
     boolean isFunctionOrClass(PsiNameIdentifierOwner element);
 
     default boolean dobfReady() {

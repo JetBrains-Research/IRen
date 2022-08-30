@@ -14,8 +14,6 @@ import org.jetbrains.iren.IRenVariableNameSuggestionProvider;
 import org.jetbrains.iren.config.ModelType;
 import org.jetbrains.iren.inspections.variable.RenameVariableQuickFix;
 import org.jetbrains.iren.services.ConsistencyChecker;
-import org.jetbrains.iren.services.IRenSuggestingService;
-import org.jetbrains.iren.services.NGramModelsUsabilityService;
 import org.jetbrains.iren.storages.VarNamePrediction;
 
 import java.util.LinkedHashMap;
@@ -32,10 +30,9 @@ public class RenameUtils {
      */
     public static void visitVariable(PsiNameIdentifierOwner variable, ProblemsHolder holder) {
         @NotNull Project project = holder.getProject();
-        if (NGramModelsUsabilityService.getInstance(project).isUsable(new ModelUtils().getName(variable.getProject(), variable.getLanguage()))
-                && ConsistencyChecker.getInstance(project).isInconsistent(variable)) {
-            @Nullable PsiElement identifier = variable.getNameIdentifier();
-            if (identifier == null) return;
+        @Nullable PsiElement identifier = variable.getNameIdentifier();
+        if (identifier == null) return;
+        if (ConsistencyChecker.getInstance(project).isInconsistent(variable)) {
             holder.registerProblem(identifier,
                     RenameBundle.message("inspection.description.template"),
                     ProblemHighlightType.WEAK_WARNING,

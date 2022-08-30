@@ -1,17 +1,17 @@
 package org.jetbrains.iren;
 
+import com.jetbrains.python.PythonFileType;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.kotlin.idea.KotlinFileType;
 
-public class KotlinInspectionHeuristicsTest extends IRenInspectionTest {
+public class PyIRenInspectionTest extends IRenInspectionTest {
     @Override
     public @NotNull String getFileExtension() {
-        return "." + KotlinFileType.EXTENSION;
+        return "." + PythonFileType.INSTANCE.getDefaultExtension();
     }
 
     @Override
     public @NotNull LanguageSupporter getLanguageSupporter() {
-        return new KotlinLanguageSupporter();
+        return new PyLanguageSupporter();
     }
 
     public void testInspection() {

@@ -60,8 +60,7 @@
                             serviceImplementation="org.jetbrains.iren.services.DOBFModelManagerImpl"/>
         <projectService serviceInterface="org.jetbrains.iren.services.IRenSuggestingService"
                             serviceImplementation="org.jetbrains.iren.services.IRenSuggestingServiceImpl"/>
-        <projectService serviceInterface="org.jetbrains.iren.services.ConsistencyChecker"
-                            serviceImplementation="org.jetbrains.iren.services.ConsistencyCheckerImpl"/>
+        <projectService serviceImplementation="org.jetbrains.iren.services.ConsistencyChecker"/>
         <projectService serviceInterface="org.jetbrains.iren.services.RenameHistory"
                         serviceImplementation="org.jetbrains.iren.services.RenameHistoryImpl"/>
         <localInspection displayName="Inconsistent variable names"
