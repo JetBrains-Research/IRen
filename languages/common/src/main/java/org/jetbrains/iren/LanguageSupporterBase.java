@@ -60,13 +60,11 @@ public abstract class LanguageSupporterBase implements LanguageSupporter {
             List<Integer> varIdxs = new ArrayList<>();
             List<PsiElement> elements = getLeafElementsFromRoot(root);
             List<String> tokens = new ArrayList<>();
-            for (int i = 0; i < elements.size(); i++) {
-                PsiElement element = elements.get(i);
+            for (PsiElement element : elements) {
                 if (usages.contains(element)) {
-                    varIdxs.add(i);
+                    varIdxs.add(tokens.size());
                 }
                 tokens.add(processTokens ? processToken(element) : element.getText());
-
             }
             Context<String> result = new Context<>(tokens, varIdxs);
             return changeToUnknown ? result.with(Vocabulary.unknownCharacter) : result;

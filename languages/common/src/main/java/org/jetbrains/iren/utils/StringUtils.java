@@ -17,6 +17,7 @@ public class StringUtils {
     public static final String NEW_LINE_TOKEN = "NEW_LINE";
     public static final String INDENT_TOKEN = "INDENT";
     public static final String DEDENT_TOKEN = "DEDENT";
+    public static final String SPACE_TOKEN = "▁";
 
     public static @NotNull Collection<String> subtokenSplit(@NotNull String token) {
         return Arrays.asList(token.split("(?<!(^|[A-Z]))(?=[A-Z])|(?<!^)(?=[A-Z][a-z])|_"));

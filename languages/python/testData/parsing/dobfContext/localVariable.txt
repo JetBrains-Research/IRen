@@ -1,0 +1,2 @@
+def sum41 ( ) : NEW_LINE INDENT a = 0 NEW_LINE for i in range ( 41 ) : NEW_LINE INDENT a += i NEW_LINE DEDENT if a == 820 : NEW_LINE INDENT print ( "Rock!" )
+7 21 27

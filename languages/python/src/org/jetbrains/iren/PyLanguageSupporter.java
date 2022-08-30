@@ -104,22 +104,24 @@ public class PyLanguageSupporter extends LanguageSupporterBase {
             List<PsiElement> elements = lexFile(file);
             List<String> tokens = new ArrayList<>();
             int indent = 0;
-            for (int i = 0; i < elements.size(); i++) {
-                PsiElement element = elements.get(i);
-                if (usages.contains(element)) {
-                    varIdxs.add(i);
-                }
-                if (element instanceof PsiWhiteSpace && element.getText().contains("\n")) {
-                    tokens.add(NEW_LINE_TOKEN);
-                    int newIndent = countIndent(file, element);
-                    int diff = newIndent - indent;
-                    if (diff != 0) {
-                        indent = newIndent;
-                        String indentToken = diff > 0 ? INDENT_TOKEN : DEDENT_TOKEN;
-                        for (int j=0; j < diff; j++) tokens.add(indentToken);
+            for (PsiElement element : elements) {
+                String text = element.getText();
+                if (element instanceof PsiWhiteSpace) {
+                    if (text.contains("\n")) {
+                        tokens.add(NEW_LINE_TOKEN);
+                        int newIndent = countIndent(file, element);
+                        int diff = newIndent - indent;
+                        if (diff != 0) {
+                            indent = newIndent;
+                            String indentToken = diff > 0 ? INDENT_TOKEN : DEDENT_TOKEN;
+                            for (int j = 0; j < Math.abs(diff); j++) tokens.add(indentToken);
+                        }
                     }
-                } else {
-                    tokens.add(element.getText());
+                } else if (StringUtils.isNotBlank(text)) {
+                    if (usages.contains(element)) {
+                        varIdxs.add(tokens.size());
+                    }
+                    tokens.add(text.replace(" ", SPACE_TOKEN));
                 }
             }
             return new Context<>(tokens, varIdxs);

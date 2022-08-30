@@ -71,7 +71,8 @@ public class Context<T> {
     }
 
     // --------------------------- For tests ---------------------------
-    public String serialize() {
+    @Override
+    public String toString() {
         return Strings.join(tokens, " ") + "\n" + Strings.join(varIdxs, " ");
     }
 
