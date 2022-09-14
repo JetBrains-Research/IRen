@@ -10,7 +10,7 @@ def some_func(param, n=5):
 
 class Foo:
     def __init__(self, arg):
-        self.arg<caret> = arg
+        self.arg = arg
 
     def print(self, smth):
         print(f"Foo: {self.arg}, also {smth}")
@@ -21,8 +21,9 @@ class Foo:
 
 class Boo(Foo):
     def print(self, a):
+        x<caret> = 0
         for <caret>i in range(0, 239):
-            a += i
+            x += i
         print(a)
 
 
