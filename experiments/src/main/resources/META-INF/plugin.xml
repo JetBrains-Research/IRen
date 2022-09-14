@@ -33,8 +33,10 @@
         <appStarter implementation="experiments.cacheSize.CacheSizePluginRunner"/>
         <appStarter implementation="experiments.dobfEvaluator.DOBFPluginRunner"/>
         <appStarter implementation="experiments.onnxEvaluator.ONNXPluginRunner"/>
+        <appStarter implementation="experiments.buildDataset.DatasetPluginRunner"/>
+        <appStarter implementation="experiments.onnxEvaluatorFromFile.FilePluginRunner"/>
         <!-- End of headless running part-->
-        <applicationService serviceInterface="org.jetbrains.iren.services.NGramModelManager"
+        <projectService serviceInterface="org.jetbrains.iren.services.NGramModelManager"
                             serviceImplementation="org.jetbrains.iren.services.NGramModelManagerImpl"/>
     </extensions>
     <extensions defaultExtensionNs="org.jetbrains.iren">

@@ -20,7 +20,12 @@ tasks {
         val language: String? by project
         val ngramType: String? by project
         args = listOfNotNull(evaluatorToUse, dataset, saveDir, language, ngramType)
-        jvmArgs = listOf("-Djava.awt.headless=true")
+        jvmArgs = listOf(
+            "-Djava.awt.headless=true",
+//            "-verbose:gc",
+//            "-XX:+PrintGCDetails",
+//            "-Xlog:gc*:/home/igor/IdeaProjects/IRen/gc.log"
+        )
         maxHeapSize = "32g"
     }
 }

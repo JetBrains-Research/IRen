@@ -11,6 +11,9 @@ import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.psi.*
 import com.intellij.psi.search.FileTypeIndex
 import com.intellij.psi.search.GlobalSearchScope
+import experiments.ModelPrediction
+import experiments.ModelPredictions
+import experiments.VarNamePredictions
 import me.tongfei.progressbar.ProgressBar
 import org.jetbrains.iren.LanguageSupporter
 import org.jetbrains.iren.ngram.NGramModelRunner
@@ -18,14 +21,12 @@ import org.jetbrains.iren.ngram.PersistentNGramModelRunner
 import org.jetbrains.iren.services.NGramModelManager
 import org.jetbrains.iren.storages.Context
 import org.jetbrains.iren.storages.VarNamePrediction
-import experiments.ModelPrediction
-import experiments.ModelPredictions
-import experiments.VarNamePredictions
 import java.io.File
 import java.nio.file.Path
 import java.time.Duration
 import java.time.Instant
 import kotlin.concurrent.thread
+import kotlin.random.Random
 import kotlin.streams.asSequence
 
 open class VarNamer(
@@ -143,6 +144,8 @@ open class VarNamer(
             }
             variables.asSequence()
                 .filterNotNull()
+                .shuffled(Random(42))
+                .take((variables.size / 10).coerceAtLeast(3))
                 .map { v -> predictVarName(v as PsiNameIdentifierOwner, thread) }
                 .filterNotNull()
                 .toList()
@@ -176,7 +179,7 @@ open class VarNamer(
     }
 
     open fun ignoreVarWithName(name: String): Boolean {
-        return false
+        return supporter.isStopName(name)
     }
 
     open fun predictWithNGram(variable: PsiNameIdentifierOwner, thread: Int): ModelPredictions {
@@ -241,7 +244,9 @@ open class VarNamer(
         variable: PsiNameIdentifierOwner,
     ): NGramModelRunner {
         val runner = persistentModelRunners[thread]
-        ReadAction.run<Exception> { NGramModelManager.getInstance(variable.project).forgetFileIfNeeded(runner, variable.containingFile) }
+        ReadAction.run<Exception> {
+            NGramModelManager.getInstance(variable.project).forgetFileIfNeeded(runner, variable.containingFile)
+        }
         return runner
     }
 }

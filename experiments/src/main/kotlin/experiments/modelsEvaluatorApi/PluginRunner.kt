@@ -18,9 +18,11 @@ import java.nio.file.Paths
 import java.time.Duration
 import java.time.Instant
 import java.util.*
+import kotlin.random.Random
 import kotlin.system.exitProcess
 
 open class PluginRunner : ApplicationStarter {
+    open val numProjects = Int.MAX_VALUE
     open val resumeEvaluation: Boolean = true
     protected lateinit var dataset: File
     protected lateinit var saveDir: Path
@@ -52,7 +54,7 @@ open class PluginRunner : ApplicationStarter {
                     else -> throw AssertionError("Unknown language")
                 }
             )!!
-            ngramType = args[4]
+            ngramType = args.getOrElse(4) { "BiDirectional" }
             assert(ngramTypes.contains(ngramType))
             evaluate()
         } catch (e: Exception) {
@@ -80,7 +82,8 @@ open class PluginRunner : ApplicationStarter {
             file.isDirectory && !name.startsWith(".")
         } ?: return)
             .asSequence()
-            .shuffled()
+            .shuffled(Random(42))
+            .take(numProjects)
             .toList())
         for (projectDir in files) {
             val projectPath = dataset.resolve(projectDir)

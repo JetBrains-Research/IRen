@@ -4,7 +4,7 @@
       <option name="executionName" />
       <option name="externalProjectPath" value="$PROJECT_DIR$/experiments" />
       <option name="externalSystemIdString" value="GRADLE" />
-      <option name="scriptParameters" value="-PevaluatorToUse=&quot;modelsEvaluator&quot; -Pdataset=&quot;C:\Users\Igor.Davidenko\PycharmProjects\dataset\python&quot; -PsaveDir=&quot;C:\Users\Igor.Davidenko\PycharmProjects\compare_predictions\top100_predictions\python&quot; -Planguage=&quot;python&quot; -PngramType=&quot;BiDirectional&quot;" />
+      <option name="scriptParameters" value="-PevaluatorToUse=&quot;modelsEvaluator&quot; -Pdataset=&quot;$USER_HOME$/PycharmProjects/datasets/java-small&quot; -PsaveDir=&quot;$USER_HOME$/PycharmProjects/CodeGen/predictions_test&quot; -Planguage=&quot;java&quot; -PngramType=&quot;BiDirectional&quot;" />
       <option name="taskDescriptions">
         <list />
       </option>
