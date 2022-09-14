@@ -1,5 +1,6 @@
 package org.jetbrains.iren;
 
+import com.google.gson.Gson;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.BufferedReader;
@@ -15,7 +16,7 @@ public abstract class LexFileTest extends ParsingTest {
 
     @Override
     protected @NotNull String getTestFileNameResult() {
-        return "/lexed/" + getTestName(true) + ".txt";
+        return "/lexed/" + getTestName(true) + ".json";
     }
 
     @Override
@@ -27,7 +28,8 @@ public abstract class LexFileTest extends ParsingTest {
     @Override
     public Object parseResult(String resultFileName) {
         try (BufferedReader br = new BufferedReader(new FileReader(resultFileName))) {
-            return List.of(br.readLine().split(" "));
+            Gson gson = new Gson();
+            return List.of(gson.fromJson(br, String[].class));
         } catch (IOException e) {
             e.printStackTrace();
         }

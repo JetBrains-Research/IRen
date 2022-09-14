@@ -1,2 +1,0 @@
-public class MyClass { public int myField = 0 ; public void setField ( int field ) { this . myField = field ; } public static void main ( String [ ] args ) { MyClass instance = new MyClass ( ) ; instance . myField = 1 ; } }
-6 20 46

@@ -3,4 +3,5 @@ def sum41():
     for i in range(41):
         a<caret> += i
     if a == 820:
-        print("Rock!")
+        print("""Rock!
+        Yeah!""")

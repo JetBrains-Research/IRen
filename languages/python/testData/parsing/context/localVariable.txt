@@ -1,2 +1,0 @@
-def sum41 ( ) : a = 0 for i in range ( <num> ) : a += i if a == <num> : print ( <str> )
-5 16 20

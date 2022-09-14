@@ -2,6 +2,8 @@ package parsing.code
 
 class MyClass {
     var myField = 0
+    val myText = """Parsing test!!! Number: $myField
+                    ¯\_(ツ)_/¯"""
 
     fun setField(field: Int) {
         this.myF<caret>ield = field

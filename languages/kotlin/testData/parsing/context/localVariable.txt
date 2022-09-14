@@ -1,2 +1,0 @@
-fun main ( args : Array < String > ) { var i = <num> i = i + <num> }
-12 15 17

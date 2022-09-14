@@ -1,16 +1,18 @@
 # carets define highlighted elements
-MODEL_PATH<caret> = 239
+import numpy as np
+
+MODEL_PATH = 239
 
 
-def some_func(para<caret>m, <caret>n=5):
+def some_func(param, n=5):
     return n * 42
 
 
 class Foo:
-    def __init__(self, arg<caret>):
+    def __init__(self, arg):
         self.arg<caret> = arg
 
-    def print(self, smth<caret>):
+    def print(self, smth):
         print(f"Foo: {self.arg}, also {smth}")
 
     def getCount(self):
@@ -18,13 +20,15 @@ class Foo:
 
 
 class Boo(Foo):
-    def print(self, a<caret>):
+    def print(self, a):
+        for <caret>i in range(0, 239):
+            a += i
         print(a)
 
 
 if __name__ == "__main__":
-    foo<caret> = Foo(14)
+    foo = Foo(14)
     try:
-        count<caret> = foo.getCount()
+        count = foo.getCount()
     except Exception as _:
         pass

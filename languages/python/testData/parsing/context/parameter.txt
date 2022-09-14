@@ -1,2 +1,0 @@
-def generate_int ( self , seed : int ) : print ( f" <str> { seed } " ) random . seed ( seed ) return random . randint ( 0 , <num> )
-5 15 23

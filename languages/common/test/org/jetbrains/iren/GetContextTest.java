@@ -17,7 +17,7 @@ public abstract class GetContextTest extends ParsingTest {
 
     @Override
     protected @NotNull String getTestFileNameResult() {
-        return "/context/" + getTestName(true) + ".txt";
+        return "/context/" + getTestName(true) + ".json";
     }
 
     @Override
@@ -25,7 +25,7 @@ public abstract class GetContextTest extends ParsingTest {
         @NotNull LanguageSupporter supporter = getLanguageSupporter();
         final PsiElement variable = getTargetElementAtCaret();
         assertTrue(supporter.isVariableDeclarationOrReference(variable));
-        return supporter.getContext((PsiNameIdentifierOwner) variable, false, false, true);
+        return supporter.getContext((PsiNameIdentifierOwner) variable,false);
     }
 
     @Override

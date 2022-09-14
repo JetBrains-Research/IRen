@@ -7,7 +7,7 @@ import org.jetbrains.annotations.NotNull;
 public abstract class GetDOBFContextTest extends GetContextTest {
     @Override
     protected @NotNull String getTestFileNameResult() {
-        return "/dobfContext/" + getTestName(true) + ".txt";
+        return "/dobfContext/" + getTestName(true) + ".json";
     }
 
     @Override

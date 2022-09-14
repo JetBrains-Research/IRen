@@ -3,7 +3,8 @@ import random
 
 class Generator:
     def generate_int(self, seed: int):
-        print(f"Initialize seed with {see<caret>d}")
+        print(f"Initialize seed with {see<caret>d}",
+              "Bugaga")
         random.seed(seed)
         return random.randint(0, 42)
 

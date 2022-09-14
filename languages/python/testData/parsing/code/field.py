@@ -1,6 +1,9 @@
 class Foo:
     def __init__(self, v: int):
         self.my_field = v
+        ustr = u"\u2156"
+        rstr = r"\u2156"
+        s = "\x34\x63\u2435"
 
     def print_field(self):
         print(self.my_field)

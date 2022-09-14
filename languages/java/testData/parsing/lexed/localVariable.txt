@@ -1,1 +1,0 @@
-package testData . parsing . code ; public class Main { public static void main ( String [ ] args ) { int i = <num> ; i = i + <num> ; } }

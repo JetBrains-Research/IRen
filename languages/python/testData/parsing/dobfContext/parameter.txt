@@ -1,2 +1,0 @@
-import random NEW_LINE class Generator : NEW_LINE INDENT def generate_int ( self , seed : int ) : NEW_LINE INDENT print ( f" Initialize▁seed▁with▁ { seed } " ) NEW_LINE random . seed ( seed ) NEW_LINE return random . randint ( 0 , 42 ) NEW_LINE DEDENT DEDENT if __name__ == "__main__" : NEW_LINE INDENT g = Generator ( ) NEW_LINE print ( g . generate_int ( 42 ) ) NEW_LINE DEDENT
-13 25 34

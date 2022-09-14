@@ -50,7 +50,7 @@ public abstract class IRenInspectionTest extends LanguageSupporterTest {
             public void visitElement(@NotNull PsiElement element) {
                 if (element instanceof PsiNameIdentifierOwner &&
                         supporter.isVariableDeclaration(element) &&
-                        checker.isInconsistent((PsiNameIdentifierOwner) element)) {
+                        checker.isInconsistent((PsiNameIdentifierOwner) element, true)) {
                     results.add(element);
                 }
                 super.visitElement(element);
