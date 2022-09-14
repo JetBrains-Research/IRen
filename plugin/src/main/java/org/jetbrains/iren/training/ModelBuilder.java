@@ -174,7 +174,7 @@ public class ModelBuilder {
                     @Nullable PsiFile psiFile = ReadAction.compute(() -> PsiManager.getInstance(myProject).findFile(file));
                     progressBar.vocabularyTrainingStep(file);
                     if (psiFile == null) return;
-                    counter.putAll(ReadAction.compute(() -> mySupporter.lexPsiFile(psiFile)));
+                    counter.putAll(mySupporter.lexPsiFile(psiFile));
                     viewedFiles.add(file);
                 });
         files.clear();
@@ -286,7 +286,7 @@ public class ModelBuilder {
             Instant start = Instant.now();
             final Path modelPath = modelUtils.getPath(name);
             if (!modelPath.toFile().exists()) downloadAndExtractModel(indicator, name, modelUtils.modelsDirectory);
-            DOBFModelRunner modelRunner = new OrtModelRunner(modelPath);
+            DOBFModelRunner modelRunner = new OrtModelRunner(modelPath, 512, 1024);
             isSmthngLoaded = true;
             DOBFModelManager.Companion.getInstance().put(language, modelRunner);
             NotificationsUtil.notificationAboutModel(project,

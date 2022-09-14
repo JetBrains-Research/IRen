@@ -1,47 +1,28 @@
-package org.jetbrains.iren.search
+package org.jetbrains.iren.utils
 
-import kotlin.math.*
+import kotlin.math.min
 
-internal fun IntArray.toLongArray(): LongArray {
-    return LongArray(size) { this[it].toLong() }
-}
-
-internal fun Array<IntArray>.toLongArray(): LongArray {
-    val arr = LongArray(this.sumOf { it.size })
-    var off = 0
-    for (block in this) {
-        for (value in block) arr[off++] = value.toLong()
-    }
-    return arr
-}
-
-internal fun IntArray.sliceArray(indices: IntArray): IntArray {
-    val result = IntArray(indices.size)
-    var targetIndex = 0
-    for (sourceIndex in indices) {
-        result[targetIndex++] = this[sourceIndex]
-    }
-    return result
-}
-
-internal fun <T> List<T>.slice(indices: IntArray): List<T> {
-    val result = ArrayList<T>(indices.size)
-    for ((targetIndex, sourceIndex) in indices.withIndex()) {
-        result.add(targetIndex, this[sourceIndex])
-    }
-    return result
-}
-
-internal fun logSoftmax(scores: Array<FloatArray>): Array<FloatArray> {
-    val expScores = Array(scores.size) {
-        val curScores = scores[it]
-        FloatArray(curScores.size) { i -> exp(curScores[i]) }
+internal fun fastLogSoftmax(scores: Array<FloatArray>): Array<FloatArray> {
+    val expScores = Array(scores.size) { i ->
+        val curScores = scores[i]
+        val maxScore = curScores.maxOf { it }
+        FloatArray(curScores.size) { j -> fastExp((curScores[j] - maxScore).toDouble()).toFloat() }
     }
     for (score in expScores) {
         val scoresSum = score.sum()
-        for (i in score.indices) score[i] = ln(score[i] / scoresSum)
+        for (i in score.indices) score[i] = fastLn((score[i] / scoresSum).toDouble()).toFloat()
     }
     return expScores
+}
+
+fun fastExp(x: Double): Double {
+    val tmp = (1512775 * x + 1072632447).toLong()
+    return java.lang.Double.longBitsToDouble(tmp shl 32)
+}
+
+fun fastLn(x: Double): Double {
+    val tmp = (java.lang.Double.doubleToLongBits(x) shr 32).toDouble()
+    return (tmp - 1072632447) / 1512775
 }
 
 internal class MaxHeap(size: Int) {
@@ -148,41 +129,4 @@ internal fun topk1d(data: FloatArray, size: Int): Pair<FloatArray, IntArray> {
     return heap.sorted()
 }
 
-internal fun topk2d(data: Array<FloatArray>, size: Int, dim: Int = 0): Array<IntArray> {
-    if (data.isEmpty()) {
-        return emptyArray()
-    }
-
-    when (dim) {
-        0 -> {
-            val listSize = min(data.size, size)
-            val result = Array(listSize) { IntArray(data[0].size) }
-            for (j in data[0].indices) {
-                val slice = FloatArray(data.size) { data[it][j] }
-                val (_, topColumnIndices) = topk1d(slice, size)
-                for (i in topColumnIndices.indices) result[i][j] = topColumnIndices[i]
-            }
-            return result
-        }
-        1 -> {
-            return Array(data.size) { topk1d(data[it], size).second }
-        }
-        else -> {
-            throw IllegalArgumentException("Index should be 0 or 1")
-        }
-    }
-}
-
-infix fun Double.floorMod(other: Double) = ((this % other) + other) % other
-
 infix fun Int.floorMod(other: Int) = ((this % other) + other) % other
-
-infix fun Double.floorMod(other: Int) = ((this % other) + other) % other
-
-infix fun Int.floorMod(other: Double) = ((this % other) + other) % other
-
-fun Int.floorDiv(other: Int): Int {
-    var q = this / other
-    if (this xor other < 0 && q * other != this) q--
-    return q
-}

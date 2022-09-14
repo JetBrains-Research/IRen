@@ -23,8 +23,6 @@ import java.nio.charset.StandardCharsets
 import java.util.stream.Collectors
 
 object VocabularyRunner {
-
-    private val PRINT_FREQ = 1000000
     private var cutOff = 0
 
     /**
@@ -36,12 +34,12 @@ object VocabularyRunner {
      * @param cutOff The minimum number of counts of an event in order for it to be considered.
      */
     fun cutOff(cutOff: Int) {
-        var cutOff = cutOff
-        if (cutOff < 0) {
+        var co = cutOff
+        if (co < 0) {
             println("VocabularyBuilder.cutOff(): negative cut-off given, set to 0 (which includes every token)")
-            cutOff = 0
+            co = 0
         }
-        VocabularyRunner.cutOff = cutOff
+        VocabularyRunner.cutOff = co
     }
 
 

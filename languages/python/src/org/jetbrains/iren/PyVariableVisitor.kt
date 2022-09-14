@@ -6,10 +6,10 @@ import com.jetbrains.python.psi.PyNamedParameter
 import com.jetbrains.python.psi.PyTargetExpression
 import org.jetbrains.iren.utils.RenameUtils
 
-class PyVariableVisitor(private val holder: ProblemsHolder) : PyElementVisitor() {
+class PyVariableVisitor(private val holder: ProblemsHolder, private val isOnTheFly: Boolean) : PyElementVisitor() {
     override fun visitPyTargetExpression(node: PyTargetExpression) {
         try {
-            RenameUtils.visitVariable(node, holder)
+            RenameUtils.visitVariable(node, holder, isOnTheFly)
         } finally {
             super.visitPyTargetExpression(node)
         }
@@ -17,7 +17,7 @@ class PyVariableVisitor(private val holder: ProblemsHolder) : PyElementVisitor()
 
     override fun visitPyNamedParameter(node: PyNamedParameter) {
         try {
-            RenameUtils.visitVariable(node, holder)
+            RenameUtils.visitVariable(node, holder, isOnTheFly)
         } finally {
             super.visitPyNamedParameter(node)
         }

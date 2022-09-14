@@ -1,152 +1,130 @@
 package org.jetbrains.iren.search
 
-import ai.onnxruntime.OnnxTensor
-import ai.onnxruntime.OrtUtil
-import com.intellij.openapi.progress.ProcessCanceledException
-import com.intellij.openapi.progress.ProgressManager
 import org.jetbrains.iren.EOS_TOKEN
+import org.jetbrains.iren.SEP_TOKEN
 import org.jetbrains.iren.VAR_TOKEN
 import org.jetbrains.iren.models.EncoderOutput
 import org.jetbrains.iren.models.OrtModel
 import org.jetbrains.iren.storages.Vocabulary
-import java.nio.FloatBuffer
-import java.nio.LongBuffer
-import kotlin.jvm.Throws
+import org.jetbrains.iren.utils.*
+import java.util.*
 
-internal class BeamSearchGenerator(
+class BeamSearchGenerator(
     val model: OrtModel,
     val vocab: Vocabulary,
     val beamSize: Int = 10,
     val maxLength: Int = 10,
-    val earlyStoppingSize: Int = 20
+    val earlyStopping: Boolean = true,
+    val lengthPenalty: Float = 1.0f,
+    val repetitionPenalty: Float = 4.0f
 ) {
     private val eosIdx = vocab.toIndex(EOS_TOKEN)
+    private val sepIdx = vocab.toIndex(SEP_TOKEN)
     private val decoderInput = vocab.toIndices(listOf(EOS_TOKEN, VAR_TOKEN))
-    private var encoderOutput: EncoderOutput? = null
-    private var eachStepLogProbs: List<MutableList<Float>> = listOf(ArrayList())
-    private var nextLogProbs: Array<FloatArray>? = null
+    val nWords = vocab.size()
 
-    private fun initLogProbs(context: List<Int>) {
-        encoderOutput = model.encode(listOf(context))
+    fun generate(idxs: List<Int>): List<Hypothesis> {
+        val encoderOutput = model.encode(listOf(idxs))
 
-        val logProbs = model.decode(listOf(decoderInput), encoderOutput!!)
-        val scoresByBatch = tensorToArrays2D(logProbs)
-        nextLogProbs = logSoftmax(scoresByBatch)
+        val search = BeamHypothesis(beamSize, maxLength, lengthPenalty, earlyStopping)
+        var curLen = 0
 
-        prepareEncoderOutput()
-    }
+        val nextBeam = mutableListOf(decoderInput)
+        val beamScores = mutableListOf(.0f)
+        var srcEmbeddings = encoderOutput.repeat(nextBeam.size)
 
-    private fun tensorToArrays2D(logProbs: OnnxTensor): Array<FloatArray> {
-        val logProbArray = logProbs.floatBuffer.array()
-        val shape = logProbs.info.shape
-        return Array(shape[0].toInt()) {
-            logProbArray.sliceArray(it * shape[1].toInt() until (it + 1) * shape[1].toInt())
+        while (curLen < maxLength) {
+            if (srcEmbeddings.logProbs.info.shape[0].toInt() != nextBeam.size)
+                srcEmbeddings = encoderOutput.repeat(nextBeam.size)
+            val (nextScores, nextWords) = generateWordsWithScores(nextBeam, beamScores, srcEmbeddings)
+            if (search.isDone(nextScores.maxOf { it })) break
+            val nextSentBeam = prepareNextBeam(nextScores, nextWords, curLen, search, nextBeam)
+            if (nextSentBeam.size == 0) break // Either next tokens are EOS or SEP, or maxLength is reached
+            updateBeam(nextBeam, beamScores, nextSentBeam)
+            curLen += 1
+            if (isCancelled()) break
         }
+        return search.hyps.sortedByDescending { it.score }
     }
 
-    private fun prepareEncoderOutput() {
-        encoderOutput =
-            EncoderOutput(encoderOutput!!.logProbs.repeat(beamSize), encoderOutput!!.lengths.repeat(beamSize))
-    }
-
-    /**
-     * Repeat tensor on first dimension [n] times. Works with long and float values.
-     **/
-    private fun OnnxTensor.repeat(n: Int): OnnxTensor {
-        val shape = this.info.shape
-        val newShape = shape.copyOf()
-        newShape[0] = newShape[0] * n
-        this.floatBuffer?.let { buffer ->
-            val data = buffer.array()
-            buffer.limit()
-            return OnnxTensor.createTensor(
-                model.env,
-                FloatBuffer.wrap(FloatArray(data.size * n) { data[it.floorMod(data.size)] }), newShape
-            )
+    private fun generateWordsWithScores(
+        nextBeam: MutableList<List<Int>>,
+        beamScores: MutableList<Float>,
+        srcEmbeddings: EncoderOutput
+    ): Pair<FloatArray, IntArray> {
+        val tensor = model.decode(nextBeam, srcEmbeddings)
+        val arrays = tensorToArrays2D(tensor)
+        //            Comparison with default: 0.07% F1 worse, 7 ms better
+        val scores = fastLogSoftmax(arrays)
+        val wordsToPessimize = getWordsToPessimize(nextBeam)
+        val scoresFlatten = FloatArray(scores.size * nWords) {
+            val beamIdx = it / nWords
+            val wordIdx = it % nWords
+            beamScores[beamIdx] + pessimizeScore(wordIdx, scores[beamIdx][wordIdx], wordsToPessimize[beamIdx])
         }
-        val data = this.longBuffer.array()
-        return OnnxTensor.createTensor(
-            model.env,
-            LongBuffer.wrap(LongArray(data.size * n) { data[it.floorMod(data.size)] }),
-            newShape
-        )
+        return topk1d(scoresFlatten, 2 * beamSize)
     }
 
-    private fun sortState(sortMask: IntArray) {
-        eachStepLogProbs = sortMask.map { ArrayList(eachStepLogProbs[it]) }
-    }
-
-    private fun updateState(sortMask: IntArray, newTokensIds: IntArray) {
-        sortState(sortMask)
-
-        sortMask.zip(newTokensIds).forEachIndexed { index, (batchInd, tokenInd) ->
-            eachStepLogProbs[index].add(nextLogProbs!![batchInd][tokenInd])
-        }
-    }
-
-    private fun getLogProbs(search: BeamSearch) {
-        val logProbs = model.decode(search.hypotheses(), encoderOutput!!)
-        val scoresByBatch = tensorToArrays2D(logProbs)
-        nextLogProbs = logSoftmax(scoresByBatch)
-    }
-
-    private fun resetState() {
-        encoderOutput = null
-    }
-
-    private fun isEndOfWords(): List<Boolean> {
-        val endOfWords = ArrayList<Boolean>()
-        val tokensIds = topk2d(nextLogProbs!!, 1, dim = 1)  // both (batch_size * num_beams, 1)
-        tokensIds.forEach {
-            endOfWords.add(eosIdx == it[0]) // Check if token is eos
-        }
-
-        return endOfWords
-    }
-
-    private fun currentHypothesis(
-        search: Search,
-        mask: List<Boolean> = (0 until search.hypotheses().size).map { true }
-    ): List<GenerationInfo> {
-        return search.hypotheses().filterIndexed { index, _ -> mask[index] }.zip(eachStepLogProbs)
-            .map { (hyp, probs) -> GenerationInfo(probs, hyp) }
-    }
-
-    val myRepetitionPenalty = 8f
-
-    fun generate(context: List<Int>): List<List<GenerationInfo>> {
-        val search = BeamSearch(vocab, beamSize, decoderInput, myRepetitionPenalty)
-
-        initLogProbs(context)
-        sortState(IntArray(search.batchSize))
-
-        val result = ArrayList<List<GenerationInfo>>()
-        if (isCancelled()) return result
-        var candidatesCount = 0
-        for (i in 0 until maxLength) {
-            if (candidatesCount > earlyStoppingSize) break
-            val stepResult = search.step(nextLogProbs!!)
-            updateState(stepResult.sortMask, stepResult.newTokens)
-
-            if (i < maxLength - 1) {
-                getLogProbs(search)
+    private fun prepareNextBeam(
+        nextScores: FloatArray,
+        nextWords: IntArray,
+        curLen: Int,
+        search: BeamHypothesis,
+        nextBeam: MutableList<List<Int>>
+    ): MutableList<Pair<List<Int>, Float>> {
+        val nextSentBeam = mutableListOf<Pair<List<Int>, Float>>()
+        for (i in nextScores.indices) {
+            val nextWord = nextWords[i]
+            val beamIdx = nextWord / nWords
+            val wordIdx = nextWord % nWords
+            if (wordIdx == eosIdx || curLen + 1 == maxLength) {
+                search.add(nextBeam[beamIdx], nextScores[i])
+            } else if (wordIdx != sepIdx) {
+                nextSentBeam.add(nextBeam[beamIdx].append(wordIdx) to nextScores[i])
             }
-            val mask = isEndOfWords()
-            candidatesCount += mask.count { it }
-            result.add(currentHypothesis(search, mask))
-            if (isCancelled()) return result
+            if (nextSentBeam.size == beamSize) break
         }
-
-        resetState()
-        return result
+        return nextSentBeam
     }
 
-    private fun isCancelled() : Boolean{
-        return try {
-            ProgressManager.checkCanceled()
-            false
-        } catch (_: ProcessCanceledException) {
-            true
+    private fun updateBeam(
+        nextBeam: MutableList<List<Int>>,
+        beamScores: MutableList<Float>,
+        nextSentBeam: MutableList<Pair<List<Int>, Float>>
+    ) {
+        nextBeam.clear()
+        beamScores.clear()
+        for ((sentence, score) in nextSentBeam) {
+            nextBeam.add(sentence)
+            beamScores.add(score)
         }
     }
+
+    private fun pessimizeScore(wordIdx: Int, score: Float, idxsToPessimize: Set<Int>) =
+        if (repetitionPenalty != 1f && idxsToPessimize.contains(wordIdx))
+            score * if (score < 0) repetitionPenalty else 1 / repetitionPenalty
+        else score
+
+    private fun getWordsToPessimize(beam: List<List<Int>>): List<Set<Int>> {
+        return beam.map { getTokensWithDiffCasing(it) }
+    }
+
+    private fun getTokensWithDiffCasing(hyp: List<Int>) = hyp.subList(2, hyp.size).flatMap { tokenIdx ->
+        val token = vocab.toWord(tokenIdx)
+        val tokens1 = getDiffCasing(token)
+        val tokens2 = if (token.endsWith("@@")) tokens1.map { it.replace("@@", "") } else tokens1.map { "$it@@" }
+        vocab.toIndices(tokens1 + tokens2)
+    }.toSet()
+
+    private fun getDiffCasing(token: String) = listOf(token,
+        token.uppercase(Locale.getDefault()),
+        token.lowercase(Locale.getDefault()),
+        token.replaceFirstChar { ch -> ch.uppercase() },
+        token.replaceFirstChar { ch -> ch.lowercase() }
+    )
+
+    fun EncoderOutput.repeat(size: Int) = EncoderOutput(
+        this.logProbs.repeat(size, model.env),
+        this.lengths.repeat(size, model.env)
+    )
 }

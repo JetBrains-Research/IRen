@@ -14,7 +14,6 @@ import java.nio.file.Path
 import java.util.zip.ZipEntry
 import java.util.zip.ZipInputStream
 
-// TODO: make it better somehow
 val INTELLIJ_MODEL_URL =
     "https://iren-intellij-model.s3.eu-north-1.amazonaws.com/intellij-${ModelUtils().version}.zip"
 val DOBF_MODEL_URL = "https://iren-dobf-models.s3.eu-north-1.amazonaws.com/%s.zip"
@@ -63,8 +62,8 @@ private fun getModelUrl(modelName: String) =
 
 @Throws(IOException::class)
 private fun unzip(modelZipPath: Path) {
-    val zis = ZipInputStream(FileInputStream(modelZipPath.toFile()))
-    var zipEntry: ZipEntry? = zis.nextEntry
+    val zipIn = ZipInputStream(FileInputStream(modelZipPath.toFile()))
+    var zipEntry: ZipEntry? = zipIn.nextEntry
     val buffer = ByteArray(1024)
     while (zipEntry != null) {
         val newFile = newFile(modelZipPath.parent.toFile(), zipEntry)
@@ -82,15 +81,15 @@ private fun unzip(modelZipPath: Path) {
             // write file content
             val fos = FileOutputStream(newFile)
             var len: Int
-            while (zis.read(buffer).also { len = it } > 0) {
+            while (zipIn.read(buffer).also { len = it } > 0) {
                 fos.write(buffer, 0, len)
             }
             fos.close()
         }
-        zipEntry = zis.nextEntry
+        zipEntry = zipIn.nextEntry
     }
-    zis.closeEntry()
-    zis.close()
+    zipIn.closeEntry()
+    zipIn.close()
 }
 
 @Throws(IOException::class)

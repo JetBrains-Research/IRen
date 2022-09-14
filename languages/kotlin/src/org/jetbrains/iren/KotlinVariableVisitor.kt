@@ -6,10 +6,10 @@ import org.jetbrains.kotlin.psi.KtParameter
 import org.jetbrains.kotlin.psi.KtProperty
 import org.jetbrains.kotlin.psi.KtVisitorVoid
 
-class KotlinVariableVisitor(private val holder: ProblemsHolder) : KtVisitorVoid() {
+class KotlinVariableVisitor(private val holder: ProblemsHolder, private val isOnTheFly: Boolean) : KtVisitorVoid() {
     override fun visitProperty(property: KtProperty) {
         try {
-            RenameUtils.visitVariable(property, holder)
+            RenameUtils.visitVariable(property, holder, isOnTheFly)
         } finally {
             super.visitProperty(property)
         }
@@ -17,7 +17,7 @@ class KotlinVariableVisitor(private val holder: ProblemsHolder) : KtVisitorVoid(
 
     override fun visitParameter(parameter: KtParameter) {
         try {
-            RenameUtils.visitVariable(parameter, holder)
+            RenameUtils.visitVariable(parameter, holder, isOnTheFly)
         } finally {
             super.visitParameter(parameter)
         }

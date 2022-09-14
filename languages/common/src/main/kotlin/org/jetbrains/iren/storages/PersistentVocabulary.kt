@@ -2,29 +2,38 @@ package org.jetbrains.iren.storages
 
 import com.intellij.openapi.util.ShutDownTracker
 import com.intellij.util.io.PersistentStringEnumerator
+import com.intellij.util.io.exists
+import com.intellij.util.io.size
 import it.unimi.dsi.fastutil.ints.Int2IntOpenHashMap
 import java.io.*
 import java.nio.file.Path
-import com.intellij.util.io.exists
-import com.intellij.util.io.size
 import kotlin.io.path.readLines
 
-class PersistentVocabulary(val vocabularyPath: Path) : Vocabulary() {
+class PersistentVocabulary(
+    val vocabularyPath: Path,
+    val unkToken: String = unknownCharacter
+) : Vocabulary() {
     val enumerator: PersistentStringEnumerator = PersistentStringEnumerator(vocabularyPath, true)
     val enum2idx: Int2IntOpenHashMap
     val idx2enum: IntArray
+    val unkIdx: Int
 
     init {
         idx2enum = loadIdx2enum()
         enum2idx = idx2enum.mapIndexed { idx, enum -> enum to idx }.toMap(Int2IntOpenHashMap())
+        unkIdx = enum2idx[enumerator.tryEnumerate(unkToken)]
         ShutDownTracker.getInstance().registerShutdownTask(enumerator::close)
     }
 
     override fun size() = enum2idx.size
 
-    override fun toIndex(token: String) = enum2idx[enumerator.tryEnumerate(token)]
+    override fun toIndex(token: String) = try {
+        enum2idx[enumerator.tryEnumerate(token)]
+    } catch (e: IOException) {
+        unkIdx
+    }
 
-    override fun toWord(index: Int) = enumerator.valueOf(idx2enum[index]) ?: unknownCharacter
+    override fun toWord(index: Int) = enumerator.valueOf(idx2enum[index]) ?: unkToken
 
     override fun store(token: String, count: Int) = -1
 
@@ -49,10 +58,10 @@ class PersistentVocabulary(val vocabularyPath: Path) : Vocabulary() {
             save(vocabulary.words, path)
         }
 
-        fun readFromPath(path: Path, vocabularyPath: Path = path.parent.resolve("vocabulary")): PersistentVocabulary {
-            if (vocabularyPath.exists() && vocabularyPath.size() > 0) return PersistentVocabulary(vocabularyPath)
+        fun readFromFile(path: Path, vocabularyPath: Path = path.parent.resolve("vocabulary"), unkToken: String = unknownCharacter): PersistentVocabulary {
+            if (vocabularyPath.exists() && vocabularyPath.size() > 0) return PersistentVocabulary(vocabularyPath, unkToken)
             save(path.readLines(), vocabularyPath)
-            return PersistentVocabulary(vocabularyPath)
+            return PersistentVocabulary(vocabularyPath, unkToken)
         }
 
         private fun save(words: List<String>, path: Path) {

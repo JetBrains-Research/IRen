@@ -23,8 +23,8 @@ public abstract class NGramVariableNamesContributor implements VariableNamesCont
     }
 
     @Override
-    public synchronized int contribute(@NotNull PsiNameIdentifierOwner variable,
-                                       @NotNull List<VarNamePrediction> predictionList) {
+    public synchronized double contribute(@NotNull PsiNameIdentifierOwner variable,
+                                          @NotNull List<VarNamePrediction> predictionList) {
         Project project = ReadAction.compute(variable::getProject);
         ModelRunner modelRunner = getModelRunnerToContribute(project, variable);
         if (modelRunner == null || notSupported(variable)) {
@@ -39,11 +39,11 @@ public abstract class NGramVariableNamesContributor implements VariableNamesCont
     }
 
     @Override
-    public synchronized @NotNull Pair<Double, Integer> getProbability(@NotNull PsiNameIdentifierOwner variable) {
+    public synchronized @NotNull Pair<Double, Double> getProbability(@NotNull PsiNameIdentifierOwner variable) {
         Project project = ReadAction.compute(variable::getProject);
         ModelRunner modelRunner = getModelRunnerToContribute(project, variable);
         if (modelRunner == null || notSupported(variable)) {
-            return new Pair<>(0.0, 0);
+            return new Pair<>(.0, .0);
         }
         if (forgetFile()) {
             NGramModelManager.getInstance(project)

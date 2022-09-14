@@ -3,7 +3,6 @@ package org.jetbrains.iren.utils;
 import com.intellij.util.text.NameUtilCore;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.jetbrains.annotations.Unmodifiable;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -18,28 +17,10 @@ public class StringUtils {
     public static final String INDENT_TOKEN = "INDENT";
     public static final String DEDENT_TOKEN = "DEDENT";
     public static final String SPACE_TOKEN = "▁";
+    public static final String STR_NEW_LINE_TOKEN = "STRNEWLINE";
+    public static final String STR_TAB_TOKEN = "TABSYMBOL";
 
-    public static @NotNull Collection<String> subtokenSplit(@NotNull String token) {
-        return Arrays.asList(token.split("(?<!(^|[A-Z]))(?=[A-Z])|(?<!^)(?=[A-Z][a-z])|_"));
-    }
-
-    public static @NotNull @Unmodifiable Collection<String> splitVariableType(@NotNull String type) {
-        return List.of(type.replaceAll("(?<=\\W)(?=\\W)|(?<=\\w)(?=\\W)|(?<=\\W)(?=\\w)", " ").split("\\s+"));
-    }
-
-    public static boolean firstIsSuffixOfSecond(@Nullable String name1, @Nullable String name2) {
-        if (name1 == null || name2 == null) return false;
-        final List<String> tokens1 = toLowerCasedTokens(name1);
-        final List<String> tokens2 = toLowerCasedTokens(name2);
-        final int size1 = tokens1.size();
-        final int size2 = tokens2.size();
-        for (int i = 1; i <= size1; i++) {
-            if (size2 < i || !tokens1.get(size1 - i).equals(tokens2.get(size2 - i))) {
-                return false;
-            }
-        }
-        return true;
-    }
+    public static final Set<String> INDENT_TOKENS = Set.of(NEW_LINE_TOKEN, INDENT_TOKEN, DEDENT_TOKEN);
 
     @NotNull
     public static List<String> toLowerCasedTokens(String name) {
@@ -63,34 +44,5 @@ public class StringUtils {
     public static boolean areSubtokensMatch(@Nullable String name, @Nullable String suggestion) {
         return name != null && suggestion != null &&
                 (name.length() < 2 ? suggestion.equals(name) : checkAnySubtokensMatch(suggestion, name));
-    }
-
-    /**
-     * Copied from {@link String#contains}
-     */
-    private static boolean checkSubtokensMatch(String suggestion, String name) {
-        @NotNull List<String> suggestionTokens = toLowerCasedTokens(suggestion);
-        @NotNull List<String> nameTokens = toLowerCasedTokens(name);
-
-        if (nameTokens.isEmpty()) return false;
-        String first = nameTokens.get(0);
-        int max = (suggestionTokens.size() - nameTokens.size());
-        for (int i = 0; i <= max; i++) {
-            // Look for first token.
-            if (!Objects.equals(suggestionTokens.get(i), first)) {
-                while (++i <= max && !Objects.equals(suggestionTokens.get(i), first)) ;
-            }
-            // Found the first token, now look at the rest of the suggestionTokens
-            if (i <= max) {
-                int j = i + 1;
-                int end = j + nameTokens.size() - 1;
-                for (int k = 1; j < end && Objects.equals(suggestionTokens.get(j), nameTokens.get(k)); j++, k++) ;
-                if (j == end) {
-                    // Found whole tokens.
-                    return true;
-                }
-            }
-        }
-        return false;
     }
 }

@@ -8,10 +8,12 @@ import java.nio.file.Path
 
 const val EOS_TOKEN = "</s>"
 const val VAR_TOKEN = "VAR_0"
+const val UNK_TOKEN = "<unk>"
+const val SEP_TOKEN = "|"
 
 class DOBFContextParser(modelDir: Path, private val maxSequenceLength: Int = 512) {
     val bpe = FastBPEAnalyzer(modelDir.resolve("codes").toFile())
-    val vocab = PersistentVocabulary.readFromPath(modelDir.resolve("vocab.txt"))
+    val vocab = PersistentVocabulary.readFromFile(modelDir.resolve("vocab.txt"), unkToken = UNK_TOKEN)
     val eosIdx = vocab.toIndex(EOS_TOKEN)
 
     fun getContext(variable: PsiNameIdentifierOwner): List<Int> {
@@ -31,10 +33,9 @@ class DOBFContextParser(modelDir: Path, private val maxSequenceLength: Int = 512
         val toBpe = ArrayList<String>()
         val tokensLists = context.splitByUsages()
         for (tokensList in tokensLists) {
-            toBpe.add(bpe.applyBpe(java.lang.String.join(" ", tokensList)))
+            toBpe.add(bpe.applyBpe(tokensList.joinToString(" ")))
         }
-        val bpeTokens = java.lang.String.join(" $VAR_TOKEN ", toBpe)
-        return bpeTokens
+        return toBpe.joinToString(" $VAR_TOKEN ")
     }
 
     private fun getIndices(bpeTokens: String): List<Int> {
@@ -57,7 +58,10 @@ class DOBFContextParser(modelDir: Path, private val maxSequenceLength: Int = 512
             val meanIdx = (minIdx + maxIdx) / 2
             meanIdx - maxSequenceLength / 2 to meanIdx + maxSequenceLength / 2
         }
-        return idxs.subList(maxOf(0, left), minOf(idxs.size, right) - 1)
+        val result = idxs.subList(maxOf(0, left), minOf(idxs.size, right)).toMutableList()
+        result[0] = eosIdx
+        result[result.size - 1] = eosIdx
+        return result
     }
 
     private fun getMinMaxIdxsOfVar(idxs: List<Int>): Pair<Int, Int> {

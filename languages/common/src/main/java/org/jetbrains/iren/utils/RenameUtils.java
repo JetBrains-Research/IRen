@@ -25,14 +25,15 @@ public class RenameUtils {
     /**
      * Register a problem if IRen considers that variable name is inconsistent.
      *
-     * @param variable to be checked
-     * @param holder   registers the problem
+     * @param variable   to be checked
+     * @param holder     registers the problem
+     * @param isOnTheFly true if inspection was run in non-batch mode
      */
-    public static void visitVariable(PsiNameIdentifierOwner variable, ProblemsHolder holder) {
+    public static void visitVariable(PsiNameIdentifierOwner variable, ProblemsHolder holder, boolean isOnTheFly) {
         @NotNull Project project = holder.getProject();
         @Nullable PsiElement identifier = variable.getNameIdentifier();
         if (identifier == null) return;
-        if (ConsistencyChecker.getInstance(project).isInconsistent(variable)) {
+        if (ConsistencyChecker.getInstance(project).isInconsistent(variable, isOnTheFly)) {
             holder.registerProblem(identifier,
                     RenameBundle.message("inspection.description.template"),
                     ProblemHighlightType.WEAK_WARNING,

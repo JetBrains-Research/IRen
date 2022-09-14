@@ -5,7 +5,10 @@ import com.intellij.lang.Language;
 import com.intellij.openapi.extensions.ExtensionPointName;
 import com.intellij.openapi.fileTypes.FileType;
 import com.intellij.openapi.project.Project;
-import com.intellij.psi.*;
+import com.intellij.psi.PsiElement;
+import com.intellij.psi.PsiElementVisitor;
+import com.intellij.psi.PsiFile;
+import com.intellij.psi.PsiNameIdentifierOwner;
 import com.intellij.psi.search.FileTypeIndex;
 import com.intellij.psi.search.GlobalSearchScope;
 import com.intellij.psi.tree.IElementType;
@@ -57,16 +60,12 @@ public interface LanguageSupporter {
 
     /**
      * @param variable        for which to find a context.
-     * @param forWholeFile    parse the whole file.
      * @param changeToUnknown if true, {@link Context} instance doesn't contain information
      *                        about ground truth name of the {@code variable}.
-     * @param processTokens   replace string literals, numbers, etc.
      * @return context of the variable.
      */
     @Nullable Context<String> getContext(@NotNull PsiNameIdentifierOwner variable,
-                                         boolean forWholeFile,
-                                         boolean changeToUnknown,
-                                         boolean processTokens);
+                                         boolean changeToUnknown);
 
     @Nullable Context<String> getDOBFContext(@NotNull PsiNameIdentifierOwner variable);
 
@@ -90,12 +89,12 @@ public interface LanguageSupporter {
 
     void printAvgTime();
 
-    static @NotNull PsiElementVisitor getVariableVisitor(@NotNull Language language, @NotNull ProblemsHolder holder) {
+    static @NotNull PsiElementVisitor getVariableVisitor(@NotNull Language language, @NotNull ProblemsHolder holder, boolean isOnTheFly) {
         LanguageSupporter supporter = getInstance(language);
-        return supporter == null ? PsiElementVisitor.EMPTY_VISITOR : supporter.createVariableVisitor(holder);
+        return supporter == null ? PsiElementVisitor.EMPTY_VISITOR : supporter.createVariableVisitor(holder, isOnTheFly);
     }
 
-    @NotNull PsiElementVisitor createVariableVisitor(@NotNull ProblemsHolder holder);
+    @NotNull PsiElementVisitor createVariableVisitor(@NotNull ProblemsHolder holder, boolean isOnTheFly);
 
     boolean isStopName(@NotNull String name);
 

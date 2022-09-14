@@ -9,8 +9,8 @@ import kotlin.Pair;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.iren.LanguageSupporter;
 import org.jetbrains.iren.VariableNamesContributor;
-import org.jetbrains.iren.contributors.ProjectVariableNamesContributor;
 import org.jetbrains.iren.config.ModelType;
+import org.jetbrains.iren.contributors.ProjectVariableNamesContributor;
 import org.jetbrains.iren.storages.Context;
 import org.jetbrains.iren.storages.VarNamePrediction;
 import org.jetbrains.iren.utils.NotificationsUtil;
@@ -61,7 +61,7 @@ public class IRenSuggestingServiceImpl implements IRenSuggestingService {
         double nameProbability = 0.0;
         int prioritiesSum = 0;
         for (final VariableNamesContributor modelContributor : VariableNamesContributor.EP_NAME.getExtensions()) {
-            Pair<Double, Integer> probPriority = modelContributor.getProbability(variable);
+            @NotNull Pair<Double, Double> probPriority = modelContributor.getProbability(variable);
             nameProbability += probPriority.getFirst() * probPriority.getSecond();
             prioritiesSum += probPriority.getSecond();
         }

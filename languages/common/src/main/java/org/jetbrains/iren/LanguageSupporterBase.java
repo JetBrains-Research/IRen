@@ -49,13 +49,11 @@ public abstract class LanguageSupporterBase implements LanguageSupporter {
 
     @Override
     public @Nullable Context<String> getContext(@NotNull PsiNameIdentifierOwner variable,
-                                                boolean forWholeFile,
-                                                boolean changeToUnknown,
-                                                boolean processTokens) {
+                                                boolean changeToUnknown) {
         return ReadAction.compute(() -> {
             PsiFile file = variable.getContainingFile();
             Collection<PsiElement> usages = findUsages(variable, file);
-            PsiElement root = forWholeFile ? file : findRoot(variable, usages);
+            PsiElement root = findRoot(variable, usages);
             if (root == null) return null;
             List<Integer> varIdxs = new ArrayList<>();
             List<PsiElement> elements = getLeafElementsFromRoot(root);
@@ -64,7 +62,7 @@ public abstract class LanguageSupporterBase implements LanguageSupporter {
                 if (usages.contains(element)) {
                     varIdxs.add(tokens.size());
                 }
-                tokens.add(processTokens ? processToken(element) : element.getText());
+                tokens.add(processToken(element));
             }
             Context<String> result = new Context<>(tokens, varIdxs);
             return changeToUnknown ? result.with(Vocabulary.unknownCharacter) : result;
@@ -73,8 +71,34 @@ public abstract class LanguageSupporterBase implements LanguageSupporter {
 
     @Override
     public @Nullable Context<String> getDOBFContext(@NotNull PsiNameIdentifierOwner variable) {
-        return getContext(variable, true, false, false);
+        return ReadAction.compute(() -> {
+            PsiFile file = variable.getContainingFile();
+            Collection<PsiElement> usages = findUsages(variable, file);
+            if (file == null) return null;
+            List<Integer> varIdxs = new ArrayList<>();
+            List<PsiElement> elements = getLeafElementsFromRoot(file);
+            List<String> tokens = new ArrayList<>();
+            for (PsiElement element : elements) {
+                if (usages.contains(element)) {
+                    varIdxs.add(tokens.size());
+                }
+                tokens.add(processDOBFToken(element));
+            }
+            return new Context<>(tokens, varIdxs);
+        });
     }
+
+    protected String processDOBFToken(PsiElement element) {
+        String text = element.getText();
+        if (isStringElement(element)) {
+            return getTokenizer().process(text);
+        }
+        return text;
+    }
+
+    protected abstract DOBFTokenizer getTokenizer();
+
+    protected abstract boolean isStringElement(PsiElement element);
 
     private @NotNull List<PsiElement> getLeafElementsFromRoot(PsiElement root) {
         return SyntaxTraverser.psiTraverser()
@@ -155,20 +179,26 @@ public abstract class LanguageSupporterBase implements LanguageSupporter {
     }
 
     public @NotNull List<String> lexPsiFile(@NotNull PsiFile file, @Nullable Consumer<PsiElement> consumer) {
-        return ReadAction.compute(() -> SyntaxTraverser.psiTraverser()
-                .withRoot(file)
-                .onRange(new TextRange(0, 64 * 1024)) // first 128 KB of chars
-                .forceIgnore(node -> node instanceof PsiComment)
-                .filter(this::shouldLex)
-                .toList()
-                .stream()
-                .peek(element -> {
-                    if (consumer != null) {
-                        consumer.accept(element);
-                    }
-                })
-                .map(this::processToken)
-                .collect(Collectors.toList()));
+        return ReadAction.compute(() -> {
+            try {
+                return SyntaxTraverser.psiTraverser()
+                        .withRoot(file)
+                        .onRange(new TextRange(0, 64 * 1024)) // first 128 KB of chars
+                        .forceIgnore(node -> node instanceof PsiComment)
+                        .filter(this::shouldLex)
+                        .toList()
+                        .stream()
+                        .peek(element -> {
+                            if (consumer != null) {
+                                consumer.accept(element);
+                            }
+                        })
+                        .map(this::processToken)
+                        .collect(Collectors.toList());
+            } catch (Exception ignore) {
+                return List.of();
+            }
+        });
     }
 
     @Override
@@ -246,14 +276,6 @@ public abstract class LanguageSupporterBase implements LanguageSupporter {
      */
     public @Nullable NameSuggestionProvider getNameSuggestionProvider() {
         return null;
-    }
-
-    public @NotNull List<PsiElement> findVarIdentifiersUnderNode(@Nullable PsiElement node) {
-        return SyntaxTraverser.psiTraverser()
-                .withRoot(node)
-                .forceIgnore(n -> n instanceof PsiComment)
-                .filter(this::isVariableDeclarationOrReference)
-                .toList();
     }
 
     /**

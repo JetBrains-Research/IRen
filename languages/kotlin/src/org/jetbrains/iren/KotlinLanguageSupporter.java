@@ -40,6 +40,7 @@ public class KotlinLanguageSupporter extends LanguageSupporterBase {
     public static final TokenSet NumberTypes = TokenSet.create(KtTokens.FLOAT_LITERAL, KtTokens.INTEGER_LITERAL);
     private static final Collection<Class<? extends PsiNameIdentifierOwner>> variableClasses = List.of(KtProperty.class, KtParameter.class);
     private static final Collection<String> stopNames = List.of("it", "_");
+    private final DOBFTokenizer tokenizer = new DOBFTokenizer();
 
     @Override
     public @NotNull Language getLanguage() {
@@ -102,8 +103,8 @@ public class KotlinLanguageSupporter extends LanguageSupporterBase {
     }
 
     @Override
-    public @NotNull PsiElementVisitor createVariableVisitor(@NotNull ProblemsHolder holder) {
-        return new KotlinVariableVisitor(holder);
+    public @NotNull PsiElementVisitor createVariableVisitor(@NotNull ProblemsHolder holder, boolean isOnTheFly) {
+        return new KotlinVariableVisitor(holder, isOnTheFly);
     }
 
     @Override
@@ -173,6 +174,16 @@ public class KotlinLanguageSupporter extends LanguageSupporterBase {
     @Override
     public boolean isColliding(@NotNull PsiElement element, @NotNull String newName) {
         return super.isColliding(element, newName) || ReadAction.compute(() -> isCollidingWithParameter(element, newName));
+    }
+
+    @Override
+    protected DOBFTokenizer getTokenizer() {
+        return tokenizer;
+    }
+
+    @Override
+    protected boolean isStringElement(PsiElement element) {
+        return element.getNode().getElementType() == KtTokens.REGULAR_STRING_PART;
     }
 
     /**

@@ -14,7 +14,7 @@ class VariableNamesInspection : LocalInspectionTool() {
         val project = holder.project
         return if (ApplicationManager.getApplication().isUnitTestMode ||
             NGramModelsUsabilityService.getInstance(project).isUsable(ModelUtils().getName(project, language))
-        ) LanguageSupporter.getVariableVisitor(language, holder) else PsiElementVisitor.EMPTY_VISITOR
+        ) LanguageSupporter.getVariableVisitor(language, holder, isOnTheFly) else PsiElementVisitor.EMPTY_VISITOR
     }
 
     override fun showDefaultConfigurationOptions(): Boolean {

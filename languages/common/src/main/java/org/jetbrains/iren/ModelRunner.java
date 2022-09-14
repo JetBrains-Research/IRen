@@ -13,7 +13,6 @@ import org.jetbrains.iren.storages.Vocabulary;
 
 import java.nio.file.Path;
 import java.util.List;
-import java.util.concurrent.ExecutionException;
 
 public interface ModelRunner {
     Model getModel();
@@ -28,11 +27,11 @@ public interface ModelRunner {
 
     @NotNull Context.Statistics getContextStatistics(@NotNull PsiNameIdentifierOwner variable);
 
-    @NotNull Pair<Double, Integer> getProbability(PsiNameIdentifierOwner variable);
+    @NotNull Pair<Double, Double> getProbability(PsiNameIdentifierOwner variable);
 
     int getOrder();
 
-    int getModelPriority();
+    double getModelPriority();
 
     void learnPsiFile(@NotNull PsiFile file);
 

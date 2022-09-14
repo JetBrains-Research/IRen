@@ -5,10 +5,10 @@ import org.jetbrains.iren.config.ModelType;
 public class VarNamePrediction {
     private final String myName;
     private final double myProbability;
-    private final int myPriority;
+    private final double myPriority;
     private final ModelType myModelType;
 
-    public VarNamePrediction(String name, double probability, ModelType modelType, int priority) {
+    public VarNamePrediction(String name, double probability, ModelType modelType, double priority) {
         myName = name;
         myProbability = probability;
         myModelType = modelType;
@@ -30,7 +30,7 @@ public class VarNamePrediction {
         return myProbability;
     }
 
-    public int getPriority() {
+    public double getPriority() {
         return myPriority;
     }
 

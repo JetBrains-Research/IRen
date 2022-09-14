@@ -2,9 +2,10 @@ package org.jetbrains.iren;
 
 import com.intellij.codeInspection.ProblemsHolder;
 import com.intellij.lang.Language;
+import com.intellij.lang.LanguageRefactoringSupport;
+import com.intellij.lang.refactoring.RefactoringSupportProvider;
 import com.intellij.openapi.application.ReadAction;
 import com.intellij.openapi.fileTypes.FileType;
-import com.intellij.openapi.project.Project;
 import com.intellij.psi.*;
 import com.intellij.psi.tree.IElementType;
 import com.intellij.refactoring.rename.RenameHandler;
@@ -15,11 +16,7 @@ import com.jetbrains.python.psi.*;
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.jetbrains.iren.config.InferenceStrategies;
-import org.jetbrains.iren.services.IRenSuggestingService;
 import org.jetbrains.iren.storages.Context;
-import org.jetbrains.iren.storages.VarNamePrediction;
-import org.jetbrains.iren.storages.Vocabulary;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -32,6 +29,7 @@ import static org.jetbrains.iren.utils.StringUtils.*;
 public class PyLanguageSupporter extends LanguageSupporterBase {
     private static final List<Class<? extends PsiNameIdentifierOwner>> variableClasses = List.of(PyNamedParameter.class, PyTargetExpression.class);
     private static final Collection<String> stopNames = List.of("self", "_");
+    private final PyDOBFTokenizer tokenizer = new PyDOBFTokenizer();
 
     @Override
     public @NotNull Language getLanguage() {
@@ -85,13 +83,34 @@ public class PyLanguageSupporter extends LanguageSupporterBase {
     }
 
     @Override
-    public @NotNull PsiElementVisitor createVariableVisitor(@NotNull ProblemsHolder holder) {
-        return new PyVariableVisitor(holder);
+    public @NotNull PsiElementVisitor createVariableVisitor(@NotNull ProblemsHolder holder, boolean isOnTheFly) {
+        return new PyVariableVisitor(holder, isOnTheFly);
     }
 
     @Override
     public boolean isStopName(@NotNull String name) {
         return stopNames.contains(name);
+    }
+
+    @Override
+    protected DOBFTokenizer getTokenizer() {
+        return tokenizer;
+    }
+
+    @Override
+    protected boolean isStringElement(PsiElement element) {
+        IElementType type = element.getNode().getElementType();
+        return STRING_NODES.contains(type) ||
+                FSTRING_TEXT_TOKENS.contains(type);
+    }
+
+    @Override
+    public boolean excludeFromInspection(@NotNull PsiNameIdentifierOwner variable) {
+        RefactoringSupportProvider provider = LanguageRefactoringSupport.INSTANCE.forContext(variable);
+        return provider != null && !provider.isInplaceRenameAvailable(variable, null) ||
+                variable.getChildren().length != 0 ||
+                variable.getParent() instanceof PyImportElement ||
+                super.excludeFromInspection(variable);
     }
 
     @Override
@@ -107,25 +126,37 @@ public class PyLanguageSupporter extends LanguageSupporterBase {
             for (PsiElement element : elements) {
                 String text = element.getText();
                 if (element instanceof PsiWhiteSpace) {
-                    if (text.contains("\n")) {
-                        tokens.add(NEW_LINE_TOKEN);
-                        int newIndent = countIndent(file, element);
-                        int diff = newIndent - indent;
-                        if (diff != 0) {
-                            indent = newIndent;
-                            String indentToken = diff > 0 ? INDENT_TOKEN : DEDENT_TOKEN;
-                            for (int j = 0; j < Math.abs(diff); j++) tokens.add(indentToken);
-                        }
-                    }
+                    if (!text.contains("\n")) continue;
+                    indent = addNewLineAndIndentation(file, tokens, indent, element);
                 } else if (StringUtils.isNotBlank(text)) {
                     if (usages.contains(element)) {
                         varIdxs.add(tokens.size());
                     }
-                    tokens.add(text.replace(" ", SPACE_TOKEN));
+                    tokens.add(processDOBFToken(element));
                 }
             }
             return new Context<>(tokens, varIdxs);
         });
+    }
+
+    private static int addNewLineAndIndentation(PsiFile file, List<String> tokens, int indent, PsiElement element) {
+        int newIndent = countIndent(file, element);
+        int diff = newIndent - indent;
+        if (diff != 0) {
+            tokens.add(NEW_LINE_TOKEN);
+            indent = newIndent;
+            String indentToken = diff > 0 ? INDENT_TOKEN : DEDENT_TOKEN;
+            for (int j = 0; j < Math.abs(diff); j++) tokens.add(indentToken);
+        } else {
+            PsiElement prevSibling = element.getPrevSibling();
+            if ((prevSibling instanceof PyStatement ||
+                    prevSibling instanceof PyDecorator ||
+                    prevSibling instanceof PyDecoratorList) &&
+                    tokens.size() > 0 &&
+                    !INDENT_TOKENS.contains(tokens.get(tokens.size() - 1)))
+                tokens.add(NEW_LINE_TOKEN);
+        }
+        return indent;
     }
 
     private static int countIndent(PsiFile file, PsiElement element) {
@@ -135,7 +166,7 @@ public class PyLanguageSupporter extends LanguageSupporterBase {
     protected List<PsiElement> lexFile(PsiFile file) {
         return SyntaxTraverser.psiTraverser()
                 .withRoot(file)
-                .forceIgnore(node -> node instanceof PsiComment)
+                .forceIgnore(node -> node instanceof PsiComment || node.getNode().getElementType() == DOCSTRING)
                 .filter(this::isLeaf)
                 .toList();
     }
@@ -157,25 +188,8 @@ public class PyLanguageSupporter extends LanguageSupporterBase {
         });
     }
 
-    private final double FIRST_PROBABILITY_THRESHOLD = 0.5;
-
     @Override
-    public boolean fastHighlighting(Project project, @NotNull PsiNameIdentifierOwner variable) {
-        IRenSuggestingService suggestingService = IRenSuggestingService.getInstance(project);
-        final Context.Statistics contextStatistics = suggestingService.getVariableContextStatistics(variable);
-        if (contextStatistics.countsMean() < 1.) return false;
-        @NotNull List<VarNamePrediction> predictions = suggestingService.suggestVariableName(project, variable, InferenceStrategies.NGRAM_ONLY);
-        if (predictions.isEmpty()) return false;
-        VarNamePrediction firstPrediction = predictions.get(0);
-        final double firstProbability = firstPrediction.getProbability();
-        final String firstName = firstPrediction.getName();
-        return firstProbability > FIRST_PROBABILITY_THRESHOLD &&
-                !Vocabulary.unknownCharacter.equals(firstName) &&
-                !areSubtokensMatch(ReadAction.compute(variable::getName), varNamePredictions2set(predictions));
-    }
-
-    @Override
-    public boolean slowHighlighting(Project project, @NotNull PsiNameIdentifierOwner variable) {
+    public boolean dobfReady() {
         return true;
     }
 }

@@ -1,14 +1,14 @@
 package org.jetbrains.iren.storages;
 
-import com.intellij.openapi.util.text.Strings;
+import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.BufferedReader;
 import java.io.IOException;
+import java.lang.reflect.Type;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
-import java.util.stream.Collectors;
 
 /**
  * Context is a snippet of code separated on tokens that contains all references of some variable.
@@ -73,13 +73,14 @@ public class Context<T> {
     // --------------------------- For tests ---------------------------
     @Override
     public String toString() {
-        return Strings.join(tokens, " ") + "\n" + Strings.join(varIdxs, " ");
+        Gson gson = new Gson();
+        return gson.toJson(this);
     }
 
     public static Context<String> deserialize(BufferedReader reader) throws IOException {
-        final List<String> tokens = List.of(reader.readLine().split(" "));
-        final List<Integer> varIdxs = Arrays.stream(reader.readLine().split(" ")).map(Integer::parseInt).collect(Collectors.toList());
-        return new Context<>(tokens, varIdxs);
+        Gson gson = new Gson();
+        Type type = new TypeToken<Context<String>>(){}.getType();
+        return gson.fromJson(reader, type);
     }
 
     @Override

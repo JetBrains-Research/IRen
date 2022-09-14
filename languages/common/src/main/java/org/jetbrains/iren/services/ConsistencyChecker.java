@@ -40,7 +40,7 @@ public class ConsistencyChecker implements Disposable {
                            }
                     );
 
-    public boolean isInconsistent(@NotNull PsiNameIdentifierOwner variable) {
+    public boolean isInconsistent(@NotNull PsiNameIdentifierOwner variable, boolean isOnTheFly) {
         LanguageSupporter supporter = LanguageSupporter.getInstance(variable.getLanguage());
         if (supporter == null) return false;
         if (ApplicationManager.getApplication().isUnitTestMode()) return !supporter.excludeFromInspection(variable);
@@ -49,9 +49,11 @@ public class ConsistencyChecker implements Disposable {
             return false;
         }
         try {
-            Future<Boolean> future = inconsistentVariablesMap.get(variable);
-            if (future.isDone()) return future.get();
-            return false;
+            Future<Boolean> future = isOnTheFly ?
+                    inconsistentVariablesMap.get(variable) :
+                    inconsistentVariablesMap.getIfPresent(variable);
+//            Only cached variables will be highlighted in batch mode of the inspection
+            return future != null && future.isDone() && future.get();
         } catch (Exception ignore) {
             return false;
         }

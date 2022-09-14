@@ -11,32 +11,27 @@ import org.jetbrains.iren.DOBFModelRunner
 import org.jetbrains.iren.config.ModelType
 import org.jetbrains.iren.contributors.DOBFContributor.Companion.MODEL_PRIORITY
 import org.jetbrains.iren.search.BeamSearchGenerator
-import org.jetbrains.iren.search.logSoftmax
 import org.jetbrains.iren.storages.VarNamePrediction
+import org.jetbrains.iren.storages.Vocabulary
 import java.nio.file.Path
 import java.util.concurrent.ExecutionException
 import kotlin.math.exp
 
-const val CACHE_SIZE = 1024L
-
-class OrtModelRunner(modelDir: Path) : DOBFModelRunner {
-    val contextParser = DOBFContextParser(modelDir)
+class OrtModelRunner(modelDir: Path, maxSequenceLength: Int = 512, cacheSize: Long = 1024L) : DOBFModelRunner {
+    private val contextParser = DOBFContextParser(modelDir, maxSequenceLength)
     val vocabulary = contextParser.vocab
     val model = OrtModel(modelDir.resolve("encoder.quant.onnx"), modelDir.resolve("decoder.quant.onnx"))
-    private val cache = CacheBuilder.newBuilder()
-        .maximumSize(CACHE_SIZE)
+    private val cache = CacheBuilder.newBuilder().maximumSize(cacheSize)
         .build(object : CacheLoader<SmartPsiElementPointer<PsiNameIdentifierOwner>, List<VarNamePrediction>>() {
             override fun load(variable: SmartPsiElementPointer<PsiNameIdentifierOwner>) = loadCache(variable)
         })
 
     private fun loadCache(variable: SmartPsiElementPointer<PsiNameIdentifierOwner>): List<VarNamePrediction> {
-        val truncatedIdxs =
-            contextParser.getContext(ReadAction.compute<PsiNameIdentifierOwner, Throwable> { variable.element }
-                ?: return listOf())
-        return predictBeamSearch(truncatedIdxs).map { (prediction, prob) ->
+        val element = ReadAction.compute<PsiNameIdentifierOwner, Throwable> { variable.element } ?: return listOf()
+        val truncatedIdxs = contextParser.getContext(element)
+        return predictBeamSearch(truncatedIdxs, model, vocabulary).map { (prediction, prob) ->
             toVariableName(prediction)?.let {
                 VarNamePrediction(
-    //                    join(" ", vocab.toWords(prediction)).replace("@@ ", ""),
                     it, prob, ModelType.DOBF, MODEL_PRIORITY
                 )
             }
@@ -56,34 +51,31 @@ class OrtModelRunner(modelDir: Path) : DOBFModelRunner {
         }
     }
 
-    private fun toVariableName(prediction: List<String>): String? {
-        val wordList = java.lang.String.join(" ", prediction.subList(2, prediction.size)).replace("@@ ", "").split(" ")
-        return if (wordList.size == 1) wordList[0] else null
-    }
-
-    fun predictGreedy(idxs: List<Int>): Map<List<String>, Double> {
-        val encoderOutput = model.encode(listOf(idxs))
-
-        val eosIdx = contextParser.eosIdx
-        val toDecList = mutableListOf(eosIdx)
-
-        var logProb = .0
-        for (i in 0..5) {
-            val out = model.decode(listOf(toDecList), encoderOutput)
-            val idx = out.floatBuffer.array().withIndex().maxByOrNull { it.value }?.index!!
-            if (idx == eosIdx) break
-            logProb += logSoftmax(arrayOf(out.floatBuffer.array()))[0][idx]
-            toDecList.add(idx)  // T += 1
+    companion object {
+        @JvmStatic
+        fun predictBeamSearch(
+            idxs: List<Int>,
+            model: OrtModel,
+            vocabulary: Vocabulary,
+            beamSize: Int = 10,
+            maxLength: Int = 10,
+            earlyStopping: Boolean = true,
+            lengthPenalty: Float = 1f
+        ): Map<List<String>, Double> {
+            val generator =
+                BeamSearchGenerator(model, vocabulary, beamSize, maxLength, earlyStopping, lengthPenalty)
+//                BeamSearchGenerator(model, vocabulary, beamSize, maxLength)
+            val preds = generator.generate(idxs)
+            val res = preds.map { vocabulary.toWords(it.hyp) to exp(it.score) }
+            val sum = res.sumOf { (_, prob) -> prob.toDouble() }
+            return res.associate { (tokens, prob) -> tokens to prob / sum }
         }
-        return mapOf(vocabulary.toWords(toDecList) to logProb)
-    }
 
-    fun predictBeamSearch(idxs: List<Int>): Map<List<String>, Double> {
-        val generator = BeamSearchGenerator(model, vocabulary)
-        val preds = generator.generate(idxs)
-        val res =
-            preds.flatMap { it.map { pred -> vocabulary.toWords(pred.ids.toList()) to exp(pred.logProbs.sum()).toDouble() } }
-        val sum = res.sumOf { (_, prob) -> prob }
-        return res.associate { (tokens, prob) -> tokens to prob / sum }
+        @JvmStatic
+        fun toVariableName(prediction: List<String>): String? {
+            val words =
+                java.lang.String.join(" ", prediction.subList(2, prediction.size)).replace("@@ ", "").split(" ")
+            return if (words.size == 1) words[0] else null
+        }
     }
 }

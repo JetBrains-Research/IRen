@@ -28,6 +28,7 @@ public class JavaLanguageSupporter extends LanguageSupporterBase {
             JavaTokenType.FLOAT_LITERAL,
             JavaTokenType.DOUBLE_LITERAL);
     private static final List<Class<? extends PsiNameIdentifierOwner>> variableClasses = List.of(PsiVariable.class);
+    private final DOBFTokenizer tokenizer = new DOBFTokenizer();
 
     @Override
     public @NotNull Language getLanguage() {
@@ -53,6 +54,17 @@ public class JavaLanguageSupporter extends LanguageSupporterBase {
     public void removeHandlers() {
         RenameHandler.EP_NAME.getPoint().unregisterExtension(VariableInplaceRenameHandler.class);
         RenameHandler.EP_NAME.getPoint().unregisterExtension(MemberInplaceRenameHandler.class);
+    }
+
+    @Override
+    protected DOBFTokenizer getTokenizer() {
+        return tokenizer;
+    }
+
+    @Override
+    protected boolean isStringElement(PsiElement element) {
+        IElementType type = element.getNode().getElementType();
+        return type == JavaTokenType.STRING_LITERAL || type == JavaTokenType.TEXT_BLOCK_LITERAL;
     }
 
     @Override
@@ -85,8 +97,8 @@ public class JavaLanguageSupporter extends LanguageSupporterBase {
     }
 
     @Override
-    public @NotNull PsiElementVisitor createVariableVisitor(@NotNull ProblemsHolder holder) {
-        return new JavaVariableVisitor(holder);
+    public @NotNull PsiElementVisitor createVariableVisitor(@NotNull ProblemsHolder holder, boolean isOnTheFly) {
+        return new JavaVariableVisitor(holder, isOnTheFly);
     }
 
     @Override

@@ -41,13 +41,13 @@ import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 import static java.lang.Math.*;
-import static org.jetbrains.iren.models.OrtModelRunnerKt.CACHE_SIZE;
 
 public class NGramModelRunner implements ModelRunner {
     protected final static String COUNTER_FILE = "counter.ser";
     protected final static String FORWARD_COUNTER_FILE = "forwardCounter.ser";
     protected final static String REVERSE_COUNTER_FILE = "reverseCounter.ser";
     protected final static String REMEMBER_IDENTIFIERS_FILE = "rememberedIdentifiers.json";
+    public static long CACHE_SIZE = 1024L;
     public static boolean DEFAULT_BIDIRECTIONAL = true;
     /**
      * {@link Set} of identifier names.
@@ -174,9 +174,9 @@ public class NGramModelRunner implements ModelRunner {
     }
 
     @Override
-    public @NotNull Pair<Double, Integer> getProbability(PsiNameIdentifierOwner variable) {
+    public @NotNull Pair<Double, Double> getProbability(PsiNameIdentifierOwner variable) {
         @Nullable Context<Integer> intContext = getContext(variable);
-        return intContext == null ? new Pair<>(0., 0) : new Pair<>(getProbability(intContext), getModelPriority());
+        return intContext == null ? new Pair<>(0., 0.) : new Pair<>(getProbability(intContext), getModelPriority());
     }
 
     @Override
@@ -185,7 +185,7 @@ public class NGramModelRunner implements ModelRunner {
     }
 
     @Override
-    public int getModelPriority() {
+    public double getModelPriority() {
         return 1;
     }
 
@@ -406,10 +406,9 @@ public class NGramModelRunner implements ModelRunner {
     private @Nullable Context<Integer> prepareContext(PsiNameIdentifierOwner variable) {
         final LanguageSupporter supporter = getSupporter(variable);
         if (supporter == null) return null;
-        final Context<String> context = supporter.getContext(variable, false, false, true);
+        final Context<String> context = supporter.getContext(variable, false);
         if (context == null) return null;
-        Context<Integer> intContext = Context.fromStringToInt(context, myVocabulary);
-        return intContext;
+        return Context.fromStringToInt(context, myVocabulary);
     }
 
     private @Nullable LanguageSupporter getSupporter(PsiElement element) {
@@ -421,10 +420,6 @@ public class NGramModelRunner implements ModelRunner {
             mySupporter = LanguageSupporter.getInstance(element.getLanguage());
         }
         return mySupporter != null && mySupporter.getLanguage().equals(element.getLanguage()) ? mySupporter : null;
-    }
-
-    public void forgetContext(@NotNull Context<Integer> context) {
-        myModel.forget(context.getTokens());
     }
 
     private @NotNull Set<Integer> getCandidates(@NotNull List<Integer> tokenIdxs, int idx) {
@@ -498,9 +493,5 @@ public class NGramModelRunner implements ModelRunner {
         List<Double> probs = logits_t.stream().map(logit -> exp(logit - maxLogit)).collect(Collectors.toList());
         double sumProbs = probs.stream().mapToDouble(Double::doubleValue).sum();
         return probs.stream().map(p -> p / sumProbs).collect(Collectors.toList());
-    }
-
-    public void learnContext(@NotNull Context<Integer> context) {
-        myModel.learn(context.getTokens());
     }
 }

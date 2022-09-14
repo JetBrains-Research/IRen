@@ -130,7 +130,7 @@ public class PersistentNGramModelRunner extends NGramModelRunner {
 
     @Override
     protected Vocabulary loadVocabulary(@NotNull File file) {
-        return new PersistentVocabulary(file.toPath());
+        return new PersistentVocabulary(file.toPath(), Vocabulary.unknownCharacter);
     }
 
     /**
