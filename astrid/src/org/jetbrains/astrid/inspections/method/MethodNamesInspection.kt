@@ -22,9 +22,8 @@ class MethodNamesInspection : AbstractBaseJavaLocalInspectionTool() {
     }
 
     class MethodVisitor(private val holder: ProblemsHolder) : JavaElementVisitor() {
-        override fun visitMethod(method: PsiMethod?) {
+        override fun visitMethod(method: PsiMethod) {
             when {
-                method == null -> return
                 method.body == null -> return
                 method.isConstructor -> return
                 hasSuperMethod(method) -> return
@@ -61,7 +60,6 @@ class MethodNamesInspection : AbstractBaseJavaLocalInspectionTool() {
         override fun getFamilyName(): String {
             return "Show method name suggestions"
         }
-
     }
 
     override fun getDisplayName(): String {
@@ -75,5 +73,4 @@ class MethodNamesInspection : AbstractBaseJavaLocalInspectionTool() {
     override fun getShortName(): String {
         return "MethodNamesInspection"
     }
-
 }

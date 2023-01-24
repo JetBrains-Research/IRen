@@ -53,8 +53,8 @@ public class ModelBuilder {
     private final Project myProject;
     private final LanguageSupporter mySupporter;
     private final ProgressIndicator myProgressIndicator;
-    private final int vocabularyCutOff = AppSettingsState.getInstance().vocabularyCutOff;
-    private final int maxTrainingTime = AppSettingsState.getInstance().maxTrainingTime;
+    private final int vocabularyCutOff = AppSettingsState.getInstance().getVocabularyCutOff();
+    private final int maxTrainingTime = AppSettingsState.getInstance().getMaxTrainingTime();
     private final MemoryListener memoryListener = new MemoryListener();
 
     public ModelBuilder(@NotNull Project project,
@@ -234,7 +234,7 @@ public class ModelBuilder {
             if (NGramModelManager.getInstance(project).containsIntellijModel() || loadNGramModels(project, indicator))
                 return true;
             final AppSettingsState settings = AppSettingsState.getInstance();
-            if (!settings.firstOpen && settings.automaticTraining) downloadAndExtractModel(indicator,
+            if (!settings.getFirstOpen() && settings.getAutomaticTraining()) downloadAndExtractModel(indicator,
                     INTELLIJ_NAME,
                     new ModelUtils().modelsDirectory);
         }
@@ -319,7 +319,7 @@ public class ModelBuilder {
                 loadDOBFModels(project, indicator);
                 AppSettingsState settings = AppSettingsState.getInstance();
                 if ((ModelsSaveTime.getInstance().needRetraining(project) ||
-                        !loadNGramModelsOrIntellij(project, indicator)) && !settings.firstOpen && settings.automaticTraining) {
+                        !loadNGramModelsOrIntellij(project, indicator)) && !settings.getFirstOpen() && settings.getAutomaticTraining()) {
                     trainModelsForAllLanguages(project, indicator, true);
                 }
             }

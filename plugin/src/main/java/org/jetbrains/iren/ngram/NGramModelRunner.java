@@ -7,7 +7,7 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.stream.JsonReader;
 import com.intellij.completion.ngram.slp.counting.Counter;
-import com.intellij.completion.ngram.slp.counting.trie.MapTrieCounter;
+import com.intellij.completion.ngram.slp.counting.trie.my.MapTrieCounter;
 import com.intellij.completion.ngram.slp.modeling.Model;
 import com.intellij.completion.ngram.slp.modeling.mix.BiDirectionalModel;
 import com.intellij.completion.ngram.slp.modeling.ngram.JMModel;
@@ -488,9 +488,9 @@ public class NGramModelRunner implements ModelRunner {
 
     private static @NotNull List<Double> softmax(@NotNull List<Double> logits, double temperature) {
         if (logits.isEmpty()) return logits;
-        List<Double> logits_t = logits.stream().map(l -> l / temperature).collect(Collectors.toList());
+        List<Double> logits_t = logits.stream().map(l -> l / temperature).toList();
         Double maxLogit = Collections.max(logits_t);
-        List<Double> probs = logits_t.stream().map(logit -> exp(logit - maxLogit)).collect(Collectors.toList());
+        List<Double> probs = logits_t.stream().map(logit -> exp(logit - maxLogit)).toList();
         double sumProbs = probs.stream().mapToDouble(Double::doubleValue).sum();
         return probs.stream().map(p -> p / sumProbs).collect(Collectors.toList());
     }

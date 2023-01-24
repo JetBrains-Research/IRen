@@ -12,8 +12,6 @@ class GNNPluginRunner : PluginRunner() {
         listOf("libgdx", "hadoop")
 //        listOf("TestProject")
 
-    override fun getCommandName(): String = "GNNEvaluator"
-
     override val varNamer: VarNamer
         get() = GNNVarNamer(saveDir, supporter, ngramType)
 }

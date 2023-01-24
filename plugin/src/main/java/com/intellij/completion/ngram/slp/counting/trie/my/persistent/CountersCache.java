@@ -1,4 +1,4 @@
-package com.intellij.completion.ngram.slp.counting.trie.persistent;
+package com.intellij.completion.ngram.slp.counting.trie.my.persistent;
 
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;

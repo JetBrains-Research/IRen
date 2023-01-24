@@ -22,19 +22,19 @@
                      defaultValue="False" restartRequired="false"/>
         <applicationService serviceImplementation="org.jetbrains.iren.settings.AppSettingsState"/>
         <!-- Headless running part-->
-        <appStarter implementation="experiments.modelsEvaluatorApi.PluginRunner"/>
-        <appStarter implementation="experiments.gnnEvaluator.GNNPluginRunner"/>
-        <appStarter implementation="experiments.transformerEvaluator.TransformerPluginRunner"/>
-        <appStarter implementation="experiments.nGramTrainingTime.PluginRunner"/>
-        <appStarter implementation="experiments.differentProjectSizes.SizePluginRunner"/>
-        <appStarter implementation="experiments.compareWithRAM.RamPluginRunner"/>
-        <appStarter implementation="experiments.compareWithDefault.DefaultPluginRunner"/>
-        <appStarter implementation="experiments.countNGrams.PluginRunner"/>
-        <appStarter implementation="experiments.cacheSize.CacheSizePluginRunner"/>
-        <appStarter implementation="experiments.dobfEvaluator.DOBFPluginRunner"/>
-        <appStarter implementation="experiments.onnxEvaluator.ONNXPluginRunner"/>
-        <appStarter implementation="experiments.buildDataset.DatasetPluginRunner"/>
-        <appStarter implementation="experiments.onnxEvaluatorFromFile.FilePluginRunner"/>
+        <appStarter implementation="experiments.modelsEvaluatorApi.PluginRunner" id="modelsEvaluator"/>
+        <appStarter implementation="experiments.gnnEvaluator.GNNPluginRunner" id="GNNEvaluator"/>
+        <appStarter implementation="experiments.transformerEvaluator.TransformerPluginRunner" id="TransformerEvaluator"/>
+        <appStarter implementation="experiments.nGramTrainingTime.PluginRunner" id="nGramTrainingTime"/>
+        <appStarter implementation="experiments.differentProjectSizes.SizePluginRunner" id="predictProjectDiffSizes"/>
+        <appStarter implementation="experiments.compareWithRAM.RamPluginRunner" id="compareWithRAM"/>
+        <appStarter implementation="experiments.compareWithDefault.DefaultPluginRunner" id="compareWithDefault"/>
+        <appStarter implementation="experiments.countNGrams.PluginRunner" id="countNGrams"/>
+        <appStarter implementation="experiments.cacheSize.CacheSizePluginRunner" id="cacheSize"/>
+        <appStarter implementation="experiments.dobfEvaluator.DOBFPluginRunner" id="DOBFEvaluator"/>
+        <appStarter implementation="experiments.onnxEvaluator.ONNXPluginRunner" id="ONNXEvaluator"/>
+        <appStarter implementation="experiments.buildDataset.DatasetPluginRunner" id="BuildDataset"/>
+        <appStarter implementation="experiments.onnxEvaluatorFromFile.FilePluginRunner" id="FileEvaluator"/>
         <!-- End of headless running part-->
         <projectService serviceInterface="org.jetbrains.iren.services.NGramModelManager"
                             serviceImplementation="org.jetbrains.iren.services.NGramModelManagerImpl"/>

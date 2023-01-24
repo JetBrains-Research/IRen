@@ -20,7 +20,6 @@ import java.nio.file.Path
 import java.util.*
 
 class FilePluginRunner : PluginRunner() {
-    override fun getCommandName(): String = "FileEvaluator"
     override val numProjects = 10
     override val projectList: List<String>? = null
     override val resumeEvaluation: Boolean = true

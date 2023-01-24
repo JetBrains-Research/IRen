@@ -6,7 +6,7 @@ import com.intellij.psi.PsiNamedElement
 import com.intellij.psi.PsiReference
 import com.intellij.refactoring.RefactoringActionHandler
 import com.intellij.refactoring.rename.inplace.VariableInplaceRenamer
-import org.jetbrains.kotlin.idea.core.unquote
+import org.jetbrains.kotlin.idea.base.psi.unquoteKotlinIdentifier
 
 class IRenKotlinVariableInplaceRenamer(
     elementToRename: PsiNamedElement,
@@ -18,7 +18,7 @@ class IRenKotlinVariableInplaceRenamer(
     override fun acceptReference(reference: PsiReference): Boolean {
         val refElement = reference.element
         val textRange = reference.rangeInElement
-        val referenceText = refElement.text.substring(textRange.startOffset, textRange.endOffset).unquote()
+        val referenceText = refElement.text.substring(textRange.startOffset, textRange.endOffset).unquoteKotlinIdentifier()
         return referenceText == myElementToRename.name
     }
 

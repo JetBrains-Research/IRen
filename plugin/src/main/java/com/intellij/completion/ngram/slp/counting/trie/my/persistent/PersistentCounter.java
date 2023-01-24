@@ -1,4 +1,4 @@
-package com.intellij.completion.ngram.slp.counting.trie.persistent;
+package com.intellij.completion.ngram.slp.counting.trie.my.persistent;
 
 import com.intellij.completion.ngram.slp.counting.Counter;
 import org.jetbrains.annotations.NotNull;

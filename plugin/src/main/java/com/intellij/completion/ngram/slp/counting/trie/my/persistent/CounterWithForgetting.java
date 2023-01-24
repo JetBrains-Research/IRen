@@ -1,7 +1,7 @@
-package com.intellij.completion.ngram.slp.counting.trie.persistent;
+package com.intellij.completion.ngram.slp.counting.trie.my.persistent;
 
 import com.intellij.completion.ngram.slp.counting.Counter;
-import com.intellij.completion.ngram.slp.counting.trie.MapTrieCounter;
+import com.intellij.completion.ngram.slp.counting.trie.my.MapTrieCounter;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.ObjectInput;

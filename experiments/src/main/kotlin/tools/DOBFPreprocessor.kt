@@ -22,7 +22,6 @@ import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
 import java.util.*
-import kotlin.collections.HashMap
 import kotlin.concurrent.thread
 import kotlin.system.exitProcess
 
@@ -33,7 +32,8 @@ class DOBFPreprocessor : ApplicationStarter {
     protected lateinit var supporter: LanguageSupporter
     val numberOfThreads = 7
 
-    override fun getCommandName(): String = "buildDOBFDataset"
+    @Deprecated("Specify it as `id` for extension definition in a plugin descriptor")
+    override val commandName = null // buildDOBFDataset
 
     override fun main(args: List<String>) {
         try {

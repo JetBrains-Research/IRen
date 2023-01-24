@@ -7,8 +7,8 @@ import com.intellij.openapi.application.ApplicationStarter
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.project.ProjectManager
 import org.jetbrains.iren.LanguageSupporter
-import org.jetbrains.iren.training.ModelBuilder
 import org.jetbrains.iren.ngram.NGramModelRunner
+import org.jetbrains.iren.training.ModelBuilder
 import java.io.File
 import java.nio.file.Path
 import java.nio.file.Paths
@@ -25,7 +25,8 @@ class PluginRunner : ApplicationStarter {
         "libgdx", "hadoop"
     )
 
-    override fun getCommandName(): String = "nGramTrainingTime"
+    @Deprecated("Specify it as `id` for extension definition in a plugin descriptor")
+    override val commandName = null
 
     override fun main(args: List<String>) {
         try {

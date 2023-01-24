@@ -26,7 +26,8 @@ public interface LanguageSupporter {
 
     static @Nullable LanguageSupporter getInstance(Language language) {
 //        TODO: think about how to better handle unsupported languages, mb inform about it in logs...
-        return INSTANCE.extensions().filter(x -> language.isKindOf(x.getLanguage())).findFirst().orElse(null);
+        return INSTANCE.getExtensionList().stream()
+                .filter(x -> language.isKindOf(x.getLanguage())).findFirst().orElse(null);
     }
 
     @NotNull Language getLanguage();
@@ -38,13 +39,13 @@ public interface LanguageSupporter {
     @NotNull Collection<Class<? extends PsiNameIdentifierOwner>> getVariableClasses();
 
     static boolean hasSupportedFiles(Project project) {
-        return INSTANCE.extensions().anyMatch(supporter ->
+        return INSTANCE.getExtensionList().stream().anyMatch(supporter ->
                 FileTypeIndex.containsFileOfType(supporter.getFileType(),
                         GlobalSearchScope.projectScope(project)));
     }
 
     static void removeRenameHandlers() {
-        INSTANCE.extensions().forEach(LanguageSupporter::removeHandlers);
+        INSTANCE.getExtensionList().forEach(LanguageSupporter::removeHandlers);
     }
 
     void removeHandlers();
@@ -84,7 +85,7 @@ public interface LanguageSupporter {
      * Compare execution time of a chosen snippet of the code.
      */
     static void showAvgTime() {
-        INSTANCE.extensions().forEach(LanguageSupporter::printAvgTime);
+        INSTANCE.getExtensionList().forEach(LanguageSupporter::printAvgTime);
     }
 
     void printAvgTime();

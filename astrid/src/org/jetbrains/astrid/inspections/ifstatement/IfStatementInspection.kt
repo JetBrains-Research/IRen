@@ -18,8 +18,7 @@ class IfStatementInspection : AbstractBaseJavaLocalInspectionTool() {
     }
 
     private class IfStatementVisitor(private val holder: ProblemsHolder) : JavaElementVisitor() {
-        override fun visitIfStatement(statement: PsiIfStatement?) {
-            if (statement == null) return
+        override fun visitIfStatement(statement: PsiIfStatement) {
             if (!Files.exists(Downloader.getModelPath())) return
             val condition = statement.condition ?: return
             // TODO: Implement more meaningful conditions

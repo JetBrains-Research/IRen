@@ -13,7 +13,7 @@
  copies or substantial portions of the Software.
  */
 
-package com.intellij.completion.ngram.slp.counting.trie;
+package com.intellij.completion.ngram.slp.counting.trie.my;
 
 import com.intellij.completion.ngram.slp.counting.Counter;
 import com.intellij.completion.ngram.slp.modeling.runners.ModelRunner;
@@ -92,8 +92,7 @@ public abstract class AbstractTrie implements Counter {
 		Object succ = this.getSuccessor(next);
 		boolean nearLast = index == indices.size() - 1;
 		// Recurse if applicable
-		if ((succ instanceof AbstractTrie)) {
-			AbstractTrie successor = (AbstractTrie) succ;
+		if ((succ instanceof AbstractTrie successor)) {
 			if (!nearLast) return successor.getCounts(indices, index + 1);
 			else return new long[] { successor.getCount(), this.counts[1] };
 		}
@@ -124,8 +123,7 @@ public abstract class AbstractTrie implements Counter {
 			int next = indices.get(index);
 			Object succ = getSuccessor(next);
 			if (succ == null) return new int[range];
-			if (succ instanceof AbstractTrie) {
-				AbstractTrie successor = (AbstractTrie) succ;
+			if (succ instanceof AbstractTrie successor) {
 				return successor.getDistinctCounts(range, indices, index + 1);
 			}
 			else {
@@ -168,8 +166,7 @@ public abstract class AbstractTrie implements Counter {
 		int next = indices.get(index);
 		Object succ = getSuccessor(next);
 		if (succ == null) return null;
-		else if (succ instanceof AbstractTrie) {
-			AbstractTrie successor = (AbstractTrie) succ;
+		else if (succ instanceof AbstractTrie successor) {
 			return successor.getSuccessorNode(indices, index + 1);
 		}
 		else {
@@ -237,8 +234,7 @@ public abstract class AbstractTrie implements Counter {
 
 	private void updateTrie(List<Integer> indices, int index, int adj, Object succ) {
 		AbstractTrie next = (AbstractTrie) succ;
-		if (next instanceof ArrayTrieCounter) {
-			ArrayTrieCounter arrayCounter = (ArrayTrieCounter) next;
+		if (next instanceof ArrayTrieCounter arrayCounter) {
 			if (arrayCounter.indices.length > 10) {
 				next = promoteArrayToMap(indices, index, arrayCounter);
 			}

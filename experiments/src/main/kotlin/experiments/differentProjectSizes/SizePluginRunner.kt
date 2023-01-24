@@ -19,7 +19,6 @@ import kotlin.math.ceil
 
 open class SizePluginRunner : PluginRunner() {
         val projectSizes = listOf(0.01, 0.05, 0.1, 0.3, 0.5, 0.7, 1.0)
-    override fun getCommandName(): String = "predictProjectDiffSizes"
 
     override fun evaluate() {
         println("Evaluating models...")

@@ -13,7 +13,7 @@
  copies or substantial portions of the Software.
  */
 
-package com.intellij.completion.ngram.slp.counting.trie;
+package com.intellij.completion.ngram.slp.counting.trie.my;
 
 import java.util.List;
 

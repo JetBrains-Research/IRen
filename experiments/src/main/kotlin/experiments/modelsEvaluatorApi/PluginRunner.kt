@@ -40,7 +40,8 @@ open class PluginRunner : ApplicationStarter {
 
     protected open val projectList: List<String>? = null
 
-    override fun getCommandName(): String = "modelsEvaluator"
+    @Deprecated("Specify it as `id` for extension definition in a plugin descriptor")
+    override val commandName = null
 
     override fun main(args: List<String>) {
         try {

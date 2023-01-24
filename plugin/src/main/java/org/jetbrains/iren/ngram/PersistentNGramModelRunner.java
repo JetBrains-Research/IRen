@@ -1,9 +1,9 @@
 package org.jetbrains.iren.ngram;
 
 import com.intellij.completion.ngram.slp.counting.Counter;
-import com.intellij.completion.ngram.slp.counting.trie.MapTrieCounter;
-import com.intellij.completion.ngram.slp.counting.trie.PersistentCounterManager;
-import com.intellij.completion.ngram.slp.counting.trie.persistent.PersistentCounter;
+import com.intellij.completion.ngram.slp.counting.trie.my.MapTrieCounter;
+import com.intellij.completion.ngram.slp.counting.trie.my.PersistentCounterManager;
+import com.intellij.completion.ngram.slp.counting.trie.my.persistent.PersistentCounter;
 import com.intellij.completion.ngram.slp.modeling.Model;
 import com.intellij.completion.ngram.slp.modeling.mix.BiDirectionalModel;
 import com.intellij.completion.ngram.slp.modeling.ngram.NGramModel;
@@ -135,7 +135,7 @@ public class PersistentNGramModelRunner extends NGramModelRunner {
 
     /**
      * Its counters cannot learn anything.
-     * Just clear counterToForget of {@link com.intellij.completion.ngram.slp.counting.trie.persistent.CounterWithForgetting}
+     * Just clear counterToForget of {@link com.intellij.completion.ngram.slp.counting.trie.my.persistent.CounterWithForgetting}
      */
     @Override
     public void learnPsiFile(@NotNull PsiFile file) {

@@ -35,7 +35,8 @@ open class PluginRunner : ApplicationStarter {
 
     private val projectList: List<String>? = listOf("intellij")
 
-    override fun getCommandName(): String = "countNGrams"
+    @Deprecated("Specify it as `id` for extension definition in a plugin descriptor")
+    override val commandName = null
 
     override fun main(args: List<String>) {
         try {

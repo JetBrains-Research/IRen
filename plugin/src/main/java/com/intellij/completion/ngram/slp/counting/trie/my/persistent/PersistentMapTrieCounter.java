@@ -13,7 +13,7 @@
  copies or substantial portions of the Software.
  */
 
-package com.intellij.completion.ngram.slp.counting.trie.persistent;
+package com.intellij.completion.ngram.slp.counting.trie.my.persistent;
 
 import it.unimi.dsi.fastutil.ints.Int2IntOpenHashMap;
 import org.jetbrains.annotations.NotNull;

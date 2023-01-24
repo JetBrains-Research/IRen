@@ -13,9 +13,9 @@
  copies or substantial portions of the Software.
  */
 
-package com.intellij.completion.ngram.slp.counting.trie.persistent;
+package com.intellij.completion.ngram.slp.counting.trie.my.persistent;
 
-import com.intellij.completion.ngram.slp.counting.trie.ArrayStorage;
+import com.intellij.completion.ngram.slp.counting.trie.my.ArrayStorage;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -89,8 +89,7 @@ public abstract class PersistentAbstractTrie extends PersistentCounter {
         Object succ = this.getSuccessor(next);
         boolean nearLast = index == indices.size() - 1;
         // Recurse if applicable
-        if ((succ instanceof PersistentAbstractTrie)) {
-            PersistentAbstractTrie successor = (PersistentAbstractTrie) succ;
+        if ((succ instanceof PersistentAbstractTrie successor)) {
             if (!nearLast) return successor.getCounts(indices, index + 1);
             else return new long[]{successor.getCount(), this.counts[1]};
         }
@@ -115,8 +114,7 @@ public abstract class PersistentAbstractTrie extends PersistentCounter {
         int next = indices.get(index);
         Object succ = getSuccessor(next);
         if (succ == null) return null;
-        else if (succ instanceof PersistentAbstractTrie) {
-            PersistentAbstractTrie successor = (PersistentAbstractTrie) succ;
+        else if (succ instanceof PersistentAbstractTrie successor) {
             return successor.getSuccessorNode(indices, index + 1);
         } else {
             int[] successor = (int[]) succ;

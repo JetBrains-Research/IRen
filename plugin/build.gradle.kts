@@ -1,3 +1,4 @@
+import org.jetbrains.changelog.Changelog
 import org.jetbrains.changelog.markdownToHTML
 import org.redundent.kotlin.xml.PrintOptions
 import org.redundent.kotlin.xml.xml
@@ -11,13 +12,13 @@ buildscript {
         mavenCentral()
     }
     dependencies {
-        classpath("org.redundent:kotlin-xml-builder:1.6.0")
+        classpath("org.redundent:kotlin-xml-builder:1.8.0")
     }
 }
 
 plugins {
     // gradle-changelog-plugin - read more: https://github.com/JetBrains/gradle-changelog-plugin
-    id("org.jetbrains.changelog") version "1.3.0"
+    id("org.jetbrains.changelog") version "2.0.0"
 }
 
 val buildPluginPath = "plugin-${properties("pluginVersion")}.zip"
@@ -59,9 +60,9 @@ tasks {
 
         // Get the latest available change notes from the changelog file
         changeNotes.set(provider {
-            changelog.run {
+            changelog.renderItem(changelog.run {
                 getOrNull(properties("pluginVersion")) ?: getLatest()
-            }.toHTML()
+            }, Changelog.OutputType.HTML)
         })
     }
 
@@ -95,7 +96,7 @@ tasks {
 
     runIde {
         jvmArgs = listOf(
-            "-Xmx21G", "-XX:+UnlockDiagnosticVMOptions",
+            "-Xlint:deprecation", "-Xmx21G", "-XX:+UnlockDiagnosticVMOptions",
             "-Dfus.internal.test.mode=true", "-Didea.is.internal=true"
         )
     }

@@ -14,8 +14,6 @@ import java.io.File
 import java.io.FileOutputStream
 
 class DatasetPluginRunner : PluginRunner() {
-    override fun getCommandName(): String = "BuildDataset"
-
     override fun evaluate() {
         println("Building dataset...")
         var projectToClose: Project? = null
@@ -40,8 +38,16 @@ class DatasetPluginRunner : PluginRunner() {
                     GlobalSearchScope.projectScope(project)
                 ).sortedBy { it.path }
                 for (file in allFiles) {
-                    addText(datsetFile, "$projectDir | ${supporter.getDOBFContext(
-                        PsiTreeUtil.findChildOfType(file.toPsi(project), PsiNameIdentifierOwner::class.java)?: continue)?.tokens?.joinToString(" ")}\n")
+                    addText(
+                        datsetFile, "$projectDir | ${
+                            supporter.getDOBFContext(
+                                PsiTreeUtil.findChildOfType(
+                                    file.toPsi(project),
+                                    PsiNameIdentifierOwner::class.java
+                                ) ?: continue
+                            )?.tokens?.joinToString(" ")
+                        }\n"
+                    )
                 }
             } catch (e: Exception) {
                 e.printStackTrace()

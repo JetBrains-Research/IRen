@@ -15,7 +15,6 @@
 
 package org.jetbrains.iren.storages
 
-import gnu.trove.TObjectIntHashMap
 import java.io.Serializable
 import java.util.*
 
@@ -32,7 +31,7 @@ import java.util.*
  */
 open class Vocabulary : Serializable {
 
-    val wordIndices: TObjectIntHashMap<String> = TObjectIntHashMap()
+    val wordIndices = mutableMapOf<String, Int>()
     val words: MutableList<String> = ArrayList()
     val counts: MutableList<Int> = ArrayList()
 
@@ -45,7 +44,7 @@ open class Vocabulary : Serializable {
     }
 
     private fun addUnk() {
-        wordIndices.put(unknownCharacter, 0)
+        wordIndices[unknownCharacter] = 0
         words.add(unknownCharacter)
         counts.add(0)
     }
@@ -75,10 +74,10 @@ open class Vocabulary : Serializable {
     }
 
     open fun store(token: String, count: Int = 1): Int {
-        var index = wordIndices.get(token)
+        var index = wordIndices.get(token) ?: 0
         if (index == 0 && token != unknownCharacter) {
-            index = wordIndices.size()
-            wordIndices.put(token, index)
+            index = wordIndices.size
+            wordIndices[token] = index
             words.add(token)
             counts.add(count)
         } else {
@@ -96,13 +95,13 @@ open class Vocabulary : Serializable {
     }
 
     open fun toIndex(token: String): Int {
-        var index: Int = wordIndices.get(token)
+        var index: Int = wordIndices[token] ?: 0
         if (index == 0) {
             if (closed) {
-                return wordIndices.get(unknownCharacter)
+                return wordIndices[unknownCharacter] ?: 0
             } else {
-                index = wordIndices.size()
-                wordIndices.put(token, index)
+                index = wordIndices.size
+                wordIndices[token] = index
                 words.add(token)
                 counts.add(1)
             }
@@ -111,7 +110,7 @@ open class Vocabulary : Serializable {
     }
 
     open fun getCount(token: String): Int? {
-        val index = wordIndices.get(token)
+        val index = wordIndices[token] ?: 0
         return if (index == 0) 0 else counts[index]
     }
 
@@ -136,7 +135,6 @@ open class Vocabulary : Serializable {
     }
 
     companion object {
-
         const val unknownCharacter = "<unknownCharacter>"
         const val beginOfString = "<s>"
         const val endOfString = "</s>"

@@ -55,7 +55,7 @@ public class NotificationsUtil {
 
     public static void askPermissions() {
         AppSettingsState settings = AppSettingsState.getInstance();
-        if (settings.firstOpen) {
+        if (settings.getFirstOpen()) {
             Notification notification = new Notification(IRenBundle.message("name"),
                     "IRen: automatic training permission",
                     "Do You allow automatic training of models?",
@@ -63,8 +63,8 @@ public class NotificationsUtil {
             notification.addAction(new NotificationAction("Yes (default)") {
                 @Override
                 public void actionPerformed(@NotNull AnActionEvent e, @NotNull Notification notification) {
-                    settings.automaticTraining = true;
-                    settings.firstOpen = false;
+                    settings.setAutomaticTraining(true);
+                    settings.setFirstOpen(false);
                     notification.expire();
                     ModelBuilder.trainModelsForAllProjectsInBackground();
                 }
@@ -72,8 +72,8 @@ public class NotificationsUtil {
             notification.addAction(new NotificationAction("No") {
                 @Override
                 public void actionPerformed(@NotNull AnActionEvent e, @NotNull Notification notification) {
-                    settings.automaticTraining = false;
-                    settings.firstOpen = false;
+                    settings.setAutomaticTraining(false);
+                    settings.setFirstOpen(false);
                     notification.expire();
                 }
             });

@@ -3,9 +3,9 @@ fun properties(key: String) = project.findProperty(key).toString()
 plugins {
     java
     // Kotlin support
-    id("org.jetbrains.kotlin.jvm") version "1.5.30" apply false
+    id("org.jetbrains.kotlin.jvm") version "1.8.0" apply false
     // gradle-intellij-plugin - read more: https://github.com/JetBrains/gradle-intellij-plugin
-    id("org.jetbrains.intellij") version "1.5.2"
+    id("org.jetbrains.intellij") version "1.12.0"
     // Gradle Qodana Plugin
     id("org.jetbrains.qodana") version "0.1.12"
 }
@@ -42,6 +42,7 @@ allprojects {
     dependencies {
         implementation(kotlin("stdlib"))
         testImplementation("pl.pragmatists:JUnitParams:1.1.1")
+        testRuntimeOnly("org.junit.platform:junit-platform-launcher:1.6.1")
         testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:${junit}")
         testImplementation("org.junit.jupiter:junit-jupiter-api:${junit}")
         testImplementation("org.junit.jupiter:junit-jupiter-params:${junit}")

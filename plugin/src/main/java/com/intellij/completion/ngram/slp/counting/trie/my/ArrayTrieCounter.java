@@ -13,7 +13,7 @@
  copies or substantial portions of the Software.
  */
 
-package com.intellij.completion.ngram.slp.counting.trie;
+package com.intellij.completion.ngram.slp.counting.trie.my;
 
 import com.intellij.completion.ngram.slp.util.Pair;
 
@@ -167,8 +167,7 @@ public class ArrayTrieCounter extends AbstractTrie {
 			if (this.indices[i] == Integer.MAX_VALUE) continue;
 			out.writeInt(this.indices[i]);
 			Object o = this.successors[i];
-			if (o instanceof int[]) {
-				int[] arr = (int[]) o;
+			if (o instanceof int[] arr) {
 				out.writeInt(arr.length);
 				for (int value : arr) out.writeInt(value);
 			}

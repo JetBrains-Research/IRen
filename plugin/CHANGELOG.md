@@ -1,6 +1,10 @@
 <!-- Keep a Changelog guide -> https://keepachangelog.com -->
 
 # IRen Changelog
+## [0.2.1]
+### Added
+- Support for 2023.* IDE versions
+
 ## [0.2.0]
 ### Added
 - New transformer DOBF models for Java (it's used for Kotlin too) and Python based on this [work](https://arxiv.org/abs/2102.07492).

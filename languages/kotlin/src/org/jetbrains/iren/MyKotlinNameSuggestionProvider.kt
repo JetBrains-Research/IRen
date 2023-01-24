@@ -11,10 +11,11 @@ import com.intellij.refactoring.rename.NameSuggestionProvider
 import org.jetbrains.kotlin.asJava.toLightElements
 import org.jetbrains.kotlin.builtins.KotlinBuiltIns
 import org.jetbrains.kotlin.descriptors.CallableDescriptor
+import org.jetbrains.kotlin.idea.base.codeInsight.KotlinNameSuggestionProvider
+import org.jetbrains.kotlin.idea.base.fe10.codeInsight.newDeclaration.Fe10KotlinNameSuggester
+import org.jetbrains.kotlin.idea.base.fe10.codeInsight.newDeclaration.Fe10KotlinNewDeclarationNameValidator
 import org.jetbrains.kotlin.idea.caches.resolve.resolveToCall
 import org.jetbrains.kotlin.idea.caches.resolve.unsafeResolveToDescriptor
-import org.jetbrains.kotlin.idea.core.KotlinNameSuggester
-import org.jetbrains.kotlin.idea.core.NewDeclarationNameValidator
 import org.jetbrains.kotlin.psi.*
 import org.jetbrains.kotlin.resolve.calls.model.ArgumentMatch
 import org.jetbrains.kotlin.resolve.lazy.BodyResolveMode
@@ -30,12 +31,13 @@ class MyKotlinNameSuggestionProvider : NameSuggestionProvider {
     ): SuggestedNameInfo? {
         if (element is KtCallableDeclaration) {
             val context = nameSuggestionContext ?: element.parent
-            val target = if (element is KtProperty || element is KtParameter) {
-                NewDeclarationNameValidator.Target.VARIABLES
-            } else {
-                NewDeclarationNameValidator.Target.FUNCTIONS_AND_CLASSES
+            val target = when (element) {
+                is KtProperty -> if (element.isLocal) KotlinNameSuggestionProvider.ValidatorTarget.VARIABLE else KotlinNameSuggestionProvider.ValidatorTarget.PROPERTY
+                is KtParameter -> KotlinNameSuggestionProvider.ValidatorTarget.PARAMETER
+                is KtFunction -> KotlinNameSuggestionProvider.ValidatorTarget.FUNCTION
+                else -> KotlinNameSuggestionProvider.ValidatorTarget.CLASS
             }
-            val validator = NewDeclarationNameValidator(context, element, target, listOf(element))
+            val validator = Fe10KotlinNewDeclarationNameValidator(context, element, target, listOf(element))
             val names = SmartList<String>().apply {
 //                val name = element.name
 //                if (!name.isNullOrBlank()) {
@@ -45,7 +47,7 @@ class MyKotlinNameSuggestionProvider : NameSuggestionProvider {
                 val callableDescriptor = element.unsafeResolveToDescriptor(BodyResolveMode.PARTIAL) as CallableDescriptor
                 val type = callableDescriptor.returnType
                 if (type != null && !type.isUnit() && !KotlinBuiltIns.isPrimitiveType(type)) {
-                    this += KotlinNameSuggester.suggestNamesByType(type, validator)
+                    this += Fe10KotlinNameSuggester.suggestNamesByType(type, validator)
                 }
             }
             result += names

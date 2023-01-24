@@ -6,7 +6,7 @@ import com.intellij.openapi.ui.popup.util.BaseListPopupStep
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiFile
 import com.intellij.psi.PsiNamedElement
-import com.intellij.refactoring.openapi.impl.RefactoringFactoryImpl
+import com.intellij.refactoring.RefactoringFactory
 import org.jetbrains.astrid.inspections.Suggestion
 import org.jetbrains.astrid.stats.RenameMethodStatistics
 
@@ -27,7 +27,7 @@ class SuggestionListPopupStep(
             RenameMethodStatistics.ignoreCount(aValues.getScores(selectedValue.first))
             return
         }
-        val refactoringFactory = RefactoringFactoryImpl.getInstance(editor.project)
+        val refactoringFactory = RefactoringFactory.getInstance(editor.project)
         val rename = refactoringFactory.createRename(findNamedElement(elementAt), selectedValue.first)
         val usages = rename.findUsages()
         RenameMethodStatistics.applyCount(selectedValue.second)

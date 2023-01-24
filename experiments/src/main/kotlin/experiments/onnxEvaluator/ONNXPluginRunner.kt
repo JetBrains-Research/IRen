@@ -4,7 +4,6 @@ import experiments.modelsEvaluatorApi.PluginRunner
 import experiments.modelsEvaluatorApi.VarNamer
 
 class ONNXPluginRunner : PluginRunner() {
-    override fun getCommandName(): String = "ONNXEvaluator"
     override val numProjects = 10
     override val projectList: List<String>? = null
 //        get() = saveDir.parent.resolve("java-med-onnx-2048").listDirectoryEntries("*_BiDirectional.jsonl")

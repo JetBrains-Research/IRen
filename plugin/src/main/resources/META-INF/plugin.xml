@@ -53,13 +53,13 @@
         <statistics.collectorExtension implementation="org.jetbrains.iren.statistics.IRenCollectorExtension"/>
         <applicationService serviceImplementation="org.jetbrains.iren.services.ModelsSaveTime"/>
         <projectService serviceInterface="org.jetbrains.iren.services.NGramModelsUsabilityService"
-                            serviceImplementation="org.jetbrains.iren.services.NGramModelsUsabilityServiceImpl"/>
+                        serviceImplementation="org.jetbrains.iren.services.NGramModelsUsabilityServiceImpl"/>
         <projectService serviceInterface="org.jetbrains.iren.services.NGramModelManager"
-                            serviceImplementation="org.jetbrains.iren.services.NGramModelManagerImpl"/>
+                        serviceImplementation="org.jetbrains.iren.services.NGramModelManagerImpl"/>
         <applicationService serviceInterface="org.jetbrains.iren.services.DOBFModelManager"
                             serviceImplementation="org.jetbrains.iren.services.DOBFModelManagerImpl"/>
         <projectService serviceInterface="org.jetbrains.iren.services.IRenSuggestingService"
-                            serviceImplementation="org.jetbrains.iren.services.IRenSuggestingServiceImpl"/>
+                        serviceImplementation="org.jetbrains.iren.services.IRenSuggestingServiceImpl"/>
         <projectService serviceImplementation="org.jetbrains.iren.services.ConsistencyChecker"/>
         <projectService serviceInterface="org.jetbrains.iren.services.RenameHistory"
                         serviceImplementation="org.jetbrains.iren.services.RenameHistoryImpl"/>
@@ -69,11 +69,14 @@
                          shortName="VariableNamesInspection"
                          enabledByDefault="true"
                          level="WARNING"
-                         implementationClass="org.jetbrains.iren.inspections.variable.VariableNamesInspection"/>
+                         implementationClass="org.jetbrains.iren.inspections.variable.VariableNamesInspection"
+                         language=""/>
         <renameHandler implementation="org.jetbrains.iren.rename.IRenVariableInplaceRenameHandler"/>
         <renameHandler implementation="org.jetbrains.iren.rename.IRenMemberInplaceRenameHandler"/>
+        <backgroundPostStartupActivity implementation="org.jetbrains.iren.application.ProjectOpenActivity"/>
         <preloadingActivity implementation="org.jetbrains.iren.application.AskPermissionsPreloadingActivity"/>
-        <nameSuggestionProvider implementation="org.jetbrains.iren.IRenVariableNameSuggestionProvider" id="iren" order="last"/>
+        <nameSuggestionProvider implementation="org.jetbrains.iren.IRenVariableNameSuggestionProvider" id="iren"
+                                order="last"/>
     </extensions>
     <extensions defaultExtensionNs="org.jetbrains.iren">
         <variableNamesContributor

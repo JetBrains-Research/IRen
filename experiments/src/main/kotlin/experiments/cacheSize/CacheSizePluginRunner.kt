@@ -7,7 +7,6 @@ import org.jetbrains.iren.ngram.NGramModelRunner
 import org.jetbrains.iren.ngram.PersistentNGramModelRunner
 
 open class CacheSizePluginRunner : PluginRunner() {
-    override fun getCommandName(): String = "cacheSize"
     override val projectList = listOf("intellij-community")
     override val varNamer: VarNamer
         get() = CacheSizeVarNamer(saveDir, supporter, ngramType)

@@ -12,8 +12,6 @@ class TransformerPluginRunner : PluginRunner() {
         listOf("libgdx", "hadoop")
 //        listOf("TestProject")
 
-    override fun getCommandName(): String = "TransformerEvaluator"
-
     override val varNamer: VarNamer
         get() = TransformerVarNamer(saveDir, supporter, ngramType)
 }

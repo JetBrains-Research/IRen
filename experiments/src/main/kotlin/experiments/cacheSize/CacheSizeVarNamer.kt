@@ -1,6 +1,6 @@
 package experiments.cacheSize
 
-import com.intellij.completion.ngram.slp.counting.trie.persistent.CountersCache
+import com.intellij.completion.ngram.slp.counting.trie.my.persistent.CountersCache
 import com.intellij.openapi.application.ReadAction
 import com.intellij.psi.PsiNameIdentifierOwner
 import experiments.ModelPrediction

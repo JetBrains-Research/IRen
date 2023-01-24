@@ -48,7 +48,7 @@ public class ModelsSaveTime implements PersistentStateComponent<ModelsSaveTime> 
         @Nullable LocalDateTime saveTime = whenTrained(project);
         AppSettingsState settings = AppSettingsState.getInstance();
         return (saveTime == null ||
-                settings.modelsLifetimeUnit.between(saveTime, LocalDateTime.now()) >= settings.modelsLifetime);
+                settings.getModelsLifetimeUnit().between(saveTime, LocalDateTime.now()) >= settings.getModelsLifetime());
     }
 
     public @Nullable LocalDateTime whenTrained(@NotNull Project project) {

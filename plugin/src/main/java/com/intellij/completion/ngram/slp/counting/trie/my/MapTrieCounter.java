@@ -13,7 +13,7 @@
  copies or substantial portions of the Software.
  */
 
-package com.intellij.completion.ngram.slp.counting.trie;
+package com.intellij.completion.ngram.slp.counting.trie.my;
 
 //import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 //import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
@@ -148,8 +148,7 @@ public class MapTrieCounter extends AbstractTrie {
 			int key = entry.getKey();
 			Object value = entry.getValue();
 			out.writeInt(key);
-			if (value instanceof int[]) {
-				int[] arr = (int[]) value;
+			if (value instanceof int[] arr) {
 				out.writeInt(arr.length);
 				for (int i : arr) out.writeInt(i);
 			}

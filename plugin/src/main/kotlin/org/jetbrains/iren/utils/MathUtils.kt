@@ -1,6 +1,21 @@
 package org.jetbrains.iren.utils
 
+import kotlin.math.exp
+import kotlin.math.ln
 import kotlin.math.min
+
+internal fun logSoftmax(scores: Array<FloatArray>): Array<FloatArray> {
+    val expScores = Array(scores.size) { i ->
+        val curScores = scores[i]
+        val maxScore = curScores.maxOf { it }
+        FloatArray(curScores.size) { j -> exp((curScores[j] - maxScore).toDouble()).toFloat() }
+    }
+    for (score in expScores) {
+        val scoresSum = score.sum()
+        for (i in score.indices) score[i] = ln((score[i] / scoresSum).toDouble()).toFloat()
+    }
+    return expScores
+}
 
 internal fun fastLogSoftmax(scores: Array<FloatArray>): Array<FloatArray> {
     val expScores = Array(scores.size) { i ->
