@@ -8,6 +8,7 @@ import org.jetbrains.iren.storages.Context;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 
 public abstract class GetContextTest extends ParsingTest {
     @Override
@@ -30,7 +31,7 @@ public abstract class GetContextTest extends ParsingTest {
 
     @Override
     public Object parseResult(String resultFileName) {
-        try (BufferedReader br = new BufferedReader(new FileReader(resultFileName))) {
+        try (BufferedReader br = new BufferedReader(new FileReader(resultFileName, StandardCharsets.UTF_8))) {
             return Context.deserialize(br);
         } catch (IOException e) {
             e.printStackTrace();
