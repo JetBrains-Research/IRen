@@ -33,7 +33,7 @@ You can file a bug in the [GitHub issue tracker](https://github.com/JetBrains-Re
 
 ## Features
 
-- Enhanced in-place refactoring via `Shift+F6`.  In contrast to the default ones, IRen suggestions have probabilities on the right.
+- Enhanced in-place refactoring via `Shift+F6`.  In contrast to the default ones, IRen suggestions have probabilities on the right
 
 <img src="pictures/Refactoring.gif" alt="Refactoring" width="75%" style='border:1px solid #000000'/>
 
